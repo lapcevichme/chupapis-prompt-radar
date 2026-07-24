@@ -38,8 +38,11 @@ sudo docker compose up -d
 2. Перейдите в **Admin Panel** $\rightarrow$ **Pipelines / Filters** $\rightarrow$ **Add Filter**.
 3. Вставьте содержимое файла [`ml_service/filter.py`](file:///home/lapcevichme/crochack/ml_service/filter.py).
 4. Активируйте фильтр для нужных моделей/чатов.
+5. При необходимости укажите URL бэкенда в настройках фильтра (**Valves**):
+   - `BACKEND_URL`: `http://backend:8000/api/v1/logs` (или `http://host.docker.internal:8000/api/v1/logs`)
+   - `BACKEND_SERVICE_TOKEN`: секретный токен бэкенда.
 
-Фильтр автоматически перехватывает входные запросы пользователей (`inlet`), ответы модели и вызовы инструментов (`outlet`), после чего отправляет их в единую систему сбора логов.
+Фильтр автоматически дублирует логи локально в файл (`LOG_FILE_PATH`) и асинхронно стримит их по HTTP на бэкенд (`BACKEND_URL`).
 
 ---
 
@@ -67,6 +70,22 @@ sudo docker compose up -d
 * **Финансовый ROI**: Чистая экономия в рублях (с учётом зарплатной ставки и расходов на API LLM).
 * **TVI (Token Value Index)**: Сэкономленные FTE-часы на каждые 1,000 токенов.
 * **Аналитика стилей**: Оценка доли мобильного и голосового ввода (`voice`, `typo`, `formal`, `jargon`).
+
+### 💣 Нагрузочное тестирование & Стресс-тест бэкенда
+
+Скрипт [`ml_service/load_tester.py`](file:///home/lapcevichme/crochack/ml_service/load_tester.py) берет сгенерированный датасет и асинхронно отправляет батчи логов на эндпоинт (`PUT /api/v1/logs`):
+
+```bash
+cd ml_service
+
+# Запуск стандартной бомбардировки локального бэкенда
+uv run python load_tester.py
+
+# Запуск с кастомным URL, размером батча (20) и 10 параллельными потоками
+uv run python load_tester.py --url http://localhost:8000/api/v1/logs --batch-size 20 --concurrency 10 --repeat 5
+```
+
+---
 
 ### Technologies
 
