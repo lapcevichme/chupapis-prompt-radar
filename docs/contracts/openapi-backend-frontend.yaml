@@ -1,0 +1,521 @@
+openapi: 3.1.0
+info:
+  title: Prompt Radar — Backend ↔ Frontend API
+  version: "1.0.0"
+  description: >
+    Контракт REST-API дашборда (backend — сервер, frontend — клиент). Источник истины —
+    docs/contracts/backend-frontend.md. Все ответы имеют примеры (для mock-сервера Prism).
+    Модель — глобальный живой дашборд со стриминговой начинкой (см. DECISIONS.md D1/D3).
+servers:
+  - url: http://localhost:4010/api/v1
+    description: Prism mock (npx @stoplight/prism-cli mock)
+  - url: http://localhost:8080/api/v1
+    description: Локальный backend (dev)
+
+tags:
+  - name: auth
+  - name: ingestion
+  - name: recompute
+  - name: dashboard
+  - name: roi
+  - name: health
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+  schemas:
+    Error:
+      type: object
+      properties:
+        error_code: { type: string, example: not_found }
+        message: { type: string, example: Resource not found }
+        details: { type: [object, "null"], example: null }
+    User:
+      type: object
+      properties:
+        id: { type: string, example: usr_demo }
+        email: { type: string, example: demo@prompt-radar.local }
+        created_at: { type: string, format: date-time, example: "2026-07-25T09:00:00Z" }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, example: demo@prompt-radar.local }
+        password: { type: string, example: DemoPass123! }
+    Source:
+      type: object
+      properties:
+        source_id: { type: string, example: src_01 }
+        name: { type: string, example: prompt_radar_dataset.json }
+        origin: { type: string, enum: [upload, demo], example: demo }
+        records_total: { type: integer, example: 350 }
+        records_valid: { type: integer, example: 348 }
+        records_rejected: { type: integer, example: 2 }
+        status:
+          type: string
+          enum: [ingesting, classified, recomputed, failed]
+          example: recomputed
+        normalization_report:
+          type: object
+          example:
+            synthesized_request_id: 350
+            synthesized_timestamp: 350
+            rejected_reasons: { empty_query_text: 2 }
+        created_at: { type: string, format: date-time, example: "2026-07-25T09:05:00Z" }
+    RecomputeStatus:
+      type: object
+      properties:
+        job_id: { type: string, example: rc_01 }
+        status: { type: string, enum: [running, completed, failed], example: completed }
+        clusters_created: { type: integer, example: 18 }
+        scenarios_named: { type: integer, example: 15 }
+        finished_at: { type: [string, "null"], format: date-time, example: "2026-07-25T09:06:00Z" }
+    TaskDistItem:
+      type: object
+      properties:
+        task_type: { type: string, example: data_analysis }
+        label: { type: string, example: Анализ данных }
+        count: { type: integer, example: 120 }
+        percentage: { type: number, example: 34.5 }
+    Scenario:
+      type: object
+      properties:
+        scenario_id: { type: string, example: "data_analysis:cluster_01" }
+        task_type: { type: [string, "null"], example: data_analysis }
+        name: { type: [string, "null"], example: Экспорт отчётов CRM }
+        summary: { type: [string, "null"], example: Пользователи выгружают данные из CRM и формируют таблицы для анализа. }
+        user_goal: { type: [string, "null"], example: Сократить ручную подготовку отчётности. }
+        representative_examples:
+          type: array
+          items: { type: string }
+          example: ["Выгрузи список выигранных тендеров", "Собери отчёт по продажам"]
+        pain_points:
+          type: array
+          items: { type: string }
+          example: ["Ручная выгрузка данных", "Повторяющиеся операции"]
+        automation_potential: { type: [string, "null"], enum: [low, medium, high, null], example: high }
+        count: { type: integer, example: 45 }
+        trend: { type: [string, "null"], enum: [up, down, stable, new, insufficient_data, null], example: up }
+        growth_rate_percent: { type: [number, "null"], example: 15.4 }
+        statistical_reliability: { type: [string, "null"], enum: [low, medium, high, null], example: medium }
+    Dashboard:
+      type: object
+      properties:
+        taxonomy_version: { type: string, example: v1 }
+        freshness:
+          type: object
+          properties:
+            last_recompute_at: { type: [string, "null"], format: date-time, example: "2026-07-25T09:06:00Z" }
+            logs_since_last_recompute: { type: integer, example: 0 }
+            recompute_pending: { type: boolean, example: false }
+        totals:
+          type: object
+          properties:
+            records_processed: { type: integer, example: 348 }
+            scenarios_count: { type: integer, example: 18 }
+            outliers_percentage: { type: number, example: 4.5 }
+        tasks_distribution:
+          type: array
+          items: { $ref: "#/components/schemas/TaskDistItem" }
+        top_scenarios:
+          type: array
+          items: { $ref: "#/components/schemas/Scenario" }
+        dynamics:
+          type: array
+          items:
+            type: object
+            properties:
+              date: { type: string, example: "2026-07-24" }
+              count: { type: integer, example: 1000 }
+        outliers_summary:
+          type: object
+          properties:
+            total_outliers_count: { type: integer, example: 16 }
+            outlier_percentage: { type: number, example: 4.5 }
+        failure_analysis:
+          type: object
+          properties:
+            status: { type: string, enum: [available, not_available], example: available }
+            total_requests_with_failure_signals: { type: integer, example: 30 }
+            failure_signal_percentage: { type: number, example: 8.6 }
+            top_failure_signals:
+              type: array
+              items:
+                type: object
+                properties:
+                  signal: { type: string, example: tool_error }
+                  count: { type: integer, example: 22 }
+    LogItem:
+      type: object
+      properties:
+        request_id: { type: string, example: req_101 }
+        query_text: { type: string, example: Выгрузи отчёт из CRM }
+        task_type: { type: string, example: data_analysis }
+        classification_confidence: { type: number, example: 0.91 }
+        scenario_id: { type: [string, "null"], example: "data_analysis:cluster_01" }
+        scenario_name: { type: [string, "null"], example: Экспорт отчётов CRM }
+        is_outlier: { type: boolean, example: false }
+        has_failure_signals: { type: boolean, example: false }
+        timestamp: { type: string, format: date-time, example: "2026-07-24T10:00:00Z" }
+    RoiSummary:
+      type: object
+      properties:
+        total_logs: { type: integer, example: 348 }
+        success_rate_percent: { type: number, example: 82.5 }
+        total_fte_hours_saved: { type: number, example: 210.5 }
+        total_manual_cost_rub: { type: number, example: 252600.0 }
+        total_agent_cost_rub: { type: number, example: 16800.0 }
+        net_savings_rub: { type: number, example: 235800.0 }
+        roi_multiplier: { type: number, example: 15.0 }
+        total_tokens_consumed: { type: integer, example: 1120000 }
+        wasted_tokens_on_errors: { type: integer, example: 96000 }
+        token_value_index: { type: number, example: 0.188 }
+        process_automation_rate: { type: number, example: 61.0 }
+        top_tools_used:
+          type: object
+          additionalProperties: { type: integer }
+          example: { CRM: 90, Mail: 70, Jira: 40 }
+    Roi:
+      type: object
+      properties:
+        assumptions:
+          type: object
+          properties:
+            fte_hourly_rate_rub: { type: number, example: 1200.0 }
+            token_cost_per_1k_rub: { type: number, example: 0.015 }
+        summary: { $ref: "#/components/schemas/RoiSummary" }
+        by_category:
+          type: array
+          items:
+            type: object
+            properties:
+              task_type: { type: string, example: data_analysis }
+              label: { type: string, example: Анализ данных }
+              count: { type: integer, example: 120 }
+              success_rate_percent: { type: number, example: 88.0 }
+              fte_hours_saved: { type: number, example: 95.0 }
+              net_savings_rub: { type: number, example: 110000.0 }
+        by_scenario:
+          type: array
+          items:
+            type: object
+            properties:
+              scenario_id: { type: string, example: "data_analysis:cluster_01" }
+              name: { type: string, example: Экспорт отчётов CRM }
+              count: { type: integer, example: 45 }
+              fte_hours_saved: { type: number, example: 40.0 }
+              net_savings_rub: { type: number, example: 47000.0 }
+              automation_potential: { type: string, example: high }
+
+security:
+  - cookieAuth: []
+
+paths:
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Логин (ставит access/refresh cookie)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: "#/components/schemas/User" }
+              example:
+                user: { id: usr_demo, email: demo@prompt-radar.local, created_at: "2026-07-25T09:00:00Z" }
+        "401":
+          description: Неверные учётные данные
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { error_code: invalid_credentials, message: Wrong email or password, details: null }
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Обновить cookie
+      responses:
+        "200": { description: OK }
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Выход
+      responses:
+        "204": { description: No Content }
+  /users/me:
+    get:
+      tags: [auth]
+      summary: Текущий пользователь
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+              example: { id: usr_demo, email: demo@prompt-radar.local, created_at: "2026-07-25T09:00:00Z" }
+
+  /ingest:
+    post:
+      tags: [ingestion]
+      summary: Загрузить датасет (или demo) → стрим в ML
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+          application/json:
+            schema:
+              type: object
+              properties:
+                use_demo: { type: boolean, example: true }
+      responses:
+        "202":
+          description: Принято, обработка асинхронная
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Source" }
+              example:
+                source_id: src_01
+                name: prompt_radar_dataset.json
+                origin: demo
+                records_total: 350
+                records_valid: 348
+                records_rejected: 2
+                status: ingesting
+                normalization_report:
+                  synthesized_request_id: 350
+                  synthesized_timestamp: 350
+                  rejected_reasons: { empty_query_text: 2 }
+                created_at: "2026-07-25T09:05:00Z"
+  /sources:
+    get:
+      tags: [ingestion]
+      summary: Список источников (заливок)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: "#/components/schemas/Source" } }
+                  total: { type: integer }
+              example:
+                total: 1
+                items:
+                  - { source_id: src_01, name: prompt_radar_dataset.json, origin: demo, records_total: 350, records_valid: 348, records_rejected: 2, status: recomputed, created_at: "2026-07-25T09:05:00Z" }
+  /sources/{source_id}:
+    get:
+      tags: [ingestion]
+      summary: Детали источника + прогресс ingestion
+      parameters:
+        - { name: source_id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Source" }
+              example: { source_id: src_01, name: prompt_radar_dataset.json, origin: demo, records_total: 350, records_valid: 348, records_rejected: 2, status: recomputed, created_at: "2026-07-25T09:05:00Z" }
+
+  /recompute:
+    post:
+      tags: [recompute]
+      summary: Запустить пересчёт кластеров + имена сценариев (проксируется в ML)
+      responses:
+        "202":
+          description: Запущено
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecomputeStatus" }
+              example: { job_id: rc_01, status: running, clusters_created: 0, scenarios_named: 0, finished_at: null }
+  /recompute/status:
+    get:
+      tags: [recompute]
+      summary: Статус пересчёта
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecomputeStatus" }
+              example: { job_id: rc_01, status: completed, clusters_created: 18, scenarios_named: 15, finished_at: "2026-07-25T09:06:00Z" }
+
+  /dashboard:
+    get:
+      tags: [dashboard]
+      summary: Главный дашборд (глобальный, с фильтрами)
+      parameters:
+        - { name: source_id, in: query, required: false, schema: { type: string } }
+        - { name: from, in: query, required: false, schema: { type: string, format: date } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Dashboard" }
+              example:
+                taxonomy_version: v1
+                freshness: { last_recompute_at: "2026-07-25T09:06:00Z", logs_since_last_recompute: 0, recompute_pending: false }
+                totals: { records_processed: 348, scenarios_count: 18, outliers_percentage: 4.5 }
+                tasks_distribution:
+                  - { task_type: data_analysis, label: Анализ данных, count: 120, percentage: 34.5 }
+                  - { task_type: information_search, label: Поиск информации, count: 80, percentage: 23.0 }
+                  - { task_type: text_generation, label: Генерация текста, count: 70, percentage: 20.1 }
+                  - { task_type: task_management, label: Планирование/задачи, count: 60, percentage: 17.2 }
+                  - { task_type: unknown, label: Не уверены, count: 10, percentage: 2.9 }
+                  - { task_type: other, label: Другое, count: 8, percentage: 2.3 }
+                top_scenarios:
+                  - { scenario_id: "data_analysis:cluster_01", task_type: data_analysis, name: Экспорт отчётов CRM, summary: "Пользователи выгружают данные из CRM и формируют таблицы для анализа.", user_goal: "Сократить ручную подготовку отчётности.", representative_examples: ["Выгрузи список выигранных тендеров", "Собери отчёт по продажам"], pain_points: ["Ручная выгрузка данных", "Повторяющиеся операции"], automation_potential: high, count: 45, trend: up, growth_rate_percent: 15.4 }
+                  - { scenario_id: "information_search:cluster_02", task_type: information_search, name: Сбор данных по клиенту, summary: "Поиск контактов и сделок по компании-клиенту.", user_goal: "Быстро собрать досье клиента.", representative_examples: ["Найди контактное лицо ООО Ромашка", "Проверь выигранные сделки клиента"], pain_points: ["Данные разбросаны по системам"], automation_potential: medium, count: 38, trend: stable, growth_rate_percent: 2.1 }
+                dynamics:
+                  - { date: "2026-07-23", count: 800 }
+                  - { date: "2026-07-24", count: 1000 }
+                outliers_summary: { total_outliers_count: 16, outlier_percentage: 4.5 }
+                failure_analysis:
+                  status: available
+                  total_requests_with_failure_signals: 30
+                  failure_signal_percentage: 8.6
+                  top_failure_signals:
+                    - { signal: tool_error, count: 22 }
+                    - { signal: hallucination_loop, count: 8 }
+  /scenarios:
+    get:
+      tags: [dashboard]
+      summary: Все сценарии (с фильтрами)
+      parameters:
+        - { name: source_id, in: query, required: false, schema: { type: string } }
+        - { name: task_type, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: "#/components/schemas/Scenario" } }
+                  total: { type: integer }
+              example:
+                total: 2
+                items:
+                  - { scenario_id: "data_analysis:cluster_01", task_type: data_analysis, name: Экспорт отчётов CRM, summary: "Выгрузка данных из CRM.", user_goal: "Сократить ручную отчётность.", representative_examples: ["Выгрузи тендеры"], pain_points: ["Ручная выгрузка"], automation_potential: high, count: 45, trend: up, growth_rate_percent: 15.4, statistical_reliability: medium }
+                  - { scenario_id: "information_search:cluster_02", task_type: information_search, name: Сбор данных по клиенту, summary: "Поиск по компании.", user_goal: "Досье клиента.", representative_examples: ["Найди контакт"], pain_points: ["Данные разбросаны"], automation_potential: medium, count: 38, trend: stable, growth_rate_percent: 2.1, statistical_reliability: high }
+  /scenarios/{scenario_id}:
+    get:
+      tags: [dashboard]
+      summary: Детали сценария
+      parameters:
+        - { name: scenario_id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: "#/components/schemas/Scenario" }
+                  - type: object
+                    properties:
+                      representative_request_ids: { type: array, items: { type: string } }
+                      records_count: { type: integer }
+              example: { scenario_id: "data_analysis:cluster_01", task_type: data_analysis, name: Экспорт отчётов CRM, summary: "Выгрузка данных из CRM.", user_goal: "Сократить ручную отчётность.", representative_examples: ["Выгрузи тендеры", "Отчёт по продажам"], pain_points: ["Ручная выгрузка"], automation_potential: high, count: 45, trend: up, growth_rate_percent: 15.4, statistical_reliability: medium, records_count: 45, representative_request_ids: [req_101, req_105, req_118] }
+  /logs:
+    get:
+      tags: [dashboard]
+      summary: Обработанные логи (пагинация + фильтры)
+      parameters:
+        - { name: source_id, in: query, required: false, schema: { type: string } }
+        - { name: task_type, in: query, required: false, schema: { type: string } }
+        - { name: scenario_id, in: query, required: false, schema: { type: string } }
+        - { name: only_failures, in: query, required: false, schema: { type: boolean } }
+        - { name: limit, in: query, required: false, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, required: false, schema: { type: integer, default: 0 } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: "#/components/schemas/LogItem" } }
+                  total: { type: integer }
+              example:
+                total: 348
+                items:
+                  - { request_id: req_101, query_text: Выгрузи отчёт из CRM, task_type: data_analysis, classification_confidence: 0.91, scenario_id: "data_analysis:cluster_01", scenario_name: Экспорт отчётов CRM, is_outlier: false, has_failure_signals: false, timestamp: "2026-07-24T10:00:00Z" }
+                  - { request_id: req_102, query_text: скажи кратко что пришло на почту, task_type: information_search, classification_confidence: 0.74, scenario_id: null, scenario_name: null, is_outlier: true, has_failure_signals: true, timestamp: "2026-07-24T10:02:00Z" }
+
+  /roi:
+    get:
+      tags: [roi]
+      summary: ROI/FTE (считает backend)
+      parameters:
+        - { name: source_id, in: query, required: false, schema: { type: string } }
+        - { name: from, in: query, required: false, schema: { type: string, format: date } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date } }
+        - { name: fte_hourly_rate_rub, in: query, required: false, schema: { type: number } }
+        - { name: token_cost_per_1k_rub, in: query, required: false, schema: { type: number } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Roi" }
+              example:
+                assumptions: { fte_hourly_rate_rub: 1200.0, token_cost_per_1k_rub: 0.015 }
+                summary:
+                  total_logs: 348
+                  success_rate_percent: 82.5
+                  total_fte_hours_saved: 210.5
+                  total_manual_cost_rub: 252600.0
+                  total_agent_cost_rub: 16800.0
+                  net_savings_rub: 235800.0
+                  roi_multiplier: 15.0
+                  total_tokens_consumed: 1120000
+                  wasted_tokens_on_errors: 96000
+                  token_value_index: 0.188
+                  process_automation_rate: 61.0
+                  top_tools_used: { CRM: 90, Mail: 70, Jira: 40 }
+                by_category:
+                  - { task_type: data_analysis, label: Анализ данных, count: 120, success_rate_percent: 88.0, fte_hours_saved: 95.0, net_savings_rub: 110000.0 }
+                by_scenario:
+                  - { scenario_id: "data_analysis:cluster_01", name: Экспорт отчётов CRM, count: 45, fte_hours_saved: 40.0, net_savings_rub: 47000.0, automation_potential: high }
+  /export:
+    get:
+      tags: [roi]
+      summary: Экспорт результатов/ROI (опц.)
+      parameters:
+        - { name: format, in: query, required: true, schema: { type: string, enum: [xlsx, csv] } }
+      responses:
+        "200": { description: Файл }
+
+  /health:
+    servers:
+      - url: http://localhost:8080/api
+    get:
+      tags: [health]
+      summary: Health
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              example: { status: ok, dependencies: { database: ok, ml: ok } }
