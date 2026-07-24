@@ -39,3 +39,5 @@ TASKS.md
 /docs/decisions
 /.claude/agents
 /.claude
+docs/contracts/FRONTEND_MOCKING.md
+/template
