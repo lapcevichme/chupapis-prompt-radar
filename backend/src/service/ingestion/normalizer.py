@@ -99,7 +99,7 @@ def _synthesize_timestamp(
 
 
 def normalize(
-    raw_records: list[dict[str, Any]], settings: Settings
+    raw_records: list[dict[str, Any]], settings: Settings, *, id_prefix: str = "req_"
 ) -> NormalizationResult:
     """Turn raw records into (log_records, dataset_rows, report)."""
     result = NormalizationResult()
@@ -115,14 +115,14 @@ def normalize(
             )
             continue
 
-        query_text = str(raw.get("user_query") or "").strip()
+        query_text = str(raw.get("user_query") or raw.get("query_text") or "").strip()
         if not query_text:
             rejected_reasons["empty_query_text"] = (
                 rejected_reasons.get("empty_query_text", 0) + 1
             )
             continue
 
-        request_id = f"req_{index}"
+        request_id = str(raw.get("request_id") or f"{id_prefix}{index}")
         timestamp = _synthesize_timestamp(index, total, settings, now)
         raw_status = raw.get("status")
         response_status, error_code = _STATUS_MAP.get(

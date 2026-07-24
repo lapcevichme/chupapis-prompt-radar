@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -111,6 +111,69 @@ class IngestionService:
         if not path.exists():
             raise DatasetInvalidError(f"Demo dataset not found at {path}")
         return path.read_bytes(), path.name
+
+    async def ingest_live(
+        self, raw_records: list[dict[str, Any]], source_name: str = "live"
+    ) -> dict[str, Any]:
+        """Append live records to a rolling source and stream them to ML now."""
+        source = await self._get_or_create_live_source(source_name)
+        result = normalize(
+            raw_records, self._settings, id_prefix=f"live_{uuid4().hex[:8]}_"
+        )
+        self._session.add_all(
+            [
+                DatasetRecord(
+                    source_id=source.id,
+                    request_id=row.request_id,
+                    query_text=row.query_text,
+                    gold_category=row.gold_category,
+                    style=row.style,
+                    tokens=row.tokens,
+                    manual_time_minutes=row.manual_time_minutes,
+                    tools_used=row.tools_used,
+                    status=row.status,
+                    timestamp=row.timestamp,
+                )
+                for row in result.dataset_rows
+            ]
+        )
+        source.records_total += result.report["records_total"]
+        source.records_valid += result.report["records_valid"]
+        source.records_rejected += result.report["records_rejected"]
+        await self._session.commit()
+
+        totals = await MlClient(self._settings).stream_logs(
+            str(source.id), result.log_records
+        )
+        return {
+            "source_id": str(source.id),
+            "accepted": int(totals.get("accepted", result.report["records_valid"])),
+            "duplicates": int(totals.get("duplicates", 0)),
+            "rejected": int(totals.get("rejected", 0)),
+            "records_valid": result.report["records_valid"],
+            "records_rejected": result.report["records_rejected"],
+        }
+
+    async def _get_or_create_live_source(self, name: str) -> IngestionSource:
+        existing = await self._session.scalar(
+            select(IngestionSource).where(
+                IngestionSource.name == name,
+                IngestionSource.origin == "live",
+            )
+        )
+        if existing is not None:
+            return existing
+        source = IngestionSource(
+            name=name,
+            origin="live",
+            records_total=0,
+            records_valid=0,
+            records_rejected=0,
+            status=SourceStatus.classified.value,
+        )
+        self._session.add(source)
+        await self._session.flush()
+        return source
 
 
 async def stream_source_logs(

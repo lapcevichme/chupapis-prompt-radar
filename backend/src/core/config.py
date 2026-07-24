@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     ML_INGEST_BATCH_SIZE: int = 200
     ML_HTTP_TIMEOUT_SEC: int = 30
 
+    # Live ingest webhook token (X-Ingest-Token). Empty disables the check.
+    INGEST_TOKEN: str = "dev-ingest-token"
+
     # --- ROI defaults ---
     ROI_FTE_HOURLY_RATE_RUB: float = 1200.0
     ROI_TOKEN_COST_PER_1K_RUB: float = 0.015

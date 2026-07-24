@@ -52,7 +52,10 @@ class MlClient:
         totals = {"accepted": 0, "duplicates": 0, "rejected": 0}
 
         for start in range(0, len(records), batch_size):
-            batch = records[start : start + batch_size]
+            batch = [
+                {**rec, "source_id": source_id}
+                for rec in records[start : start + batch_size]
+            ]
             payload = {"source_id": source_id, "logs": batch}
             result = await self._request("PUT", "/api/v1/logs", json=payload)
             for key in totals:
