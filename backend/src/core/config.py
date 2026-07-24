@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     DEMO_USER_EMAIL: str = "test@gmail.com"
     DEMO_USER_PASSWORD: str = "test123"
 
+    # --- CORS (frontend SPA, cookie auth needs explicit origins + credentials) ---
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://localhost:8080"
+
     # --- ML integration ---
     ML_SERVICE_URL: str = "http://ml-service:8000"
     ML_SERVICE_TOKEN: str = "change-me-ml-token"
@@ -63,6 +66,11 @@ class Settings(BaseSettings):
     NORMALIZE_TIMESTAMP_SPAN_DAYS: int = 14
     # Demo dataset path: backend-owned fixture (decoupled from ml_service layout).
     DEMO_DATASET_PATH: str = str(BASE_DIR / "src" / "data" / "demo_dataset.json")
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Parse CORS_ORIGINS CSV into a clean list of allowed origins."""
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
     @field_validator("COOKIE_SAMESITE", mode="before")
     @classmethod

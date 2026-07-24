@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 import httpx
 from fastapi import FastAPI, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
@@ -87,6 +88,18 @@ def create_app(
         openapi_url="/api/openapi.json",
     )
     app.add_middleware(RequestTracingMiddleware)
+    # CORS last so it wraps outermost and sets headers on every response (incl. errors).
+    # allow_credentials=True requires explicit origins (no "*") — cookie auth needs it.
+    cors_origins = settings.cors_origins_list
+    if cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=cors_origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+            expose_headers=["Content-Disposition"],
+        )
     register_exception_handlers(app, settings)
 
     app.include_router(get_api_routers())
