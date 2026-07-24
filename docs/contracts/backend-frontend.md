@@ -55,6 +55,32 @@ Response `202`:
 
 Детали + прогресс ingestion (`ingested`, `classified`, `assigned` счётчики). Фронт поллит.
 
+## 2b. Live ingestion (webhook, machine-to-machine)
+
+Для отправки логов в реальном времени (агентская платформа / OWUI-фильтр / demo-симулятор).
+Авторизация — заголовок `X-Ingest-Token` (**не cookie**): это машинный вход, отдельный от пользовательского.
+
+### `POST /api/v1/logs` → `202`
+
+Header: `X-Ingest-Token: <INGEST_TOKEN>`. Body — сырые записи (тот же формат, что demo-датасет;
+принимается и `query_text`, и `user_query`; можно передать свой `request_id`):
+
+```json
+{ "logs": [ { "user_query": "Выгрузи отчёт из CRM", "status": "success",
+             "simulated_context_tokens": 12000, "estimated_manual_time_minutes": 30,
+             "tools_used": ["CRM"], "category": "data_analysis" } ], "source_name": "live" }
+```
+
+Response:
+
+```json
+{ "source_id": "...", "accepted": 1, "duplicates": 0, "rejected": 0,
+  "records_valid": 1, "records_rejected": 0 }
+```
+
+Backend нормализует, копит в rolling-источник `live` (`origin: "live"`) и стримит в ML. Записи видны
+на дашборде (глобально или с фильтром `source_id`). Симулятор потока: `tools/feed_live.py` / `make feed`.
+
 ## 3. Recompute (пересчёт кластеров + имена сценариев)
 
 ### `POST /api/v1/recompute` → `202`

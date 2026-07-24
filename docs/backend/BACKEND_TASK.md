@@ -121,6 +121,7 @@ ML_SERVICE_URL=http://ml-service:8000
 ML_SERVICE_TOKEN=change-me-ml-token
 ML_INGEST_BATCH_SIZE=200
 ML_HTTP_TIMEOUT_SEC=30
+INGEST_TOKEN=dev-ingest-token        # live webhook auth (X-Ingest-Token header)
 
 # ROI defaults (customer FTE methodology, QNA §1)
 ROI_FTE_HOURLY_RATE_RUB=1200.0
@@ -206,6 +207,8 @@ Backend превращает сырой датасет в записи `log.sche
 
 - **auth:** `POST /auth/login`, `/auth/refresh`, `/auth/logout`, `GET /users/me`;
 - **ingestion:** `POST /ingest`, `GET /sources`, `GET /sources/{id}`;
+- **live webhook:** `POST /api/v1/logs` — приём live-логов потоком (заголовок `X-Ingest-Token`,
+  machine-to-machine, не cookie; rolling-источник `live`). Симулятор: `tools/feed_live.py`;
 - **recompute:** `POST /recompute`, `GET /recompute/status`;
 - **dashboard:** `GET /dashboard`, `/scenarios`, `/scenarios/{id}`, `/logs` (все с фильтрами
   `source_id/from/to`, пагинацией);

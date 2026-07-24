@@ -6,6 +6,7 @@
 
 > Контекст кейса — в `docs/`. ТЗ бэкенда — `docs/backend/BACKEND_TASK.md`. ТЗ ML — `ml_service/ТЗ.md`.
 > Контракты — `docs/contracts/`. Решения — `docs/decisions/DECISIONS.md`. Задачи/статус — `TASKS.md`.
+> Запуск стека: `make up` (compose: backend + db + qdrant + ml). Demo-логин: `test@gmail.com` / `test123`.
 
 ## Цель продукта
 
@@ -32,8 +33,9 @@
 
 ## Границы ответственности
 
-- Backend: ingestion датасета, нормализация → записи `log.schema.json`, стриминг в ML, триггер
-  recompute, хранение бизнес-состояния, ROI, read-API для дашборда, auth.
+- Backend: ingestion датасета (+ live-webhook `POST /api/v1/logs` c `X-Ingest-Token`, D7), нормализация
+  → записи `log.schema.json`, стриминг в ML, триггер recompute, хранение бизнес-состояния, ROI,
+  read-API для дашборда, auth.
 - ML: приём логов, классификация, эмбеддинги, онлайн-кластеризация, пересчёт (UMAP+HDBSCAN),
   саммаризация, агрегаты для `/statistics`. Подробности — `ml_service/ТЗ.md`.
 - Frontend: дашборд для CTO. Каждый график отвечает на управленческий вопрос.

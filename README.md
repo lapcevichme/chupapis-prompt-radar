@@ -4,6 +4,29 @@
 
 ---
 
+### 🚀 Полный стек (Docker Compose)
+
+Backend + Postgres + Qdrant + ml-service одной командой:
+
+```bash
+cp .env.example .env            # опционально — работает и с дефолтами
+docker compose up -d --build    # или: make up
+```
+
+- Backend API + Swagger: <http://localhost:8080/api/docs>
+- ML health: <http://localhost:8000/health/ready>
+- Demo-логин: `test@gmail.com` / `test123`
+
+Демо-потоки: `make feed` (live-поток в `POST /api/v1/logs` — дашборд реагирует) или разовый
+датасет: логин → `POST /api/v1/ingest {"use_demo": true}` → `POST /api/v1/recompute` →
+`GET /api/v1/dashboard` / `GET /api/v1/roi`.
+
+> Для осмысленной классификации/сценариев задай `OPENROUTER_API_KEY` в `.env` (QNA §4 — API-модели
+> разрешены). Без него ml идёт в offline mock-embeddings → низкое качество. Контракты и структура —
+> в `docs/`, задачи и статус — `TASKS.md`.
+
+---
+
 ### 🚀 Быстрый старт ML-сервиса
 
 Все зависимости сервиса управляются через `uv`:
