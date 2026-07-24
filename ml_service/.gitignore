@@ -11,3 +11,8 @@ __pycache__/
 Thumbs.db
 .idea/
 .vscode/
+
+prompt_radar_dataset.json
+catboost_info/
+
+*.db
