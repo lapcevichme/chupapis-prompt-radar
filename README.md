@@ -25,6 +25,28 @@ docker compose up -d --build    # или: make up
 > разрешены). Без него ml идёт в offline mock-embeddings → низкое качество. Контракты и структура —
 > в `docs/`, задачи и статус — `TASKS.md`.
 
+**End-to-end одной командой:** `make demo` поднимает стек и гоняет сценарий
+`login → ingest demo → recompute (best-effort) → dashboard → ROI → export` с печатью саммари
+(скрипт `tools/demo.py`).
+
+**Экспорт ROI в Excel/CSV** (кейсовая тема): `GET /api/v1/export?format=xlsx|csv` — выгрузка
+ROI-саммари, разрезов по категориям и сценариям. XLSX собирается нативно (stdlib, без доп.
+зависимостей); CSV — с BOM для корректной кириллицы в Excel.
+
+**Тесты бэкенда:** `make test` (`cd backend && poetry run pytest`) — 43 unit + API-теста
+(ROI-калькулятор, нормализация, стриминг в ML, экспорт, валидация `/statistics`, контракт роутов).
+Линт: `make lint`.
+
+#### Ограничения MVP (осознанные компромиссы)
+
+- Фоновая обработка — в одном процессе (без Celery/брокера); recompute триггерится вручную.
+- `timestamp` в demo-датасете **синтезируется** (помечено в `normalization_report`).
+- Дашборд-статистика — read-модель из стора ML (кэш с TTL), не пересчитывается на каждый запрос.
+- Ставки ROI (`fte_hourly_rate_rub`, `token_cost_per_1k_rub`) и session-коэффициенты — **предпосылки**
+  расчёта, отдаются в `assumptions`; переопределяются query-параметрами («что если»).
+- Таксономия v1 (7 классов). Без `OPENROUTER_API_KEY`/Ollama ml — в degraded (классы `unknown`,
+  сценарии-одиночки); бэкенд это переживает (recompute → `502 ML_UNAVAILABLE`, дашборд/ROI живут).
+
 ---
 
 ### 🚀 Быстрый старт ML-сервиса
