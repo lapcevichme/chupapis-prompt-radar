@@ -28,12 +28,8 @@ restart:       ## recreate backend only (after code change)
 feed:          ## stream live demo requests to the running backend
 	python tools/feed_live.py --url $(BACKEND_URL) --token $(INGEST_TOKEN) --count 30 --interval 0.5
 
-demo: up       ## bring the stack up and print next steps
-	@echo ""
-	@echo "Stack starting. Backend docs: $(BACKEND_URL)/api/docs   ML ready: http://localhost:8000/health/ready"
-	@echo "Login:  test@gmail.com / test123"
-	@echo "Live stream:  make feed"
-	@echo "Batch demo:   POST $(BACKEND_URL)/api/v1/ingest  {\"use_demo\": true}  then POST /api/v1/recompute"
+demo: up       ## bring the stack up and run the end-to-end demo (ingest -> dashboard -> ROI -> export)
+	python tools/demo.py --url $(BACKEND_URL)
 
 test:          ## run backend unit + API tests
 	cd backend && poetry run pytest -q
