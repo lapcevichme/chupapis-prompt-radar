@@ -129,3 +129,25 @@ async def test_export_rejects_bad_format(app, client) -> None:
     finally:
         app.dependency_overrides.clear()
     assert resp.status_code == 422
+
+
+async def test_cors_allows_frontend_origin_with_credentials(client) -> None:
+    origin = "http://localhost:3000"
+    resp = await client.get("/api/ping", headers={"Origin": origin})
+    assert resp.status_code == 200
+    assert resp.headers.get("access-control-allow-origin") == origin
+    assert resp.headers.get("access-control-allow-credentials") == "true"
+
+
+async def test_cors_preflight(client) -> None:
+    resp = await client.options(
+        "/api/v1/auth/login",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+    assert resp.status_code in (200, 204)
+    assert resp.headers.get("access-control-allow-origin") == "http://localhost:5173"
+    assert "POST" in resp.headers.get("access-control-allow-methods", "")
