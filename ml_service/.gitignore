@@ -6,7 +6,6 @@ __pycache__/
 !.env.example
 *.pem
 *.key
-prompt_radar_dataset.json
 *.log
 .DS_Store
 Thumbs.db
