@@ -1,4 +1,4 @@
-.PHONY: up down logs ps build restart feed demo
+.PHONY: up down down-clean logs ps build restart feed demo test lint
 
 COMPOSE := docker compose
 INGEST_TOKEN ?= dev-ingest-token
@@ -34,3 +34,9 @@ demo: up       ## bring the stack up and print next steps
 	@echo "Login:  test@gmail.com / test123"
 	@echo "Live stream:  make feed"
 	@echo "Batch demo:   POST $(BACKEND_URL)/api/v1/ingest  {\"use_demo\": true}  then POST /api/v1/recompute"
+
+test:          ## run backend unit + API tests
+	cd backend && poetry run pytest -q
+
+lint:          ## ruff check backend
+	cd backend && poetry run ruff check src tests

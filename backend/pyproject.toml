@@ -42,3 +42,8 @@ dev = [
 target-version = "py313"
 line-length = 88
 extend-exclude = ["migrations/versions"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["src"]
+testpaths = ["tests"]
