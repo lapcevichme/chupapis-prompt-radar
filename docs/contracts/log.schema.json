@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prompt-radar/contracts/log.schema.json",
+  "title": "Prompt Radar — log record (one item of PUT /api/v1/logs batch)",
+  "description": "Backend normalizes the raw dataset into these records and streams them in batches. Required fields per docs/contracts/backend-ml.md.",
+  "type": "object",
+  "required": ["request_id", "query_text", "timestamp"],
+  "additionalProperties": true,
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Уникальный id запроса. Backend синтезирует, если в источнике нет. Ключ идемпотентности в ML."
+    },
+    "query_text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Текст пользовательского запроса (после trim)."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601. Backend синтезирует для демо, если в источнике нет (нужен для трендов/динамики)."
+    },
+    "source_id": {
+      "type": ["string", "null"],
+      "description": "Идентификатор заливки/источника (для фильтрации дашборда). Проставляет backend."
+    },
+    "agent_id": { "type": ["string", "null"] },
+    "user_id": { "type": ["string", "null"] },
+    "department": { "type": ["string", "null"] },
+    "response_text": { "type": ["string", "null"] },
+    "response_status": {
+      "type": ["string", "null"],
+      "description": "Сигнал успешности (для failure-анализа). Наш датасет: success | error."
+    },
+    "error_code": {
+      "type": ["string", "null"],
+      "description": "Технический сигнал сбоя: tool_error | hallucination_loop | null."
+    },
+    "response_latency_ms": { "type": ["integer", "null"], "minimum": 0 },
+    "user_feedback": { "type": ["integer", "null"], "description": "Оценка: -1 | 0 | 1." },
+    "retry_count": { "type": ["integer", "null"], "minimum": 0 },
+    "metadata": {
+      "type": "object",
+      "description": "Доп. поля. Backend кладёт сюда gold_category, style и т.п. Сырые ROI-поля (tokens, manual_time, tools) ML может игнорировать — их владелец backend.",
+      "additionalProperties": true
+    }
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prompt-radar/contracts/statistics.schema.json",
+  "title": "Prompt Radar — GET /api/v1/statistics response (ML → backend)",
+  "description": "Pre-aggregated analytics served instantly from ML store (no model calls). Backend caches this and enriches with ROI + human labels for the frontend.",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "totals", "tasks_distribution", "top_scenarios"],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": { "type": "string", "examples": ["1.0"] },
+    "taxonomy_version": { "type": "string", "examples": ["v1"] },
+    "pipeline_version": { "type": "string" },
+    "generated_at": { "type": "string", "format": "date-time" },
+
+    "filters_applied": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "source_id": { "type": ["string", "null"] },
+        "from": { "type": ["string", "null"] },
+        "to": { "type": ["string", "null"] }
+      }
+    },
+
+    "freshness": {
+      "type": "object",
+      "description": "Насколько актуальны сценарии: онлайн-назначения свежие, но имена кластеров обновляются только на recompute.",
+      "properties": {
+        "last_recompute_at": { "type": ["string", "null"], "format": "date-time" },
+        "logs_since_last_recompute": { "type": "integer", "minimum": 0 },
+        "recompute_pending": { "type": "boolean" }
+      }
+    },
+
+    "totals": {
+      "type": "object",
+      "required": ["records_total"],
+      "properties": {
+        "records_total": { "type": "integer", "minimum": 0 },
+        "scenarios_count": { "type": "integer", "minimum": 0 },
+        "unknown_count": { "type": "integer", "minimum": 0 },
+        "outliers_percentage": { "type": "number", "minimum": 0 }
+      }
+    },
+
+    "tasks_distribution": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["task_type", "count"],
+        "properties": {
+          "task_type": { "type": "string" },
+          "count": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+
+    "top_scenarios": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/scenario" }
+    },
+
+    "dynamics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["date", "count"],
+        "properties": {
+          "date": { "type": "string" },
+          "count": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+
+    "outliers_summary": {
+      "type": "object",
+      "properties": {
+        "total_outliers_count": { "type": "integer", "minimum": 0 },
+        "outlier_percentage": { "type": "number", "minimum": 0 }
+      }
+    },
+
+    "failure_analysis": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["available", "not_available"] },
+        "total_requests_with_failure_signals": { "type": "integer", "minimum": 0 },
+        "failure_signal_percentage": { "type": "number", "minimum": 0 },
+        "top_failure_signals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["signal", "count"],
+            "properties": {
+              "signal": { "type": "string" },
+              "count": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+
+    "pipeline_metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "classifier_mode": { "type": "string" },
+        "classifier_model_version": { "type": "string" },
+        "embedding_provider": { "type": "string" },
+        "embedding_model": { "type": "string" },
+        "llm_provider": { "type": "string" },
+        "llm_model": { "type": "string" },
+        "online_similarity_threshold": { "type": "number" },
+        "umap_params": { "type": "object", "additionalProperties": true },
+        "hdbscan_params": { "type": "object", "additionalProperties": true }
+      }
+    }
+  },
+
+  "$defs": {
+    "scenario": {
+      "type": "object",
+      "required": ["scenario_id", "name", "count"],
+      "additionalProperties": true,
+      "properties": {
+        "scenario_id": { "type": "string" },
+        "task_type": { "type": ["string", "null"] },
+        "name": { "type": ["string", "null"] },
+        "summary": { "type": ["string", "null"] },
+        "user_goal": { "type": ["string", "null"] },
+        "representative_examples": { "type": "array", "items": { "type": "string" } },
+        "pain_points": { "type": "array", "items": { "type": "string" } },
+        "automation_potential": { "type": ["string", "null"], "enum": ["low", "medium", "high", null] },
+        "count": { "type": "integer", "minimum": 0 },
+        "trend": { "type": ["string", "null"], "enum": ["up", "down", "stable", "new", "insufficient_data", null] },
+        "growth_rate_percent": { "type": ["number", "null"] },
+        "statistical_reliability": { "type": ["string", "null"], "enum": ["low", "medium", "high", null] }
+      }
+    }
+  }
+}
