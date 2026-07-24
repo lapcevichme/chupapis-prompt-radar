@@ -67,6 +67,11 @@ class Settings(BaseSettings):
     # Demo dataset path: backend-owned fixture (decoupled from ml_service layout).
     DEMO_DATASET_PATH: str = str(BASE_DIR / "src" / "data" / "demo_dataset.json")
 
+    # --- Read-model cache ---
+    # Dashboard statistics is a read-model from the ML store; cache it briefly to
+    # avoid hitting ML on every request. 0 disables caching.
+    STATISTICS_CACHE_TTL_SEC: int = 15
+
     @property
     def cors_origins_list(self) -> list[str]:
         """Parse CORS_ORIGINS CSV into a clean list of allowed origins."""
