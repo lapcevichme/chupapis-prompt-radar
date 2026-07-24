@@ -141,7 +141,10 @@ Backend проксирует в ML. `{ "job_id": "rc_01", "status": "running" }`
 
 ```json
 {
-  "assumptions": { "fte_hourly_rate_rub": 1200.0, "token_cost_per_1k_rub": 0.015 },
+  "assumptions": {
+    "fte_hourly_rate_rub": 1200.0, "token_cost_per_1k_rub": 0.015,
+    "session_coefficients": { "short": 0.3, "medium": 1.0, "long": 2.0 }
+  },
   "summary": {
     "total_logs": 348, "success_rate_percent": 82.5,
     "total_fte_hours_saved": 210.5, "total_manual_cost_rub": 252600.0,

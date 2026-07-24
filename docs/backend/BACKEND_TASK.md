@@ -122,9 +122,14 @@ ML_SERVICE_TOKEN=change-me-ml-token
 ML_INGEST_BATCH_SIZE=200
 ML_HTTP_TIMEOUT_SEC=30
 
-# ROI defaults (предпосылки расчёта)
+# ROI defaults (customer FTE methodology, QNA §1)
 ROI_FTE_HOURLY_RATE_RUB=1200.0
 ROI_TOKEN_COST_PER_1K_RUB=0.015
+ROI_SESSION_COEFF_SHORT=0.3          # short-session multiplier
+ROI_SESSION_COEFF_MEDIUM=1.0         # medium-session multiplier
+ROI_SESSION_COEFF_LONG=2.0           # long-session multiplier
+ROI_SESSION_SHORT_MAX_TOKENS=4000    # <= short; >= long is ROI_SESSION_LONG_MIN_TOKENS; between = medium
+ROI_SESSION_LONG_MIN_TOKENS=30000
 
 # Normalization
 NORMALIZE_SYNTHESIZE_TIMESTAMPS=true
@@ -217,6 +222,11 @@ Backend превращает сырой датасет в записи `log.sche
 (`request_id → task_type, scenario_id`) × `dataset_records` (`tokens, manual_time_minutes,
 tools_used, status`). Выход — `summary` + `by_category` + `by_scenario` + `assumptions`
 (контракт §5). Ставки из env, опц. переопределение query-параметрами. Кэш в `roi_cache`/Redis.
+
+**Методика заказчика (QNA §1).** Сэкономленное время = `manual_time_minutes × session_coeff`,
+где `session_coeff` зависит от длины сессии по `tokens`: короткая `0.3`, средняя `1`, очень
+длинная `2` (пороги/коэффициенты — env, §5). Дальше часы → ₽ → FTE и ROI-множитель. Коэффициенты
+отдаём в `assumptions` для прозрачности — это ядро методологической защиты.
 
 ---
 
