@@ -1,66 +1,249 @@
-"""Prompt Radar ML service — CQRS: write / recompute / read."""
+"""Prompt Radar ML service — CQRS: write / recompute / read (merged PR A–G)."""
 from __future__ import annotations
 
 import asyncio
-import logging
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Query
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from app.api.schemas import Assignment, AssignmentsResponse, LogBatch
+from app.api.dependencies import require_service_token
+from app.api.schemas import LogBatch
 from app.core.config import settings
+from app.core.exceptions import (
+    INVALID_REQUEST,
+    MLServiceError,
+    error_response,
+)
+from app.core.logging import get_logger, log_event, setup_logging
 from app.database.meta_store import MetaStore
 from app.domain.taxonomy import Taxonomy
+from app.ingest.queue import IngestQueue
+from app.ingest.worker import IngestWorker
+from app.pipeline.aggregation import AggregationConfig, build_scenarios_list, build_statistics
 from app.pipeline.classification.catboost_classifier import CatBoostClassifier
 from app.pipeline.online_pipeline import OnlinePipeline
-from app.recompute.job import STORE, RecomputeJob
+from app.pipeline.summarization import Summarizer
+from app.recompute import job as job_mod
+from app.recompute.job import RecomputeJob, RecomputeStore
+from app.recompute.scheduler import Scheduler
 from app.store.qdrant import QdrantStore
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+setup_logging(settings.log_level)
+logger = get_logger(__name__)
 
-SERVICE_TOKEN = os.getenv("ML_SERVICE_TOKEN", "")
 SCHEMA_VERSION = "2.0.0"
-PIPELINE_VERSION = "0.1.0-mvp"
+PIPELINE_VERSION = "0.3.0-mvp"
 TAXONOMY_VERSION = "v1"
 
-# In-memory buffers until full Qdrant/meta wiring
-_PENDING_FOR_RECOMPUTE: list[dict[str, Any]] = []
-_ASSIGNMENTS: dict[str, dict[str, Any]] = {}
+_LAST_RECOMPUTE_AT: Optional[str] = None
+_LOGS_AT_LAST_RECOMPUTE: int = 0
 
 
-def _check_token(x_service_token: Optional[str]) -> None:
-    if not SERVICE_TOKEN:
-        return  # local/dev open
-    if x_service_token != SERVICE_TOKEN:
-        raise HTTPException(status_code=401, detail={"code": "UNAUTHORIZED", "message": "Invalid token"})
+def _store_dict() -> dict[str, Any]:
+    return {
+        "qdrant_url": settings.store.qdrant_url,
+        "qdrant_collection": settings.store.qdrant_collection,
+        "meta_db_url": settings.store.meta_db_url,
+    }
+
+
+def _failure_signals(log: dict[str, Any]) -> list[str]:
+    signals: list[str] = []
+    status = log.get("response_status")
+    if status is not None and str(status).lower() in (
+        "error",
+        "failed",
+        "failure",
+        "timeout",
+    ):
+        signals.append(f"response_status:{str(status).lower()}")
+    if log.get("error_code"):
+        signals.append(f"error_code:{log['error_code']}")
+    fb = log.get("user_feedback")
+    if fb is not None:
+        try:
+            if int(fb) < 0:
+                signals.append("user_feedback:negative")
+        except (TypeError, ValueError):
+            pass
+    retry = log.get("retry_count")
+    if retry is not None:
+        try:
+            if int(retry) > 0:
+                signals.append(f"retry_count:{retry}")
+        except (TypeError, ValueError):
+            pass
+    return signals
+
+
+async def _process_one(log: dict[str, Any]) -> dict[str, Any]:
+    """Classify → embed → online cluster → persist meta + qdrant."""
+    request_id = log["request_id"]
+    query_text = (log.get("query_text") or "").strip()
+    if not query_text:
+        return {"request_id": request_id, "rejected": True, "reason": "empty_query"}
+
+    meta: MetaStore = app.state.meta
+    if meta.has_assignment(request_id):
+        return {"request_id": request_id, "duplicate": True}
+
+    # .cbm trained on Ollama embeddings: embed once → CatBoost → online cluster (same vector).
+    import numpy as np
+
+    original, normalized, lt, emb_list = await app.state.online.embed_query(query_text)
+    emb = np.asarray(emb_list, dtype=np.float32)
+    clf = app.state.classifier.predict_with_confidence(query_text, embedding=emb)
+    task_type = clf["task_type"]
+    online = await app.state.online.process(
+        request_id=request_id,
+        query_text=query_text,
+        task_type=task_type,
+        embedding=emb_list,
+        long_text=lt,
+        original_text=original,
+        normalized_text=normalized,
+    )
+
+    signals = _failure_signals(log)
+    assignment = {
+        "request_id": request_id,
+        "task_type": task_type,
+        "classification_confidence": clf.get("classification_confidence", 0.0),
+        "scenario_id": online.scenario_id,
+        "is_outlier": False,
+        "has_failure_signals": bool(signals),
+        "failure_signals": signals,
+        "source_id": log.get("source_id"),
+        "timestamp": log.get("timestamp"),
+        "query_text": query_text,
+        "response_status": log.get("response_status"),
+        "error_code": log.get("error_code"),
+        "user_feedback": log.get("user_feedback"),
+        "retry_count": log.get("retry_count"),
+        "long_text_strategy": getattr(online, "long_text_strategy", None),
+    }
+    meta.upsert_assignment(assignment)
+
+    qdrant: Optional[QdrantStore] = getattr(app.state, "qdrant", None)
+    if qdrant is not None:
+        qdrant.upsert(
+            request_id,
+            online.embedding,
+            payload={
+                "request_id": request_id,
+                "task_type": task_type,
+                "scenario_id": online.scenario_id,
+                "timestamp": str(log.get("timestamp") or ""),
+                "source_id": log.get("source_id"),
+                "is_outlier": False,
+                "has_failure_signals": bool(signals),
+                "failure_signals": signals,
+            },
+        )
+
+    source_id = log.get("source_id") or "_unknown"
+    meta.bump_ingest_log(source_id, classified=1, assigned=1)
+    return assignment
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.taxonomy = Taxonomy()
+    fb = settings.classifier.fallback_mode
+    model_path = os.getenv("CLASSIFIER_MODEL_PATH") or settings.classifier.model_path
+    # Resolve relative path against ml_service root
+    from pathlib import Path
+
+    mp = Path(model_path)
+    if not mp.is_file():
+        candidates = [
+            Path.cwd() / model_path,
+            Path(__file__).resolve().parents[1] / "app" / "models" / "catboost_task_classifier.cbm",
+            Path(__file__).resolve().parents[1] / "models" / "catboost_task_classifier.cbm",
+            Path(model_path.lstrip("/")),
+        ]
+        for c in candidates:
+            if c.is_file():
+                mp = c
+                break
+    model_path = str(mp) if mp.is_file() else model_path
+
+    # Only force keyword when: no .cbm AND no OpenRouter AND offline mock embeddings
+    if not Path(model_path).is_file() and fb == "llm":
+        if not (os.getenv("OPENROUTER_API_KEY") or settings.llm.openrouter_api_key):
+            if os.getenv("EMBEDDINGS_PROVIDER", settings.embeddings.provider) == "mock":
+                fb = "keyword"
+
     app.state.classifier = CatBoostClassifier(
-        taxonomy=app.state.taxonomy.taxonomy,
+        model_path=model_path,
+        taxonomy=app.state.taxonomy.taxonomy
+        if hasattr(app.state.taxonomy, "taxonomy")
+        else app.state.taxonomy,
         config={
-            "fallback_mode": os.getenv("CLASSIFIER_FALLBACK_MODE", "llm"),
-            "confidence_threshold": float(os.getenv("CLASSIFIER_CONFIDENCE_THRESHOLD", "0.60")),
+            "fallback_mode": fb,
+            "confidence_threshold": settings.classifier.confidence_threshold,
         },
     )
+    log_event(
+        logger,
+        "classifier ready",
+        stage="startup",
+        model_path=model_path,
+        model_loaded=getattr(app.state.classifier, "model_available", False),
+        fallback_mode=fb,
+    )
     app.state.online = OnlinePipeline(settings=settings)
-    try:
-        app.state.qdrant = QdrantStore(getattr(settings, "store", {}) if hasattr(settings, "store") else {})
-    except Exception:  # noqa: BLE001
-        app.state.qdrant = None
-    meta_url = os.getenv("ML_META_DB_URL", "sqlite:///./ml_meta.db")
+    app.state.qdrant = QdrantStore(
+        _store_dict(),
+        vector_size=settings.embeddings.dim,
+    )
+    meta_url = os.getenv("ML_META_DB_URL") or settings.store.meta_db_url
+    if meta_url.startswith("sqlite:////data/") and os.name == "nt":
+        meta_url = os.getenv("ML_META_DB_URL", "sqlite:///./ml_meta.db")
     app.state.meta = MetaStore(meta_url)
-    logger.info("ML service started")
+
+    job_mod.STORE = RecomputeStore(persistence=app.state.meta)
+
+    app.state.ingest_queue = IngestQueue()
+    app.state.ingest_worker = IngestWorker(
+        app.state.ingest_queue,
+        _process_one,
+        concurrency=settings.ingest.worker_concurrency,
+    )
+    await app.state.ingest_worker.start()
+
+    app.state.scheduler = None
+    sched_enabled = os.getenv("RECOMPUTE_SCHEDULER_ENABLED", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    if sched_enabled and hasattr(Scheduler, "from_config"):
+        try:
+            app.state.scheduler = Scheduler.from_config({"recompute": {"interval_hours": settings.recompute.interval_hours if hasattr(settings.recompute, "interval_hours") else 2}})
+        except Exception:  # noqa: BLE001
+            app.state.scheduler = None
+
+    log_event(
+        logger,
+        "ML service started",
+        stage="startup",
+        embeddings_provider=settings.embeddings.provider,
+        meta=meta_url,
+        qdrant_mock=getattr(app.state.qdrant, "is_mock", True),
+    )
     yield
+    await app.state.ingest_worker.stop()
     await app.state.online.close()
-    logger.info("ML service stopped")
+    if hasattr(app.state.meta, "close"):
+        app.state.meta.close()
+    log_event(logger, "ML service stopped", stage="shutdown")
 
 
 app = FastAPI(
@@ -77,106 +260,184 @@ app.add_middleware(
 )
 
 
+@app.exception_handler(MLServiceError)
+async def ml_service_error_handler(_request: Request, exc: MLServiceError) -> JSONResponse:
+    return JSONResponse(status_code=exc.status_code or 500, content=exc.to_dict())
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(
+    _request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=422,
+        content=error_response(
+            INVALID_REQUEST,
+            "Request validation failed",
+            retryable=False,
+            details={"errors": exc.errors()},
+        ),
+    )
+
+
 def _pipeline_metadata() -> dict[str, Any]:
-    return {
+    emb = settings.embeddings
+    meta = {
         "schema_version": SCHEMA_VERSION,
         "pipeline_version": PIPELINE_VERSION,
         "taxonomy_version": TAXONOMY_VERSION,
-        "embeddings_provider": settings.embeddings.provider,
+        "classifier_mode": settings.classifier.provider,
+        "classifier_fallback_mode": settings.classifier.fallback_mode,
+        "embedding_provider": emb.provider,
+        "embeddings_provider": emb.provider,
+        "embedding_model": (
+            emb.ollama_model if emb.provider == "ollama" else emb.openrouter_model
+        ),
+        "llm_provider": settings.llm.provider,
+        "llm_model": settings.llm.openrouter_model,
         "online_similarity_threshold": settings.online_clustering.similarity_threshold,
+    }
+    if hasattr(settings, "pipeline_metadata_params"):
+        meta.update(settings.pipeline_metadata_params())
+    return meta
+
+
+def _agg_config() -> AggregationConfig:
+    ad = getattr(settings, "aggregation_defaults", None)
+    return AggregationConfig(
+        top_tasks_limit=int(getattr(ad, "top_tasks_limit", 7) if ad else 7),
+        top_scenarios_limit=int(getattr(ad, "top_scenarios_limit", 9) if ad else 9),
+        trend_threshold_percent=float(
+            getattr(ad, "trend_threshold_percent", 10.0) if ad else 10.0
+        ),
+        schema_version=SCHEMA_VERSION,
+        taxonomy_version=TAXONOMY_VERSION,
+        pipeline_version=PIPELINE_VERSION,
+    )
+
+
+def _freshness() -> dict[str, Any]:
+    meta: MetaStore = app.state.meta
+    total = meta.count_assignments()
+    logs_since = max(0, total - _LOGS_AT_LAST_RECOMPUTE)
+    pending = False
+    for job in job_mod.STORE.jobs.values():
+        if job.get("status") in ("pending", "running"):
+            pending = True
+            break
+    return {
+        "last_recompute_at": _LAST_RECOMPUTE_AT,
+        "logs_since_last_recompute": logs_since,
+        "recompute_pending": pending,
     }
 
 
 @app.get("/health/live")
 async def health_live() -> dict[str, str]:
-    return {"status": "live"}
+    return {"status": "ok"}
 
 
 @app.get("/health/ready")
 async def health_ready() -> dict[str, Any]:
-    return {
-        "status": "ready",
-        "checks": {
-            "embeddings_provider": settings.embeddings.provider,
-            "classifier": "ok",
-            "clusters_loaded": app.state.online.clusterer.cluster_count(),
-        },
+    qdrant = getattr(app.state, "qdrant", None)
+    classifier = getattr(app.state, "classifier", None)
+    clf_status = "ok"
+    if classifier is not None and hasattr(classifier, "readiness_status"):
+        rs = classifier.readiness_status()
+        if isinstance(rs, dict):
+            clf_status = str(rs.get("status") or "ok")
+        else:
+            clf_status = str(rs)
+    elif classifier is not None and hasattr(classifier, "is_ready"):
+        ready = classifier.is_ready
+        if callable(ready):
+            ready = ready()
+        clf_status = "ok" if ready else "degraded"
+
+    qdrant_mock = True
+    if qdrant is not None:
+        qdrant_mock = bool(getattr(qdrant, "is_mock", getattr(qdrant, "_mock", True)))
+
+    llm_key = settings.llm.openrouter_api_key or os.getenv("OPENROUTER_API_KEY", "")
+    llm_status = "ok" if llm_key else "degraded"
+
+    checks = {
+        "config": "ok" if settings.is_valid() else "fail",
+        "embeddings_provider": settings.embeddings.provider,
+        "classifier": clf_status,
+        "qdrant": "mock" if (qdrant is None or qdrant_mock) else "ok",
+        "llm_provider": llm_status,
+        "meta_store": "ok" if getattr(app.state, "meta", None) else "missing",
+        "clusters_loaded": app.state.online.clusterer.cluster_count()
+        if getattr(app.state, "online", None)
+        else 0,
     }
+    status = "ready"
+    if not settings.is_valid():
+        status = "not_ready"
+    elif clf_status in ("degraded", "not_ready") or qdrant_mock or llm_status == "degraded":
+        status = "degraded"
+    if checks["meta_store"] == "missing":
+        status = "not_ready"
+    return {"status": status, "checks": checks}
 
 
-async def _process_one(log: dict[str, Any]) -> dict[str, Any]:
-    request_id = log["request_id"]
-    query_text = (log.get("query_text") or "").strip()
-    if not query_text:
-        return {"request_id": request_id, "rejected": True, "reason": "empty_query"}
-
-    clf = app.state.classifier.predict_with_confidence(query_text)
-    task_type = clf["task_type"]
-    online = await app.state.online.process(
-        request_id=request_id,
-        query_text=query_text,
-        task_type=task_type,
-    )
-    assignment = {
-        "request_id": request_id,
-        "task_type": task_type,
-        "classification_confidence": clf["classification_confidence"],
-        "scenario_id": online.scenario_id,
-        "scenario_name": None,
-        "is_outlier": False,
-        "has_failure_signals": bool(
-            log.get("error_code") or log.get("response_status") in ("error", "failed")
-        ),
-        "embedding": online.embedding,
-        "timestamp": log.get("timestamp"),
-        "source_id": log.get("source_id"),
-    }
-    _ASSIGNMENTS[request_id] = assignment
-    _PENDING_FOR_RECOMPUTE.append(
-        {
-            "request_id": request_id,
-            "task_type": task_type,
-            "embedding": online.embedding,
-            "query_text": query_text,
-            "source_id": log.get("source_id"),
-            "timestamp": log.get("timestamp"),
-        }
-    )
-    return assignment
+def _validate_timestamp(ts: Any) -> bool:
+    if ts is None:
+        return False
+    if isinstance(ts, datetime):
+        return True
+    s = str(ts).strip()
+    if not s:
+        return False
+    try:
+        datetime.fromisoformat(s.replace("Z", "+00:00"))
+        return True
+    except ValueError:
+        return False
 
 
-async def process_batch(logs: list[dict[str, Any]]) -> None:
-    for log in logs:
-        try:
-            await _process_one(log)
-        except Exception:  # noqa: BLE001
-            logger.exception("Failed to process request_id=%s", log.get("request_id"))
-
-
-@app.put("/api/v1/logs", status_code=202)
-async def put_logs(
-    batch: LogBatch,
-    background: BackgroundTasks,
-    x_service_token: Optional[str] = Header(default=None, alias="X-Service-Token"),
-) -> dict[str, Any]:
-    _check_token(x_service_token)
+@app.put("/api/v1/logs", status_code=202, dependencies=[Depends(require_service_token)])
+async def put_logs(batch: LogBatch) -> dict[str, Any]:
     accepted = 0
     duplicates = 0
     rejected = 0
-    source_id = None
+    source_id: Optional[str] = None
     to_process: list[dict[str, Any]] = []
-    for item in batch.logs:
+    meta: MetaStore = app.state.meta
+    seen_in_batch: set[str] = set()
+
+    max_size = settings.ingest.batch_max_size
+    logs = batch.logs[:max_size] if max_size > 0 else batch.logs
+
+    for item in logs:
         source_id = source_id or item.source_id
-        if not (item.query_text or "").strip():
+        query = (item.query_text or "").strip()
+        if not query:
             rejected += 1
             continue
-        if item.request_id in _ASSIGNMENTS:
+        if not _validate_timestamp(item.timestamp):
+            rejected += 1
+            continue
+        rid = item.request_id
+        if not rid or rid in seen_in_batch:
+            duplicates += 1
+            continue
+        seen_in_batch.add(rid)
+        if meta.has_assignment(rid):
             duplicates += 1
             continue
         to_process.append(item.model_dump(mode="json"))
         accepted += 1
+
+    if source_id:
+        meta.bump_ingest_log(
+            source_id, accepted=accepted, rejected=rejected, duplicates=duplicates
+        )
+
     if to_process:
-        background.add_task(process_batch, to_process)
+        await app.state.ingest_queue.enqueue(to_process)
+
     return {
         "accepted": accepted,
         "duplicates": duplicates,
@@ -185,126 +446,221 @@ async def put_logs(
     }
 
 
-@app.post("/api/v1/recompute", status_code=202)
-async def post_recompute(
-    background: BackgroundTasks,
-    x_service_token: Optional[str] = Header(default=None, alias="X-Service-Token"),
-) -> dict[str, str]:
-    _check_token(x_service_token)
-    job = RecomputeJob(store=STORE)
-    data = list(_PENDING_FOR_RECOMPUTE)
+def _pending_for_recompute() -> list[dict[str, Any]]:
+    meta: MetaStore = app.state.meta
+    qdrant: Optional[QdrantStore] = getattr(app.state, "qdrant", None)
+    vectors_by_id: dict[str, list[float]] = {}
+    if qdrant is not None:
+        for p in qdrant.get_all():
+            vectors_by_id[p["request_id"]] = p.get("vector") or []
+
+    out: list[dict[str, Any]] = []
+    for a in meta.all_assignments():
+        rid = a["request_id"]
+        out.append(
+            {
+                "request_id": rid,
+                "task_type": a.get("task_type"),
+                "embedding": vectors_by_id.get(rid) or [0.0] * settings.embeddings.dim,
+                "query_text": a.get("query_text"),
+                "source_id": a.get("source_id"),
+                "timestamp": a.get("timestamp"),
+            }
+        )
+    return out
+
+
+@app.post("/api/v1/recompute", status_code=202, dependencies=[Depends(require_service_token)])
+async def post_recompute(background: BackgroundTasks) -> dict[str, str]:
+    api_key = settings.llm.openrouter_api_key or os.getenv("OPENROUTER_API_KEY", "")
+    summarizer = Summarizer(api_key=api_key) if api_key else Summarizer(api_key="")
+    store = job_mod.STORE
+    job = RecomputeJob(
+        store=store,
+        summarizer=summarizer,
+        qdrant=getattr(app.state, "qdrant", None),
+        enable_summarization=True,
+        config={
+            "recompute": {
+                "umap": settings.pipeline_metadata_params().get("umap", {}),
+                "hdbscan": settings.pipeline_metadata_params().get("hdbscan", {}),
+            }
+        },
+    )
+    app.state.meta.put_job(job.result)
+    data = _pending_for_recompute()
 
     async def _run() -> None:
+        global _LAST_RECOMPUTE_AT, _LOGS_AT_LAST_RECOMPUTE
         try:
-            await job.run(data)
-            for rid, a in STORE.assignments.items():
-                if rid in _ASSIGNMENTS:
-                    _ASSIGNMENTS[rid].update(
-                        {
-                            "scenario_id": a.get("scenario_id"),
-                            "is_outlier": a.get("is_outlier", False),
-                        }
-                    )
-                else:
-                    _ASSIGNMENTS[rid] = a
+            result = await job.run(data)
+            app.state.meta.put_job(result)
+            for rid, a in store.assignments.items():
+                app.state.meta.update_assignment_scenario(
+                    rid,
+                    scenario_id=a.get("scenario_id"),
+                    is_outlier=bool(a.get("is_outlier", False)),
+                )
+            for sid, cluster in store.clusters.items():
+                payload = dict(cluster)
+                if sid in store.centroids:
+                    payload["centroid"] = store.centroids[sid]
+                app.state.meta.upsert_cluster(payload)
+            qdrant: Optional[QdrantStore] = getattr(app.state, "qdrant", None)
+            if qdrant is not None:
+                for rid, a in store.assignments.items():
+                    existing = qdrant.get(rid) if hasattr(qdrant, "get") else None
+                    if not existing:
+                        continue
+                    payload = dict(existing.get("payload") or {})
+                    payload["scenario_id"] = a.get("scenario_id")
+                    payload["is_outlier"] = bool(a.get("is_outlier", False))
+                    qdrant.upsert(rid, existing.get("vector") or [], payload)
+            _LAST_RECOMPUTE_AT = result.get("completed_at")
+            _LOGS_AT_LAST_RECOMPUTE = app.state.meta.count_assignments()
         except Exception:  # noqa: BLE001
             logger.exception("recompute failed job_id=%s", job.job_id)
+            app.state.meta.put_job(job.result)
 
     background.add_task(_run)
     return {"job_id": job.job_id, "status": "pending"}
 
 
-@app.get("/api/v1/recompute/{job_id}")
-async def get_recompute(
-    job_id: str,
-    x_service_token: Optional[str] = Header(default=None, alias="X-Service-Token"),
-) -> dict[str, Any]:
-    _check_token(x_service_token)
-    job = STORE.get_job(job_id)
+@app.get("/api/v1/recompute/{job_id}", dependencies=[Depends(require_service_token)])
+async def get_recompute(job_id: str) -> dict[str, Any]:
+    job = app.state.meta.get_job(job_id) or job_mod.STORE.get_job(job_id)
     if not job:
-        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": "job not found"})
+        raise HTTPException(
+            status_code=404, detail={"code": "NOT_FOUND", "message": "job not found"}
+        )
     return job
 
 
-@app.get("/api/v1/statistics")
+@app.get("/api/v1/statistics", dependencies=[Depends(require_service_token)])
 async def get_statistics(
     source_id: Optional[str] = Query(default=None),
     from_date: Optional[str] = Query(default=None, alias="from"),
     to_date: Optional[str] = Query(default=None, alias="to"),
-    x_service_token: Optional[str] = Header(default=None, alias="X-Service-Token"),
 ) -> dict[str, Any]:
-    _check_token(x_service_token)
-    items = list(_ASSIGNMENTS.values())
-    if source_id:
-        items = [a for a in items if a.get("source_id") == source_id]
-
-    by_task: dict[str, int] = {}
-    by_scenario: dict[str, int] = {}
-    outliers = 0
-    for a in items:
-        tt = a.get("task_type") or "unknown"
-        by_task[tt] = by_task.get(tt, 0) + 1
-        sid = a.get("scenario_id") or "unknown"
-        by_scenario[sid] = by_scenario.get(sid, 0) + 1
-        if a.get("is_outlier"):
-            outliers += 1
-
-    return {
-        "total_logs": len(items),
-        "by_task_type": [{"task_type": k, "count": v} for k, v in sorted(by_task.items(), key=lambda x: -x[1])],
-        "by_scenario": [
-            {
-                "scenario_id": k,
-                "count": v,
-                "name": STORE.clusters.get(k, {}).get("name"),
-            }
-            for k, v in sorted(by_scenario.items(), key=lambda x: -x[1])
-        ],
-        "outliers": outliers,
-        "failure_analysis": {"status": "not_available"},
-        "pipeline_metadata": _pipeline_metadata(),
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "filters": {"source_id": source_id, "from": from_date, "to": to_date},
-    }
+    assignments = app.state.meta.all_assignments(
+        source_id=source_id, from_date=from_date, to_date=to_date
+    )
+    clusters = {c["scenario_id"]: c for c in app.state.meta.list_clusters()}
+    if not clusters and job_mod.STORE.clusters:
+        clusters = dict(job_mod.STORE.clusters)
+    payload = build_statistics(
+        assignments,
+        clusters=clusters,
+        source_id=source_id,
+        from_date=from_date,
+        to_date=to_date,
+        config=_agg_config(),
+        freshness=_freshness(),
+        pipeline_metadata=_pipeline_metadata(),
+    )
+    # backward-compat aliases used by early ingest tests
+    totals = payload.get("totals") or {}
+    payload.setdefault("total_logs", totals.get("records_total", len(assignments)))
+    return payload
 
 
-@app.get("/api/v1/assignments")
+@app.get("/api/v1/assignments", dependencies=[Depends(require_service_token)])
 async def get_assignments(
     source_id: Optional[str] = Query(default=None),
     limit: int = Query(default=100, ge=1, le=1000),
     offset: int = Query(default=0, ge=0),
-    x_service_token: Optional[str] = Header(default=None, alias="X-Service-Token"),
+    from_date: Optional[str] = Query(default=None, alias="from"),
+    to_date: Optional[str] = Query(default=None, alias="to"),
 ) -> dict[str, Any]:
-    _check_token(x_service_token)
-    items = list(_ASSIGNMENTS.values())
-    if source_id:
-        items = [a for a in items if a.get("source_id") == source_id]
-    total = len(items)
-    page = items[offset : offset + limit]
-    # drop heavy embedding from response
+    page = app.state.meta.list_assignments(
+        source_id=source_id,
+        from_date=from_date,
+        to_date=to_date,
+        limit=limit,
+        offset=offset,
+    )
     cleaned = []
-    for a in page:
+    for a in page["items"]:
+        cluster = app.state.meta.get_cluster(a.get("scenario_id") or "")
         cleaned.append(
             {
                 "request_id": a.get("request_id"),
                 "task_type": a.get("task_type"),
                 "classification_confidence": a.get("classification_confidence"),
                 "scenario_id": a.get("scenario_id"),
-                "scenario_name": a.get("scenario_name")
-                or STORE.clusters.get(a.get("scenario_id") or "", {}).get("name"),
+                "scenario_name": (cluster or {}).get("name")
+                or job_mod.STORE.clusters.get(a.get("scenario_id") or "", {}).get("name"),
                 "is_outlier": bool(a.get("is_outlier")),
                 "has_failure_signals": bool(a.get("has_failure_signals")),
             }
         )
-    return {"items": cleaned, "total": total, "pipeline_metadata": _pipeline_metadata()}
+    return {
+        "items": cleaned,
+        "total": page["total"],
+        "pipeline_metadata": _pipeline_metadata(),
+    }
 
 
-@app.get("/api/v1/scenarios")
+@app.get("/api/v1/scenarios", dependencies=[Depends(require_service_token)])
 async def get_scenarios(
-    x_service_token: Optional[str] = Header(default=None, alias="X-Service-Token"),
+    source_id: Optional[str] = Query(default=None),
+    from_date: Optional[str] = Query(default=None, alias="from"),
+    to_date: Optional[str] = Query(default=None, alias="to"),
 ) -> dict[str, Any]:
-    _check_token(x_service_token)
-    return {"items": list(STORE.clusters.values()), "total": len(STORE.clusters)}
+    assignments = app.state.meta.all_assignments(
+        source_id=source_id, from_date=from_date, to_date=to_date
+    )
+    clusters = {c["scenario_id"]: c for c in app.state.meta.list_clusters()}
+    if not clusters and job_mod.STORE.clusters:
+        clusters = dict(job_mod.STORE.clusters)
+    return build_scenarios_list(
+        assignments,
+        clusters=clusters,
+        source_id=source_id,
+        from_date=from_date,
+        to_date=to_date,
+        config=_agg_config(),
+    )
+
+
+@app.get("/api/v1/scenarios/{scenario_id}", dependencies=[Depends(require_service_token)])
+async def get_scenario(
+    scenario_id: str,
+    source_id: Optional[str] = Query(default=None),
+    from_date: Optional[str] = Query(default=None, alias="from"),
+    to_date: Optional[str] = Query(default=None, alias="to"),
+) -> dict[str, Any]:
+    assignments = app.state.meta.all_assignments(
+        source_id=source_id, from_date=from_date, to_date=to_date
+    )
+    clusters = {c["scenario_id"]: c for c in app.state.meta.list_clusters()}
+    if not clusters and job_mod.STORE.clusters:
+        clusters = dict(job_mod.STORE.clusters)
+    result = build_scenarios_list(
+        assignments,
+        clusters=clusters,
+        source_id=source_id,
+        from_date=from_date,
+        to_date=to_date,
+        config=_agg_config(),
+        scenario_id=scenario_id,
+    )
+    if result.get("items"):
+        return result["items"][0]
+    if scenario_id not in clusters:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": f"scenario {scenario_id} not found"},
+        )
+    meta = clusters[scenario_id]
+    return {
+        "scenario_id": scenario_id,
+        "task_type": meta.get("task_type"),
+        "name": meta.get("name"),
+        "summary": meta.get("summary"),
+        "count": 0,
+        "trend": "insufficient_data",
+    }
 
 
 if __name__ == "__main__":

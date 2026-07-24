@@ -23,3 +23,10 @@ def test_small_group_fallback():
 
 def test_technical_name():
     assert "code_help" in technical_scenario_name("code_help", 1)
+
+
+def test_empty_embeddings():
+    out = run_umap_hdbscan([], task_type="t")
+    assert out["fallback_used"] == "empty"
+    assert out["scenario_ids"] == []
+    assert out["centroids"] == {}

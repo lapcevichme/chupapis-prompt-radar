@@ -32,7 +32,9 @@ online_clustering:
   similarity_threshold: 0.85
 
 recompute:
+  scheduler_enabled: false          # opt-in cron; main trigger is POST /recompute
   interval_hours: 2
+  centroid_match_threshold: 0.75    # stabilize scenario_id across recompute
   umap: { n_neighbors: 15, n_components: 10, min_dist: 0.0, metric: "cosine", random_state: 42 }
   hdbscan: { min_cluster_size: 5, min_samples: 3, metric: "euclidean", cluster_selection_method: "eom" }
 

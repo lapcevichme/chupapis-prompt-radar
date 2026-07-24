@@ -16,3 +16,5 @@ Thumbs.db
 catboost_info/
 
 *.db
+*.cbm
+*.png

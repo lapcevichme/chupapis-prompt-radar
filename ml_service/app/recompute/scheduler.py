@@ -1,10 +1,14 @@
-"""Optional periodic recompute trigger (asyncio, no Celery)."""
+"""Optional periodic recompute trigger (asyncio, no Celery). Default: off."""
 
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from collections.abc import Awaitable, Callable
+from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class Scheduler:
@@ -14,6 +18,31 @@ class Scheduler:
         self.interval_seconds = max(0.0, float(interval_hours) * 3600.0)
         self.running = False
         self._task: asyncio.Task | None = None
+
+    @classmethod
+    def from_config(cls, config: Optional[dict[str, Any]] = None) -> Optional["Scheduler"]:
+        """
+        Build scheduler only when explicitly enabled.
+
+        config.recompute.scheduler_enabled: false by default (opt-in).
+        Env RECOMPUTE_SCHEDULER_ENABLED=true also enables.
+        """
+        import os
+
+        cfg = (config or {}).get("recompute") or {}
+        env_on = os.getenv("RECOMPUTE_SCHEDULER_ENABLED", "").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+        enabled = bool(cfg.get("scheduler_enabled", False)) or env_on
+        if not enabled:
+            return None
+        hours = float(cfg.get("interval_hours", 2))
+        if hours <= 0:
+            logger.warning("recompute.interval_hours <= 0 — scheduler not started")
+            return None
+        return cls(interval_hours=hours)
 
     async def start(
         self,
@@ -42,7 +71,7 @@ class Scheduler:
             except asyncio.CancelledError:
                 break
             except Exception as exc:  # noqa: BLE001
-                print(f"Error in scheduler task: {exc}")
+                logger.exception("Error in scheduler task: %s", exc)
 
     def stop(self) -> None:
         self.running = False
