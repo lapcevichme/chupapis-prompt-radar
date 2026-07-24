@@ -1,0 +1,101 @@
+name: prompt-radar
+
+# Full stack: backend (API + orchestration + Postgres) + ml-service (CQRS) + qdrant.
+# Quick start:  docker compose up -d --build
+# Then: login test@gmail.com/test123 at http://localhost:8080/api/docs, or `make feed`.
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-prompt_radar}
+    ports:
+      - "${DB_HOST_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.5
+    ports:
+      - "${QDRANT_HOST_PORT:-6333}:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+  ml-service:
+    build:
+      context: ./ml_service
+      dockerfile: Dockerfile
+    environment:
+      ML_SERVICE_TOKEN: ${ML_SERVICE_TOKEN:-dev-ml-token}
+      EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-mock}
+      QDRANT_URL: http://qdrant:6333
+      ML_META_DB_URL: sqlite:////data/ml/meta.db
+      CLASSIFIER_MODEL_PATH: /app/app/models/catboost_task_classifier.cbm
+      ML_CONFIG_PATH: /app/config.yaml
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ml_meta_data:/data/ml
+    ports:
+      - "${ML_HOST_PORT:-8000}:8000"
+    depends_on:
+      qdrant:
+        condition: service_started
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-prompt_radar}
+      JWT_SECRET: ${JWT_SECRET:-dev-local-jwt-secret-change-me-please-0123456789}
+      ML_SERVICE_URL: http://ml-service:8000
+      ML_SERVICE_TOKEN: ${ML_SERVICE_TOKEN:-dev-ml-token}
+      INGEST_TOKEN: ${INGEST_TOKEN:-dev-ingest-token}
+      DEMO_USER_EMAIL: ${DEMO_USER_EMAIL:-test@gmail.com}
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-test123}
+      APP_STAGE: ${APP_STAGE:-dev}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "${BACKEND_HOST_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/ping', timeout=5)"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  # Optional local embedding provider: docker compose --profile ollama up -d
+  ollama:
+    profiles: ["ollama"]
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  postgres_data:
+  qdrant_data:
+  ml_meta_data:
+  ollama_data:
