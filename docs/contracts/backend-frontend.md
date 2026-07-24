@@ -192,7 +192,13 @@ Backend проксирует в ML. `{ "job_id": "rc_01", "status": "running" }`
 
 ### `GET /api/v1/export?format=xlsx|csv` → `200` (файл)
 
-Выгрузка результатов/ROI в Excel/CSV (кейсовая тема «экспорт в Excel»). Опц. фича. Те же фильтры.
+Выгрузка ROI в Excel/CSV (кейсовая тема «экспорт в Excel»). Те же фильтры + переопределение ставок,
+что и `GET /roi`. `format` по умолчанию `xlsx`. Ответ — `Content-Disposition: attachment` с именем
+`prompt_radar_roi.xlsx|csv`.
+
+- `xlsx`: три листа — `Summary`, `ByCategory`, `ByScenario` (собирается нативно, без доп. зависимостей).
+- `csv`: один файл с секциями `# Summary` / `# ByCategory` / `# ByScenario`, UTF-8 с BOM (кириллица
+  в Excel). Неверный `format` → `422`.
 
 ## 6. Health
 
