@@ -16,3 +16,5 @@ prompt_radar_dataset.json
 catboost_info/
 
 *.db
+*.cbm
+*.png

@@ -1,3 +1,3 @@
-from .cosine_clusterer import CosineClusterer, AssignmentResult
+from .cosine_clusterer import AssignmentResult, ClusterState, CosineClusterer, cosine_sim
 
-__all__ = ["CosineClusterer", "AssignmentResult"]
+__all__ = ["AssignmentResult", "ClusterState", "CosineClusterer", "cosine_sim"]

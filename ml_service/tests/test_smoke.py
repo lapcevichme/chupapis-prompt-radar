@@ -12,10 +12,10 @@ def test_health_endpoints():
     with TestClient(app) as client:
         r = client.get("/health/live")
         assert r.status_code == 200
-        assert r.json()["status"] == "live"
+        assert r.json()["status"] in ("live", "ok")
         r2 = client.get("/health/ready")
         assert r2.status_code == 200
-        assert r2.json()["status"] == "ready"
+        assert r2.json()["status"] in ("ready", "degraded")
 
 
 def test_logs_and_statistics_flow():

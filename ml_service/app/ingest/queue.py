@@ -1,30 +1,32 @@
+"""Async ingest queue for log batches."""
+from __future__ import annotations
+
 import asyncio
-from typing import List, Dict
-from app.store.qdrant import QdrantStore
-from app.database.meta_store import MetaStore
-from app.api.schemas import Log
+from typing import Any, Dict, List, Optional
+
 
 class IngestQueue:
-    def __init__(self):
-        self.queue: asyncio.Queue = asyncio.Queue()
-        self.worker = None
+    """Thin asyncio.Queue wrapper for batches of log dicts."""
 
-    async def enqueue(self, logs: List[Dict]):
-        await self.queue.put(logs)
+    def __init__(self, maxsize: int = 0):
+        self._queue: asyncio.Queue[List[Dict[str, Any]]] = asyncio.Queue(maxsize=maxsize)
 
-    async def process_queue(self):
-        while True:
-            logs = await self.queue.get()
-            try:
-                # Mock processing
-                for log in logs:
-                    log["task_type"] = "document_processing"
-                    log["scenario_id"] = f"document_processing:{hash(str(log['request_id'])) % 1000}"
-                    log["is_outlier"] = False
-                    log["has_failure_signals"] = False
-                    # Store in qdrant and meta
-                    # ...
-            except Exception as e:
-                pass
-            finally:
-                self.queue.task_done()
+    async def enqueue(self, logs: List[Dict[str, Any]]) -> None:
+        if not logs:
+            return
+        await self._queue.put(logs)
+
+    async def get(self) -> List[Dict[str, Any]]:
+        return await self._queue.get()
+
+    def task_done(self) -> None:
+        self._queue.task_done()
+
+    def qsize(self) -> int:
+        return self._queue.qsize()
+
+    def empty(self) -> bool:
+        return self._queue.empty()
+
+    async def join(self) -> None:
+        await self._queue.join()
