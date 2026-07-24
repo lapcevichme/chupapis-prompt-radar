@@ -93,13 +93,21 @@ async def _process_one(log: dict[str, Any]) -> dict[str, Any]:
     if meta.has_assignment(request_id):
         return {"request_id": request_id, "duplicate": True}
 
-    # Classify (keyword/llm/centroid/.cbm), then embed + online cluster
-    clf = app.state.classifier.predict_with_confidence(query_text)
+    # .cbm trained on Ollama embeddings: embed once → CatBoost → online cluster (same vector).
+    import numpy as np
+
+    original, normalized, lt, emb_list = await app.state.online.embed_query(query_text)
+    emb = np.asarray(emb_list, dtype=np.float32)
+    clf = app.state.classifier.predict_with_confidence(query_text, embedding=emb)
     task_type = clf["task_type"]
     online = await app.state.online.process(
         request_id=request_id,
         query_text=query_text,
         task_type=task_type,
+        embedding=emb_list,
+        long_text=lt,
+        original_text=original,
+        normalized_text=normalized,
     )
 
     signals = _failure_signals(log)
@@ -148,13 +156,32 @@ async def _process_one(log: dict[str, Any]) -> dict[str, Any]:
 async def lifespan(app: FastAPI):
     app.state.taxonomy = Taxonomy()
     fb = settings.classifier.fallback_mode
-    # Offline/tests without model: keyword fallback unless explicitly fail_fast
-    if os.getenv("EMBEDDINGS_PROVIDER", settings.embeddings.provider) == "mock" and fb == "llm":
-        if not os.getenv("OPENROUTER_API_KEY") and not settings.llm.openrouter_api_key:
-            fb = "keyword"
+    model_path = os.getenv("CLASSIFIER_MODEL_PATH") or settings.classifier.model_path
+    # Resolve relative path against ml_service root
+    from pathlib import Path
+
+    mp = Path(model_path)
+    if not mp.is_file():
+        candidates = [
+            Path.cwd() / model_path,
+            Path(__file__).resolve().parents[1] / "app" / "models" / "catboost_task_classifier.cbm",
+            Path(__file__).resolve().parents[1] / "models" / "catboost_task_classifier.cbm",
+            Path(model_path.lstrip("/")),
+        ]
+        for c in candidates:
+            if c.is_file():
+                mp = c
+                break
+    model_path = str(mp) if mp.is_file() else model_path
+
+    # Only force keyword when: no .cbm AND no OpenRouter AND offline mock embeddings
+    if not Path(model_path).is_file() and fb == "llm":
+        if not (os.getenv("OPENROUTER_API_KEY") or settings.llm.openrouter_api_key):
+            if os.getenv("EMBEDDINGS_PROVIDER", settings.embeddings.provider) == "mock":
+                fb = "keyword"
 
     app.state.classifier = CatBoostClassifier(
-        model_path=settings.classifier.model_path,
+        model_path=model_path,
         taxonomy=app.state.taxonomy.taxonomy
         if hasattr(app.state.taxonomy, "taxonomy")
         else app.state.taxonomy,
@@ -162,6 +189,14 @@ async def lifespan(app: FastAPI):
             "fallback_mode": fb,
             "confidence_threshold": settings.classifier.confidence_threshold,
         },
+    )
+    log_event(
+        logger,
+        "classifier ready",
+        stage="startup",
+        model_path=model_path,
+        model_loaded=getattr(app.state.classifier, "model_available", False),
+        fallback_mode=fb,
     )
     app.state.online = OnlinePipeline(settings=settings)
     app.state.qdrant = QdrantStore(

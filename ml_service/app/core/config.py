@@ -91,7 +91,8 @@ class LLMSettings:
 @dataclass
 class ClassifierSettings:
     provider: str = "catboost"
-    model_path: str = "/app/models/catboost_task_classifier.cbm"
+    # Docker default; local resolve also scans app/models/ via classifier code when env set.
+    model_path: str = "app/models/catboost_task_classifier.cbm"
     confidence_threshold: float = 0.60
     fallback_mode: str = "llm"  # fail_fast | llm | embedding_centroid
     taxonomy_version: str = "v1"

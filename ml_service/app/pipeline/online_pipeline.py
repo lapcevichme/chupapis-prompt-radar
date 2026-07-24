@@ -91,24 +91,37 @@ class OnlinePipeline:
         request_id: str,
         query_text: str,
         task_type: str,
+        embedding: Optional[list[float]] = None,
+        long_text: Optional[LongTextResult] = None,
+        original_text: Optional[str] = None,
+        normalized_text: Optional[str] = None,
     ) -> OnlinePipelineResult:
         # 1) preprocess
-        original, normalized = preprocess_query(query_text)
+        if original_text is not None and normalized_text is not None:
+            original, normalized = original_text, normalized_text
+        else:
+            original, normalized = preprocess_query(query_text)
 
         # 2) long-text strategy (no silent truncate of whole doc)
-        lt = prepare_for_embedding(
-            normalized,
-            max_direct_tokens=self.settings.long_text.max_direct_tokens,
-            chunk_size_tokens=self.settings.long_text.chunk_size_tokens,
-            chunk_overlap_tokens=self.settings.long_text.chunk_overlap_tokens,
-        )
+        if long_text is not None:
+            lt = long_text
+        else:
+            lt = prepare_for_embedding(
+                normalized,
+                max_direct_tokens=self.settings.long_text.max_direct_tokens,
+                chunk_size_tokens=self.settings.long_text.chunk_size_tokens,
+                chunk_overlap_tokens=self.settings.long_text.chunk_overlap_tokens,
+            )
 
-        # 3) embed summary / direct representation
-        embedding = await self.embedder.embed_one(lt.representation)
+        # 3) embed summary / direct representation (reuse if provided — CatBoost needs same vector)
+        if embedding is not None:
+            emb_list = list(embedding)
+        else:
+            emb_list = await self.embedder.embed_one(lt.representation)
 
         # 4) online assign within task_type
         assignment: AssignmentResult = self.clusterer.assign(
-            np.asarray(embedding, dtype=np.float64),
+            np.asarray(emb_list, dtype=np.float64),
             task_type,
         )
 
@@ -116,7 +129,7 @@ class OnlinePipeline:
             "long_text_strategy": lt.strategy,
             "chunks_processed": lt.chunks_processed,
             "original_tokens": lt.original_tokens,
-            "embedding_dim": len(embedding),
+            "embedding_dim": len(emb_list),
             "embedding_provider": getattr(self.embedder, "provider_name", "unknown"),
             "similarity": assignment.similarity,
             "is_new_cluster": assignment.is_new_cluster,
@@ -128,7 +141,7 @@ class OnlinePipeline:
             scenario_id=assignment.scenario_id,
             similarity=assignment.similarity,
             is_new_cluster=assignment.is_new_cluster,
-            embedding=list(embedding),
+            embedding=emb_list,
             long_text=lt,
             original_text=original,
             normalized_text=normalized,
@@ -136,6 +149,18 @@ class OnlinePipeline:
             chunks_processed=lt.chunks_processed,
             metrics=metrics,
         )
+
+    async def embed_query(self, query_text: str) -> tuple[str, str, LongTextResult, list[float]]:
+        """Preprocess + long-text + embed once (for CatBoost → cluster reuse)."""
+        original, normalized = preprocess_query(query_text)
+        lt = prepare_for_embedding(
+            normalized,
+            max_direct_tokens=self.settings.long_text.max_direct_tokens,
+            chunk_size_tokens=self.settings.long_text.chunk_size_tokens,
+            chunk_overlap_tokens=self.settings.long_text.chunk_overlap_tokens,
+        )
+        emb = await self.embedder.embed_one(lt.representation)
+        return original, normalized, lt, list(emb)
 
     async def close(self) -> None:
         await self.embedder.close()
