@@ -36,8 +36,8 @@ class Settings(BaseSettings):
     COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
     COOKIE_DOMAIN: str | None = None
     COOKIE_PATH: str = "/"
-    DEMO_USER_EMAIL: str = "demo@prompt-radar.local"
-    DEMO_USER_PASSWORD: str = "DemoPass123!"
+    DEMO_USER_EMAIL: str = "test@gmail.com"
+    DEMO_USER_PASSWORD: str = "test123"
 
     # --- ML integration ---
     ML_SERVICE_URL: str = "http://ml-service:8000"

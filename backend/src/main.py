@@ -68,6 +68,9 @@ def create_app(
         try:
             if check_db_on_startup:
                 await wait_for_db()
+                from scripts.seed_demo_user import seed_demo_user
+
+                await seed_demo_user()
             yield
         finally:
             await dispose_engine()

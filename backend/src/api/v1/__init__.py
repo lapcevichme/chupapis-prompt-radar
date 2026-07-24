@@ -1,15 +1,23 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 
 def get_v1_router() -> APIRouter:
-    from . import dashboard, ingest, logs, recompute, roi, scenarios, sources
+    from . import (
+        auth,
+        dashboard,
+        ingest,
+        logs,
+        recompute,
+        roi,
+        scenarios,
+        sources,
+    )
+    from .deps import get_current_user
 
     router = APIRouter()
-    router.include_router(ingest.router)
-    router.include_router(sources.router)
-    router.include_router(recompute.router)
-    router.include_router(dashboard.router)
-    router.include_router(scenarios.router)
-    router.include_router(logs.router)
-    router.include_router(roi.router)
+    router.include_router(auth.router)
+
+    protected = (ingest, sources, recompute, dashboard, scenarios, logs, roi)
+    for module in protected:
+        router.include_router(module.router, dependencies=[Depends(get_current_user)])
     return router
