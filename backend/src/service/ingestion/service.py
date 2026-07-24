@@ -145,6 +145,10 @@ class IngestionService:
         totals = await MlClient(self._settings).stream_logs(
             str(source.id), result.log_records
         )
+
+        from service.dashboard.cache import invalidate as invalidate_stats
+
+        invalidate_stats()  # new live logs -> dashboard totals changed
         return {
             "source_id": str(source.id),
             "accepted": int(totals.get("accepted", result.report["records_valid"])),
@@ -203,6 +207,10 @@ async def stream_source_logs(
             logger.warning(
                 "assignment sync failed for source_id=%s: %s", source_id, exc
             )
+
+        from service.dashboard.cache import invalidate as invalidate_stats
+
+        invalidate_stats()  # fresh classified logs -> refresh dashboard read-model
 
 
 async def _set_status(source_id: str, status: str) -> None:

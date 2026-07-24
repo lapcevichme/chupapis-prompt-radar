@@ -24,6 +24,8 @@ from domain.dashboard import (
 from domain.taxonomy import TAXONOMY_VERSION, label
 from service.ml import MlClient
 
+from . import cache as stats_cache
+
 logger = logging.getLogger(__name__)
 
 _FAILURE_STATUSES = ("error_tool", "hallucination_loop", "error")
@@ -36,7 +38,11 @@ class DashboardService:
         self._ml = MlClient(settings)
 
     async def get_dashboard(self, filters: dict[str, Any]) -> Dashboard:
-        stats = await self._ml.get_statistics(filters)
+        key = stats_cache.cache_key(filters)
+        stats = stats_cache.get(key)
+        if stats is None:
+            stats = await self._ml.get_statistics(filters)
+            stats_cache.set(key, stats, self._settings.STATISTICS_CACHE_TTL_SEC)
         return _map_dashboard(stats)
 
     async def get_scenarios(self, filters: dict[str, Any]) -> Paginated[ScenarioOut]:

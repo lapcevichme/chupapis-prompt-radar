@@ -71,6 +71,7 @@ async def finalize_recompute(settings: Settings, job_id: str) -> None:
         return
 
     from service.dashboard import DashboardService
+    from service.dashboard.cache import invalidate as invalidate_stats
 
     factory = get_session_factory(settings or get_settings())
     async with factory() as session:
@@ -81,4 +82,5 @@ async def finalize_recompute(settings: Settings, job_id: str) -> None:
             .values(status=SourceStatus.recomputed.value)
         )
         await session.commit()
+        invalidate_stats()  # new clusters/scenarios -> drop stale dashboard cache
         logger.info("recompute finalized job_id=%s synced=%s", job_id, synced)
