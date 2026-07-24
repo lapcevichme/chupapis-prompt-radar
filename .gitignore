@@ -29,7 +29,6 @@ __pycache__/
 
 # Data & Logs
 *.log
-prompt_radar_dataset.json
 *.jsonl
 
 # OS generated files

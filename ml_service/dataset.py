@@ -15,7 +15,8 @@ URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "deepseek/deepseek-v4-flash"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_FILE = os.path.join(BASE_DIR, "prompt_radar_dataset.json")
+NOTEBOOKS_DIR = os.path.join(BASE_DIR, "notebooks")
+OUTPUT_FILE = os.path.join(NOTEBOOKS_DIR, "prompt_radar_dataset.json")
 
 CATEGORIES = {
     "text_generation": "Генерация текста (письма, инструкции, посты)",
@@ -194,6 +195,7 @@ def append_to_dataset(filepath: str, new_data: List[Dict]):
     if not new_data:
         return
 
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
     dataset = []
     if os.path.exists(filepath):
         try:
