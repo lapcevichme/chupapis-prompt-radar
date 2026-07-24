@@ -1,12 +1,12 @@
 .venv/
-venv/
-.venv-tts/
 __pycache__/
 *.pyc
+.env
+.env.*
+!.env.example
 *.pem
 *.key
-*.wav
-*.env
+prompt_radar_dataset.json
 *.log
 .DS_Store
 Thumbs.db

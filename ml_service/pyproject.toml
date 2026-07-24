@@ -1,0 +1,12 @@
+[project]
+name = "ml-service"
+version = "0.1.0"
+description = "ML Service for Prompt Radar"
+requires-python = ">=3.10"
+dependencies = [
+    "aiohttp>=3.9.0",
+    "python-dotenv>=1.0.0",
+]
+
+[tool.uv]
+package = false
