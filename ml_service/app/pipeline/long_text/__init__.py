@@ -1,3 +1,15 @@
-from .chunking import split_text_into_chunks, prepare_for_embedding
+from .chunking import (
+    LongTextResult,
+    estimate_tokens,
+    join_chunk_embeddings,
+    prepare_for_embedding,
+    split_text_into_chunks,
+)
 
-__all__ = ["split_text_into_chunks", "prepare_for_embedding"]
+__all__ = [
+    "LongTextResult",
+    "estimate_tokens",
+    "join_chunk_embeddings",
+    "prepare_for_embedding",
+    "split_text_into_chunks",
+]

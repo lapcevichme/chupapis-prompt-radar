@@ -1,0 +1,61 @@
+# Prompt Radar ML stack (ТЗ §14, §17)
+# Usage: docker compose up -d --build
+# Optional local embeddings: docker compose --profile ollama up -d
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.5
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  ml-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      ML_SERVICE_TOKEN: ${ML_SERVICE_TOKEN:-}
+      EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-mock}
+      QDRANT_URL: http://qdrant:6333
+      ML_META_DB_URL: ${ML_META_DB_URL:-sqlite:////data/ml/meta.db}
+      CLASSIFIER_MODEL_PATH: /app/app/models/catboost_task_classifier.cbm
+      ML_CONFIG_PATH: /app/config.yaml
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3-embedding:4b}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-qwen/qwen3-embedding-4b}
+      OPENROUTER_CHAT_URL: ${OPENROUTER_CHAT_URL:-https://openrouter.ai/api/v1/chat/completions}
+      OPENROUTER_EMBEDDINGS_URL: ${OPENROUTER_EMBEDDINGS_URL:-https://openrouter.ai/api/v1/embeddings}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      CLASSIFIER_FALLBACK_MODE: ${CLASSIFIER_FALLBACK_MODE:-llm}
+      CLASSIFIER_CONFIDENCE_THRESHOLD: ${CLASSIFIER_CONFIDENCE_THRESHOLD:-0.60}
+      ONLINE_SIMILARITY_THRESHOLD: ${ONLINE_SIMILARITY_THRESHOLD:-0.85}
+    volumes:
+      - ml_meta_data:/data/ml
+    depends_on:
+      qdrant:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # Optional local embedding provider (ТЗ §14)
+  ollama:
+    profiles: ["ollama"]
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  qdrant_data:
+  ml_meta_data:
+  ollama_data:
