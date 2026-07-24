@@ -1,0 +1,14 @@
+.venv/
+venv/
+.venv-tts/
+__pycache__/
+*.pyc
+*.pem
+*.key
+*.wav
+*.env
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
