@@ -52,6 +52,8 @@ class Settings(BaseSettings):
     # --- Normalization ---
     NORMALIZE_SYNTHESIZE_TIMESTAMPS: bool = True
     NORMALIZE_TIMESTAMP_SPAN_DAYS: int = 14
+    # Demo dataset path: backend-owned fixture (decoupled from ml_service layout).
+    DEMO_DATASET_PATH: str = str(BASE_DIR / "src" / "data" / "demo_dataset.json")
 
     @field_validator("COOKIE_SAMESITE", mode="before")
     @classmethod

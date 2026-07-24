@@ -1,0 +1,4633 @@
+[
+  {
+    "user_query": "Пожалуйста, предоставь краткую сводку по всем непрочитанным письмам за сегодня, с указанием отправителя, темы и срочности.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "эй агент дай мне краткое резюме по непрочитанным письмам за сегодня что там важно а что нет",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "сводка по непрочитаным письмам за севодня кратко и структурированно",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "Сформируй дайджест непрочитанных писем за сегодня: выдели самые важные, сгруппируй по проектам.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 30000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Mail",
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай я опаздываю скажи кратко что пришло на почту сегодня непрочитанное",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 18,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Сергей, найди в CRM контактное лицо компании ООО «Ромашка» и проверь, были ли у них выигранные сделки за последний год.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 4,
+    "tools_used": [
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "агась слушй найди кто директор у этой фирмы из сиарэм и есть ли сделки там выиграные",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 3,
+    "tools_used": [
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "Серега, глянь в сиарэм по компании ООО Ромашка: кто директор и были ли выигранные сделки?",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 3,
+    "tools_used": [
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "найди в црм контакты директора компании ромашка и скажи есть ли выигранные сделки срочно",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 10000,
+    "agent_steps": 3,
+    "tools_used": [
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Пожалуйста, извлеки из CRM последнюю информацию по компании «Ромашка»: ФИО генерального директора и список закрытых успешных сделок.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 20000,
+    "agent_steps": 5,
+    "tools_used": [
+      "CRM",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "Please set up a periodic job to monitor emails that have been unanswered for over 2 hours and flag them for follow-up.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "can you like make a thing that checks my inbox every hour for emails i haven't replied to in more than two hours and then maybe send a reminder or something",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 20000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "sete up a perriodic task to moniter emails with no responce for mor than 2 hour",
+    "style": "typo",
+    "category": "task_management",
+    "simulated_context_tokens": 10000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "I need a recurring task that scans all unread emails where the last reply from me is older than 2 hours and creates a ticket in Jira.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 80000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Mail",
+      "Jira"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "okay so I want an automated thing that looks through my mail and finds emails I didn't answer in two hours and then maybe like puts them in a list or sends a notification",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 100000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Необходимо получить полный список участников проектной команды по проекту 'Автоматизация логистики', а также указать, кто является ответственным за вендора-поставщика ПО.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 5,
+    "tools_used": [
+      "CRM",
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "собери всю инфу по проектной команде проекту и скажи кто отвечает за вендора ну того который софт поставляет",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 2500,
+    "agent_steps": 4,
+    "tools_used": [
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "Собери кто входит в проектную команду и кто отвечает за вендора",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 1000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "Предоставьте детализированную информацию о составе рабочей группы проекта 'Цифровая трансформация' и персоне, ответственность за взаимодействие с внешним вендором (ООО 'ТехноПартнер').",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 25000,
+    "agent_steps": 6,
+    "tools_used": [
+      "CRM",
+      "Confluence",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "найди состав по проекту и вендор ответственный кто будет подскажи",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 1800,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 5,
+    "status": "success"
+  },
+  {
+    "user_query": "Выгрузи данные по клиентам из CRM в Excel сводный отчет за последний месяц.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 6,
+    "tools_used": [
+      "CRM",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "а выгрузика мне данные по клиентам из сиэрэм в эксель сделай отчет сводный ну там где видно",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 7,
+    "tools_used": [
+      "CRM",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "выгрузи данные по клиетнам из црм в сводный отчет эксел",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 5,
+    "tools_used": [
+      "CRM",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "Сформируй отчет Excel по клиентам из CRM: выбери поля: название, контакт, сумма сделок, дата регистрации. Сгруппируй по менеджерам.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 65000,
+    "agent_steps": 8,
+    "tools_used": [
+      "CRM",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "экспортни мне клиентов из црм в эксельку только тех у кого просрочка больше 30 дней",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 10000,
+    "agent_steps": 4,
+    "tools_used": [
+      "CRM",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Найди, пожалуйста, свободную переговорную комнату на сегодня на 2 часа, вместимостью не менее 10 человек",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 2500,
+    "agent_steps": 3,
+    "tools_used": [
+      "Calendar",
+      "Room booking system"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "нужна комната для встречи человек 15 прямо сейчас есть свободная",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 2,
+    "tools_used": [
+      "Calendar"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "найди свободную переговорку на 20 человек на завтра на 3 часа",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 1800,
+    "agent_steps": 4,
+    "tools_used": [
+      "Calendar",
+      "Room booking system"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Где сейчас есть свободная большая переговорная? Нужно на час, человек 12",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 3100,
+    "agent_steps": 2,
+    "tools_used": [
+      "Calendar"
+    ],
+    "estimated_manual_time_minutes": 12,
+    "status": "success"
+  },
+  {
+    "user_query": "найди переговорку на 8 человек на сегодня 14:00",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 3,
+    "tools_used": [
+      "Calendar",
+      "Room booking system"
+    ],
+    "estimated_manual_time_minutes": 8,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Необходимо настроить мониторинг статусов проектов в ИСУП с автоматическим подсвечиванием переходов из 'В работе' в 'На проверке'.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 50000,
+    "agent_steps": 6,
+    "tools_used": [
+      "ISUP",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "ой а можно в исупе сделать так чтобы подсвечивались переходы когда статус меняется я не успеваю отслеживать",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 4,
+    "tools_used": [
+      "ISUP"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "Настрой монитоинг статусов проектов в ИСУП с подсвечиванием определенных переходов",
+    "style": "typo",
+    "category": "task_management",
+    "simulated_context_tokens": 10000,
+    "agent_steps": 5,
+    "tools_used": [
+      "ISUP",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "Требуется создать дашборд для отслеживания переходов проектов в ИСУП с цветовой индикацией критических стадий.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 120000,
+    "agent_steps": 10,
+    "tools_used": [
+      "ISUP",
+      "Excel",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 180,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "слушай мне нужно чтобы в исуп выделялось когда проект переходит из разработки в тестирование это очень важно",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 500,
+    "agent_steps": 3,
+    "tools_used": [
+      "ISUP"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "Подготовь текст для поста в LinkedIn о победе в тендере на цифровизацию государственной услуги. Укажи ключевые достижения и благодарность команде.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Confluence",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "напиши пост для линкедина про тендер мы выиграли госуслугу цифра класс надо срочно",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "пост в линкедин о победе в тендере на цифровизцию гос услуги выдели главное",
+    "style": "typo",
+    "category": "text_generation",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "Создай текст поста для LinkedIn: наша компания выиграла тендер на цифровизацию госуслуги. Упомяни заказчика и наши инновационные решения.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 67000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 75,
+    "status": "success"
+  },
+  {
+    "user_query": "пост про тендер выиграли срочно нужно текстом для линкедина давай быстрее",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 1,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Подготовь скрипт холодного обзвона для отдела продаж. Целевая аудитория — ритейлеры, заинтересованные в ИИ-аналитике. Скрипт должен включать введение, квалификацию, презентацию ценности ИИ и обработку возражений.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Confluence",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "нужен скрипт для обзвона ритейлеров по ии аналитике чтоб быстро впаривать плиз сделай на 5 минут разговора и с возражениями",
+    "style": "typo",
+    "category": "text_generation",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "Эй агент создай мне скрипт обзвона по холоду для ритейл клиентов про ии аналитику типа как открывать разговор какие вопросы задать и как закрывать на встречу давай быстро",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 30000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Confluence",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 100,
+    "status": "success"
+  },
+  {
+    "user_query": "Составь шаблон сценария холодного звонка для B2B-продаж ИИ-аналитики ритейлерам. Учти, что клиенты скептичны, добавь блоки с доказательной базой и кейсами",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 60000,
+    "agent_steps": 7,
+    "tools_used": [
+      "Confluence",
+      "Mail",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 180,
+    "status": "success"
+  },
+  {
+    "user_query": "сделай скрипт для холодных звонков по ии аналитике в ритейле нужно чтобы менеджеры не тупили и сразу продавали добавь чеклист возражений",
+    "style": "typo",
+    "category": "text_generation",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Составьте, пожалуйста, официальное письмо-уведомление для клиентов об изменении банковских реквизитов нашей компании. Включите образец нового платежного поручения.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "Блин письмо клиентам про реквизиты новые надо сделать с платежкой примером сделай быстренько",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 200,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "сосатвь письмо клинетам об изменении реквизитов оплты, с образцом платежного поручения",
+    "style": "typo",
+    "category": "text_generation",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 2,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "Необходимо подготовить уведомление для всех контрагентов об изменении расчетного счета. Приложите шаблон поручения.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 20000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Mail",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "Ой срочно надо письмо про смену реквизитов клиентам с платежкой примером сделай да",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 500,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 15,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Напиши заметку для внутреннего блога о результатах опроса удовлетворенности сотрудников за 2025 год. Включи основные показатели и план действий на следующий квартал.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "э слышь надо пост в блог написать про опрос сотрудников типа результаты там и что будем менять сделай",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "Напишы заметку для внутренего блога о резултатах опроса сотрудников удовлетворенности и планы по улучшению",
+    "style": "typo",
+    "category": "text_generation",
+    "simulated_context_tokens": 3000,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 50,
+    "status": "success"
+  },
+  {
+    "user_query": "Подготовь статью для корпоративного блога: анализ опроса удовлетворенности, ключевые выводы и мероприятия по улучшению условий труда.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "бро набери текст для блога про опрос удовлетворенности сотрудников там результаты и план действий сделай кратко",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 40,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Составьте официальное письмо для B2B-клиентов о запуске нового облачного сервиса. Укажите ключевые преимущества: безопасность данных и интеграция с 1С. Тон деловой, но дружелюбный.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 4,
+    "tools_used": [
+      "CRM",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "нужно письмо для клиентов по b2b про новый облачный сервис безопасность и интеграция с 1с сделай чтоб было понятно и кратко",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "напиши писмо для б2б клиентов о новом облачном сервисе, акцент на безопасность и интеграция с 1с",
+    "style": "typo",
+    "category": "text_generation",
+    "simulated_context_tokens": 3000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "Подготовьте текст email-рассылки для корпоративных клиентов о запуске облачного продукта. Основные пункты: безопасность на уровне enterprise, бесшовная интеграция с 1С. Приложите предложение по персональной демонстрации.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 25000,
+    "agent_steps": 8,
+    "tools_used": [
+      "CRM",
+      "Mail",
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "а сделай письмо для клиентов бизнес клиентов про новый облачный сервис там безопасность и с 1с интеграция чтобы они захотели купить",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Подготовьте официальную инструкцию по созданию заявок в SAP Ariba для сотрудников отдела маркетинга. Требуется пошаговое описание с скриншотами.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 8,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "нужна инструкция по арибе как заявку оформить для коллег, чтобы быстро и понятно, плиз",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "напешы инструкцию для закупок в SAP ariba для всех отделов, шаги с картинками",
+    "style": "typo",
+    "category": "text_generation",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "Составьте подробное руководство по оформлению закупочных заявок в SAP Ariba. Включите реквизиты и правила согласования.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 60000,
+    "agent_steps": 10,
+    "tools_used": [
+      "Confluence",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 150,
+    "status": "success"
+  },
+  {
+    "user_query": "сделай инструкцию по заявкам в арибе, чтобы люди не тупили, быстро",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 45,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Please draft a post for our internal Telegram channel announcing the migration from GitLab CI to Jenkins. The tone should be professional, include key benefits, timeline, and contact for support. Target audience: all engineering teams.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 50000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Mail",
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "hey need a telegram post about switching from gitlab to jenkins make it sound exciting but not too technical mention we're doing this for speed and reliability and tell them to check the wiki for details",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 20000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "pls rite a tg post for devops chanel abot migrating from gitlab ci to jenkins. keep it short but include why we do this and when. thx",
+    "style": "typo",
+    "category": "text_generation",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "Compose a detailed announcement for the internal Telegram group regarding the GitLab to Jenkins CI/CD migration. The post should highlight the improved pipeline performance, new features, and a link to the migration guide. Also, include a Q&A section at the end.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 80000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Confluence",
+      "Jira"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "create a short announcement for telegram about gitlab to jenkins migration make it friendly and include a call to action to test new pipelines give a deadline for feedback",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 30000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 18,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Составьте подробную инструкцию для новых сотрудников по работе с корпоративным порталом и системе бронирования переговорных комнат через Google Calendar и Sherpa. Опишите пошагово процесс регистрации, поиска свободных комнат и создания брони.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай надо инструкцию для новичков как пользоваться порталом и шерпой там с календарем забронировать переговорку в общем типа шпаргалку сделай",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 30000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "напиши инструкцию для новых сотруднеков как полтьзоватся порталам и систимой бронирования переговорок (гугл календарь и шерпа) шаги чтоб понятно было",
+    "style": "typo",
+    "category": "text_generation",
+    "simulated_context_tokens": 20000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "Разработайте руководство для новых сотрудников по корпоративному порталу и бронированию переговорных. Включите разделы: вход в портал, настройка профиля, поиск комнаты в Sherpa, привязка к Google Calendar, отмена брони.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 60000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Confluence",
+      "Google Calendar"
+    ],
+    "estimated_manual_time_minutes": 150,
+    "status": "success"
+  },
+  {
+    "user_query": "ага мне нужно инструкцию для новеньких чтобы они сразу понимали как работать с порталом и бронилкой переговорок через гугл календарь и шерпу сделай чтоб понятно было",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Составьте официальное письмо-ответ контрагенту на претензию о срыве сроков поставки. Укажите ссылки на пункты 5.2 и 7.4 договора. Тон деловой, но конструктивный.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Mail",
+      "Confluence",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "нужно письмо контрагенту ответ на претензию по срокам поставки ссылки на договор пункты там 5.2 и 7.4 сделай официально но не агрессивно",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 100,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "сосьтавь офицальное письмо ответ контрагенту на притензию о срыве поставок укажи ссылку на п.5.2 и 7.4 договора",
+    "style": "typo",
+    "category": "text_generation",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Подготовьте ответное письмо на претензию от ООО 'СтройКомплект' по договору №345-2024. Сослаться на пункты 4.1 и 6.3, обосновать задержку форс-мажором. Приложить справку от перевозчика.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 7,
+    "tools_used": [
+      "Mail",
+      "CRM",
+      "Jira"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "ага претензия пришла от контрагента надо ответить письмом типа официальное разослать по пунктам договора ссылки дать на пункт 4.1 и 6.3 про форс-мажор и справку приложить",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 500,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 10,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Подготовь, пожалуйста, инструкцию по code review для новых джуниоров. Включи основные правила проверки кода, ссылки на наши внутренние стандарты и примеры хороших практик. Используй формат Confluence.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "слышь напиши инструкцию для джунов по код ревью чтоб правила были ссылки на стандарты и примеры короче",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 3000,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "Напиши интсрукцию по code ревью для джуниоров включи основынй правила и ссылки на стандарты",
+    "style": "typo",
+    "category": "text_generation",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 100,
+    "status": "success"
+  },
+  {
+    "user_query": "Составь документ для новых разработчиков о процессе code review. Укажи обязательные пункты проверки, частые ошибки и ссылки на соответствующие страницы в базе знаний.",
+    "style": "formal",
+    "category": "text_generation",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Confluence",
+      "Jira"
+    ],
+    "estimated_manual_time_minutes": 150,
+    "status": "success"
+  },
+  {
+    "user_query": "бро срочно нужно инструкция по ревью кода для джунов чтоб всё было понятно и ссылки дай",
+    "style": "voice",
+    "category": "text_generation",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 60,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Разработай макрос VBA в Excel, который читает шаблон письма из Access, подставляет данные клиента и создает письмо в Outlook. Нужно чтобы обрабатывал до 500 записей.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 8,
+    "tools_used": [
+      "Excel",
+      "SQL",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "бля чет макрос для екселя надо чтоб письма сам создавал из базы данных у меня шаблон в аксесс ну и подставлял данные клиентов помоги плиз",
+    "style": "typo",
+    "category": "code_help",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Excel",
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "Сделай макрос VBA который берет данные из SQL базы, формирует email на основе шаблона в Excel и отправляет через Outlook. Ограничение: не более 100 писем за раз.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 10,
+    "tools_used": [
+      "Excel",
+      "SQL",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 150,
+    "status": "success"
+  },
+  {
+    "user_query": "нужна vba макро для ексел автоматом создает письма из шаблона базы данных чтоб с клиентами работать побыстрее",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 3000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Excel",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Напиши макрос для Excel VBA: из таблицы данных с клиентами и шаблона письма (ячейка A1) генерировать письма в Outlook, каждому клиенту своё. Не забудь про обработку ошибок.",
+    "style": "typo",
+    "category": "code_help",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 7,
+    "tools_used": [
+      "Excel",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 80,
+    "status": "success"
+  },
+  {
+    "user_query": "Please provide a Python script that validates JSON files against a predefined schema before importing them into MongoDB.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Python",
+      "MongoDB"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "эй ай агент мне нужен скрипт на питоне который проверяет json файлы по схеме перед загрузкой в монгу сделай побыстрее",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 200,
+    "agent_steps": 3,
+    "tools_used": [
+      "Python",
+      "MongoDB"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "сделай пйтон скрипт для валидации джсон фалов по схеме перед импортом в монгодб",
+    "style": "typo",
+    "category": "code_help",
+    "simulated_context_tokens": 500,
+    "agent_steps": 4,
+    "tools_used": [
+      "Python",
+      "MongoDB"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "I need a Python script to validate JSON documents against a JSON Schema before inserting them into MongoDB. The script should handle errors gracefully and report schema violations.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 25000,
+    "agent_steps": 8,
+    "tools_used": [
+      "Python",
+      "MongoDB",
+      "Git"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "помоги с питоновским скриптом для проверки жсон файлов по схеме перед тем как их в монгу залить чекни если есть ошибки",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 300,
+    "agent_steps": 4,
+    "tools_used": [
+      "Python",
+      "MongoDB"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "Напиши код на Python для парсинга XML-отчетов из 1С и преобразования в CSV для загрузки в Tableau.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 5,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "как там питон писать парсинг xml из 1с в csv для tableau в общем помоги",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 120,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "Напиши код на питоне для пасинг XML из 1С в CSV для табло",
+    "style": "typo",
+    "category": "code_help",
+    "simulated_context_tokens": 800,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "Требуется скрипт Python для извлечения данных из XML-файлов 1С и конвертации в CSV-формат, совместимый с Tableau.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 120000,
+    "agent_steps": 8,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "нужен питон скрипт xml из 1с в csv для tableau давай код",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 200,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 30,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Сергей, помогите, пожалуйста, с отладкой JavaScript кода для отправки файлов через REST API с авторизацией по токену. Форма не отправляет файлы, ошибка 401.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "серёга помоги с джаваскриптом форма файлы не шлёт апи токен не работает что делать",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 3000,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "Сергей, JavaScript форма не рабоатет, файлы не отправляються через REST API, ошибка 401, токен прооблема",
+    "style": "typo",
+    "category": "code_help",
+    "simulated_context_tokens": 4000,
+    "agent_steps": 5,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 60,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Добрый день, Сергей. У меня проблема с JavaScript кодом для веб-формы. При отправке файлов через REST API возникает ошибка авторизации. Проверьте, пожалуйста, корректность передачи токена.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 6000,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 50,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай сергей джаваскрипт форма файлы не отправляет токен вроде правильный а ошибка 401 что за хрень",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Необходим SQL-запрос для поиска дубликатов поставщиков в Oracle ERP. Критерии: дубли по полям ИНН и название компании. Запрос должен учитывать возможные различия в регистре и пробелах.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 50000,
+    "agent_steps": 4,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай нужен sql запрос найти дубликаты поставщиков в оракле по инн и названию компании проверь чтобы регистр не мешал и пробелы",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 20000,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "нужен скул запрос на поиск дубликатов паставщиков в оракл ерп по инн и названию кампнии учитывать регистр и пробелы",
+    "style": "typo",
+    "category": "code_help",
+    "simulated_context_tokens": 10000,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "Здравствуйте, помогите составить SQL-запрос для выявления дублирующихся записей поставщиков в Oracle ERP. Поля для сравнения: ИНН и наименование организации. Желательно учесть возможные опечатки в названиях.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 60000,
+    "agent_steps": 5,
+    "tools_used": [
+      "SQL",
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "эй агент сделай sql запрос который найдет дублей поставщиков по инн и имени у нас оракл ерп да чтобы игнорировал большие буквы и лишние пробелы",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 6,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 25,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Создай Terraform-модуль для развертывания EC2-инстансов в AWS с настраиваемыми тегами и группой безопасности.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "а модуль терраформ для ес2 с тегами и секьюрити группой сделай а",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 800,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 35,
+    "status": "success"
+  },
+  {
+    "user_query": "Нужен терраформ модуль для EC2 инстансов с тегами и security grou",
+    "style": "typo",
+    "category": "code_help",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 50,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Напиши Terraform-модуль для AWS EC2 с переменными для тегов и security group.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 10000,
+    "agent_steps": 5,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай терраформ модуль для ec2 с указанием тегов и security group сделай пожалуйста",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 6,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "Составьте SQL-запрос для выявления транзакций с суммой более 1 млн руб. и частотой более 10 операций в час.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 3,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "мне нужен sql запрос найти подозрительные транзакции сумма больше миллиона и больше десяти операций за час ага",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 2,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "Сделай СКЛ запрос найти транзакции сумм >1 млн руб иболее 10 операций за час",
+    "style": "typo",
+    "category": "code_help",
+    "simulated_context_tokens": 800,
+    "agent_steps": 4,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "Пожалуйста, напишите SQL-скрипт, который отберет транзакции свыше 1 000 000 рублей и группирует по клиенту за час, если операций больше 10.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 10000,
+    "agent_steps": 5,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "нужен запрос в sql найти сомнительные перечисления сумма свыше миллиона и частота больше десяти в час",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 3000,
+    "agent_steps": 3,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 35,
+    "status": "success"
+  },
+  {
+    "user_query": "Необходимо составить SQL-запрос для ClickHouse, который вычислит средний чек за последние 30 дней по каждому магазину из таблицы 'sales'. Ожидаю сгенерированный код.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 3,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "крч нужно средний чек по магазинам за 30 дней в кликхаузе из таблицы сейлз напиши запрос",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 2,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "Сделай зпрос SQL для ClickHouse средний чек за 30 дней по магазинам из таблицы 'sales'",
+    "style": "typo",
+    "category": "code_help",
+    "simulated_context_tokens": 1800,
+    "agent_steps": 3,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "Требуется SQL-запрос для расчета среднего чека (avg) за последние 30 дней, с группировкой по store_id из таблицы sales в ClickHouse. Учитывать только завершенные транзакции.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 2500,
+    "agent_steps": 3,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "бро срочно нужен запрос средний чек за месяц по магазинам в кликхаузе таблица sales помоги",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 2,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "Нужно написать Python-скрипт, который будет ежедневно скачивать CSV-файлы с SFTP-сервера и загружать их в таблицы PostgreSQL. Необходимо реализовать логирование ошибок в отдельный файл. Параметры подключения должны задаваться через конфигурационный файл.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 35000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Python",
+      "SFTP",
+      "PostgreSQL",
+      "Logging"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай надо скрипт на питоне который с sftp будет каждый день качать файлы и в постгресс их загружать ну там логирование ошибок тоже сделай чтобы в файл писалось ну и чтоб конфиг отдельный был",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Python",
+      "SFTP",
+      "PostgreSQL"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "напиши пйтон скрипт для загрзки дынных с сфтп в постгрес с лагированием ошипок и чтоб каждый день работал",
+    "style": "typo",
+    "category": "code_help",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Python",
+      "SFTP",
+      "PostgreSQL"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Разработайте Python-скрипт для автоматической загрузки данных из SFTP в PostgreSQL. Требуется: поддержка расписания, логирование ошибок, обработка дубликатов, конфигурация через YAML.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 8,
+    "tools_used": [
+      "Python",
+      "SFTP",
+      "PostgreSQL",
+      "YAML",
+      "Logging"
+    ],
+    "estimated_manual_time_minutes": 150,
+    "status": "success"
+  },
+  {
+    "user_query": "ааа крч надо скрипт на python который будет сам с sftp таскать файлы в postgres и логировать ошибки ну и чтоб настраивалось всё через конфиг можно сделать",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Python",
+      "SFTP",
+      "PostgreSQL"
+    ],
+    "estimated_manual_time_minutes": 70,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Сергей, нужно написать bash-скрипт для мониторинга свободного места на серверах. При превышении 90% отправлять уведомление в Telegram.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 4,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "ну типа мне нужен баш скрипт который смотрит свободное место на серверах и если больше 90 процентов то шлет в телеграм сообщение",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 800,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "тимилд просит скрипт баш для мониторинга своб места на серваках и отправки уведомлений в телеграм при пороге 90%",
+    "style": "typo",
+    "category": "code_help",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 5,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "Тимлид Сергей просит разработать bash-скрипт, который будет проверять использование дискового пространства на серверах и отправлять оповещение в Telegram при достижении 90% занятости.",
+    "style": "formal",
+    "category": "code_help",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 50,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай напиши скрипт на баше смотри место на дисках если больше 90 процентов то телеграм уведомление",
+    "style": "voice",
+    "category": "code_help",
+    "simulated_context_tokens": 500,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 20,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Мне нужно в Excel сопоставить поставщиков из выгрузки SAP PO_HEADER с их рейтингом. Используйте ВПР и выделите проблемных красным.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 5,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "эй агент у меня есть файл с поставщиками из сап надо по рейтингу подтянуть и проблемные подсветить цветом сделай это в экселе через впр",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 800,
+    "agent_steps": 4,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "сделай в эксель впр по поставщикам из сап найти рейтинг и выделить проблемных цветом, не получается руками",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 600,
+    "agent_steps": 3,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Прошу вас выполнить анализ: сопоставьте поставщиков из отчета SAP PO_Header с таблицей рейтингов. Используйте функцию ВПР, примените условное форматирование для выделения низкого рейтинга.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 6,
+    "tools_used": [
+      "Excel",
+      "SAP"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "возьми из сап выгрузку пим хэдер и добавь рейтинг впр сделай условие для проблемных выдели красным чтобы видно было",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 1000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Напиши SQL-запрос для ClickHouse, чтобы выделить клиентов с суммой покупок более 10 000 рублей за последние 3 месяца. Нужно для таргетированной рассылки.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 4,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "срочно нужен запрос в кликхаус найти клиентов кто купил больше 10 тыс за последние 3 месяца для рассылки помоги",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 25000,
+    "agent_steps": 3,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "напиши скул запрос в кликхаус клиенты с покупками больше 10000 руб за 3 мес для рассылки",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 18000,
+    "agent_steps": 5,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Помоги составить SQL-запрос для ClickHouse: выбрать клиентов, у которых общая сумма покупок за последние 3 месяца превышает 10 000 рублей. Это для маркетинговой кампании.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 60000,
+    "agent_steps": 2,
+    "tools_used": [
+      "SQL",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "нужен запрос в кликхаус типа сегмент клиентов с суммой >10к за 3 месяца для рассылки сделай плиз",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 6,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Объедините Excel-отчёт по корпоративным картам за июль с таблицей EXPENSE_REPORTS из SQL и найдите несоответствия в суммах и датах.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Excel",
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "бро, слушай, у меня тут экселька с транзакциями и sql база, найди где не сходится, плиз, срочно",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 35000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Excel",
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "обьедини эксель файл с картами и табл EXPENSE_REPORTS из SQL, найди расхождения по суммам",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 32000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Excel",
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 80,
+    "status": "success"
+  },
+  {
+    "user_query": "Для проверки комплаенс: нужно смержить выгрузку по корп. картам (Excel) с данными из SQL EXPENSE_REPORTS. Выявить записи, где сумма или дата отличается.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 52000,
+    "agent_steps": 7,
+    "tools_used": [
+      "Excel",
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 150,
+    "status": "success"
+  },
+  {
+    "user_query": "соедини ексель с транзакциями и sql базу, чет не бьется, давай быстрее",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 28000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Excel",
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Напиши скрипт T-SQL для парсинга JSON логов транзакций, удаления дубликатов и приведения типов полей. Целевая таблица — витрина dbo.Transactions.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 50000,
+    "agent_steps": 5,
+    "tools_used": [
+      "SQL Server"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "мне нужен скрипт на SQL сервере чтобы почистить логи транзакции из JSON удалить дубликаты и загрузить в витрину ну типы там привести да",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 3000,
+    "agent_steps": 7,
+    "tools_used": [
+      "SQL Server",
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "нужен скрипт sql server для очистки json логов транзакций, удали дубликаты, приведи типы полей, загрзуи в витрину",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 20000,
+    "agent_steps": 4,
+    "tools_used": [
+      "SQL Server"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "Требуется написать SQL скрипт для обработки JSON-логов транзакций. Необходимо удалить дубликаты, привести типы данных и загрузить данные в витрину dbo.Transactions.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 100000,
+    "agent_steps": 8,
+    "tools_used": [
+      "SQL Server",
+      "Jira"
+    ],
+    "estimated_manual_time_minutes": 180,
+    "status": "success"
+  },
+  {
+    "user_query": "а напиши плиз скрпит для SQL чтоб из JSON транзакций вытащить данные почистить там дубликаты убрать и в витрину загрузить ну и типы правильно сделать",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 1000,
+    "agent_steps": 6,
+    "tools_used": [
+      "SQL Server",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Сергей, загрузите файл с опросом удовлетворённости в формате Excel и создайте сводную таблицу с фильтрами по отделам. Оценки должны быть в баллах, сгруппируйте данные по среднему значению.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 500,
+    "agent_steps": 4,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "ой, слушай, я тут скинул эксель с пятью тысячами строк, это опрос по удовлетворенности, сделай сводную, ну там фильтры по отделам и чтобы баллы были, да?",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 200,
+    "agent_steps": 3,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "загрузи файл Excel 5000 строк опрос удовлетв. сделай сводную таблицу фильтр по отделам оценки баллы",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 800,
+    "agent_steps": 5,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Необходимо обработать загруженный Excel-файл, содержащий 5000 строк результатов опроса удовлетворённости. Создать сводную таблицу с возможностью фильтрации по отделам, отобразить оценки в баллах.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 1000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "а, привет, у меня тут эксель с опросом, 5000 строк, сделай сводную с фильтром по отделам и баллы покажи, ок?",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 400,
+    "agent_steps": 3,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Сформируйте SQL-запрос для PostgreSQL: рассчитать оборачиваемость товаров за месяц (продажи / средний запас) по каждой категории на основе таблиц sales и inventory. Учтите, что данные за июль 2026.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 4,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "эй агент скинь sql запрос для postgresql оборачиваемость товаров за месяц продажи на средний запас по категориям из таблиц сейлс и инвентори да",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 2,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "нужен sql запрос для постгрескюл расчитать оборачиваемость товаров за месяц продажи разделить на средний запас по кажой категории из таблиц сэйлс и инвентари",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 30000,
+    "agent_steps": 5,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Необходимо получить SQL-запрос для PostgreSQL, вычисляющий коэффициент оборачиваемости товаров за последний месяц (продажи / средний запас) с группировкой по категориям. Исходные таблицы: sales и inventory.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 120000,
+    "agent_steps": 6,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "а слышь сгенерируй мне запрос чтобы посчитать оборачиваемость по категориям за месяц там продажи на средний запас таблицы сейлс и инвентори в постгресе",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 3,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 12,
+    "status": "success"
+  },
+  {
+    "user_query": "Please assist in creating a cohort retention analysis in Excel based on Mixpanel export. Need formulas for retention rates and conditional formatting to highlight high/low values.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "hey i need help with cohort analysis in excel i got data from mixpanel retention stuff can you build the formulas and color code it please",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 4,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "pls help cohort anaysis excel from mixpanel data need formuas and conditonal formating",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "I have a CSV export from Mixpanel showing user cohorts by week. Can you generate an Excel template with retention rates using countif and conditional formatting to show green for >60% retention?",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 8,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "so I have this mixpanel data for retention and I need to make a cohort table in excel but I don't know how to do the formulas can you do it for me yeah and also make it look nice with colors",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 3000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "Необходимо написать скрипт на Python для объединения данных из SAP таблицы ZFI_EXPENSES и 1C таблицы Расходы_месяц по коду затрат, выполнить сверку сумм и выявить расхождения. Результат вывести в CSV.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 5,
+    "tools_used": [
+      "SQL",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай нужно сделать скрипт чтобы объединить данные из сап и 1с по коду затрат и сравнить суммы найти расхождения давай быстрее",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 3,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "напиши скрипт для обьеденения даных из сап (ZFI_EXPENSES) и 1с (Расходы_месяц) по коду затрат сверить сумму и найти разхождения",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 80000,
+    "agent_steps": 7,
+    "tools_used": [
+      "SQL",
+      "Excel",
+      "SAP"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "Прошу разработать ETL-процесс для слияния данных из SAP и 1С по полю 'Код затрат', с последующей сверкой итогов и формированием отчета о расхождениях.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 500,
+    "agent_steps": 4,
+    "tools_used": [
+      "SQL",
+      "1C"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "эй агент надо объединить две таблицы из сап и 1с по коду затрат и сравнить суммы покажи где не совпадает",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 100000,
+    "agent_steps": 10,
+    "tools_used": [
+      "SQL",
+      "Excel",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Прошу подготовить Excel-дашборд с данными из Salesforce для анализа выполнения плана продаж по регионам за текущий квартал. Необходимо включить графики и условное форматирование для наглядности.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Excel",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "сделай дашборд в ексель из салсфорс за квартал по регионам с графиками и условным форматом плиз",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Excel",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "ну нужно типа дашборд в экселе из сейлзфорса за квартал по регионам с графиками ну и условное форматирование там да",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Excel",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 75,
+    "status": "success"
+  },
+  {
+    "user_query": "Подготовьте, пожалуйста, сводный отчет в Excel на основе данных CRM (Salesforce) за прошедший квартал. Отобразите выполнение плана по каждому региону, добавьте диаграммы и выделите цветом ячейки в зависимости от процента выполнения.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Excel",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "нужна дашборд в ексель из срм за квартал по реггионам с графика и условное форматирование",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 20000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Excel",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Напишите SQL-скрипт для Oracle, который сравнивает PLANNED_DELIVERY_DATE и ACTUAL_DELIVERY_DATE из таблицы поставок и выводит строки, где задержка более 2 дней, с группировкой по складам.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 4,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "а ну короче нужен скрипт sql для оракла чтобы сравнить planned delivery date и actual delivery date и выдать задержки больше двух дней по складам сделай плиз",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 3,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "Нужен SQL скрипт для оракла, сравнивает PLANNED_DELIVERY_DATE и ACTUAL_DELIVERY_DATE, выдать задержки более 2 дней по складам, помогите",
+    "style": "typo",
+    "category": "data_analysis",
+    "simulated_context_tokens": 300,
+    "agent_steps": 5,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Подготовьте, пожалуйста, запрос к Oracle, который бы показывал все записи с задержкой доставки более 2 дней, используя поля PLANNED_DELIVERY_DATE и ACTUAL_DELIVERY_DATE, с разбивкой по складам.",
+    "style": "formal",
+    "category": "data_analysis",
+    "simulated_context_tokens": 80000,
+    "agent_steps": 6,
+    "tools_used": [
+      "SQL",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай сделай мне скрипт sql для оракла по поставкам чтобы показать где задержка больше двух дней по складам ну там planned_date и actual_date",
+    "style": "voice",
+    "category": "data_analysis",
+    "simulated_context_tokens": 150000,
+    "agent_steps": 7,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Объясните политику компенсации удаленной работы: какие именно формы нужно заполнить (заявление на возмещение, акт выполненных работ) и каковы этапы согласования с руководителем и бухгалтерией?",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "какие там формы для удаленки нужно заявление на возмещение и акт еще этапы согласования с руководителем и бухгалтерией",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 850,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "Обьясните политика кампенсации удаленой работы какие формы (заявление на возмещение, акт выполненных работ) этапы согласования с руководителем, бухгалтерией",
+    "style": "typo",
+    "category": "education",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Можете предоставить инструкцию по возмещению расходов на удаленную работу: перечень документов и порядок согласования?",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 12,
+    "status": "success"
+  },
+  {
+    "user_query": "как получить компенсацию за удаленку формы там акт заявление к кому идти сначала к начальнику потом в бухгалтерию",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 600,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 8,
+    "status": "success"
+  },
+  {
+    "user_query": "Коллеги, подскажите, пожалуйста, какие сроки хранения персональных данных клиентов установлены в нашей политике GDPR? Как в Salesforce настроить автоматическое удаление данных по истечении срока? Нужна инструкция.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Salesforce",
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "так блин мне нужно разобраться с GDPR сроки хранения в Salesforce как настроить автоудаление объясни пошагово",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 4,
+    "tools_used": [
+      "Salesforce"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "привет, а какие сроки хранения по GDPR для разных типов данных в салсфорс? как настроить чтоб само удалялось?",
+    "style": "typo",
+    "category": "education",
+    "simulated_context_tokens": 800,
+    "agent_steps": 3,
+    "tools_used": [
+      "Salesforce",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "Добрый день. Прошу предоставить информацию о сроках хранения для контактов, лидов и сделок в Salesforce в соответствии с GDPR. А также алгоритм настройки автоматического удаления.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 32000,
+    "agent_steps": 7,
+    "tools_used": [
+      "Salesforce",
+      "Confluence",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай а как там с GDPR сроки хранения в Salesforce непонятно совсем объясни плиз или инструкцию дай",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 500,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 20,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Please provide a step-by-step guide on creating a purchase order in SAP Ariba, including filling in material code and quantity, attaching a contract, and the approval workflow for amounts over $50,000.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 4,
+    "tools_used": [
+      "SAP Ariba",
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "hey how do I create a purchase order in sap ariba like fields material code quantity attach contract approval if over 50000 dollars kind of need it explained step by step",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 32000,
+    "agent_steps": 3,
+    "tools_used": [
+      "SAP Ariba"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "need help creating purchse order in sap ariba - fileds materil code, qty, attach contract, approval route for amounts abve 50k pls explain",
+    "style": "typo",
+    "category": "education",
+    "simulated_context_tokens": 28000,
+    "agent_steps": 3,
+    "tools_used": [
+      "SAP Ariba",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 18,
+    "status": "success"
+  },
+  {
+    "user_query": "Could you explain the process for creating a purchase order in SAP Ariba? I need details on mandatory fields, document attachment, and the approval chain for high-value orders exceeding $50,000.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 55000,
+    "agent_steps": 5,
+    "tools_used": [
+      "SAP Ariba",
+      "Confluence",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "I'm a procurement manager and I need to understand how to create a PO in SAP Ariba. Specifically, filling in material code, quantity, attaching a contract, and the approval routing for amounts over $50K. Please explain.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 62000,
+    "agent_steps": 4,
+    "tools_used": [
+      "SAP Ariba",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 22,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Объясните, как через Self-Service Portal сбросить пароль пользователя в Active Directory. Какие есть критерии для эскалации, если учётная запись заблокирована или забыты ответы на секретные вопросы?",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 5,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "как через селф сервис портал пароль сбросить в актив директори и когда эскалировать если учетка заблокирована или вопросы забыты",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 200,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "обьясните как сбросить пароль через селф-сервис портал в АД. критерии эскалации если заблокирована учётка или забыл секретные вопросы",
+    "style": "typo",
+    "category": "education",
+    "simulated_context_tokens": 500,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "Добрый день, я инженер ТП. Нужна инструкция по сбросу пароля через SSP в AD. Также интересуют критерии эскалации для заблокированных аккаунтов и случаев утери ответов на секретные вопросы.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 120000,
+    "agent_steps": 7,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "брось пароль через селф сервис портал в AD и расскажи когда эскалировать если заблокирован или вопросы не помню",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 150,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 10,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Please explain the calculation of Value at Risk using the historical method. Specifically, how do we use historical returns from the last year? How to set a 95% confidence level and interpret the results?",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Hey how do you calculate VaR historical method like what historical data do we need and how to set confidence level to 95 and read the results",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "pls explain var historical method calc. witch historical data? last year returns? how do i set confidense level 95% and read outcome?",
+    "style": "typo",
+    "category": "education",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 25,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "I need a detailed explanation of the historical VaR calculation. Which historical returns should be used (e.g., daily returns over the past year)? How to specify a 95% confidence level and interpret the VaR figure?",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "ok so explain historical var method like what data do i use and how to get the 95% confidence level and understand the result",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 7000,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 12,
+    "status": "success"
+  },
+  {
+    "user_query": "Здравствуйте, я руководитель проектов. Мне нужно изучить планирование ресурсов в Jira: настройка Timeline, назначение задач и отслеживание загрузки. Помогите с обучением.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 500,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "привет как там в жире настроить таймлайн чтоб задачи назначать и загрузку смотреть workload management в общем научи",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 5,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "нужна помащь с планированием ресурсов в жире настроить тймлайн назначить задачи и смотреть заргрузку ворклоад менеджмент",
+    "style": "typo",
+    "category": "education",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "Добрый день. Интересует возможность обучения по функции планирования ресурсов в Jira, а именно: работа с представлением Timeline, распределение задач по участникам и контроль загрузки с помощью инструментов управления нагрузкой.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 25000,
+    "agent_steps": 7,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "ой слушай я хочу разобраться как в jira планировать ресурсы ну там таймлайн настроить задачи людям назначить и загрузку отслеживать workload management как это работает обучи меня",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 90,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Объясните, пожалуйста, процесс настройки CI/CD пайплайна в Jenkins для автоматической сборки при merge в GitLab. Интересуют этапы: линтовка, тесты, деплой на staging.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Jenkins",
+      "GitLab"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "как там в дженкинсе настроить сборку когда в гитлаб мерж делаю и какие шаги там линтинг тесты деплой на стейджинг",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 3000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Jenkins",
+      "GitLab"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "обьясните ci/cd пайплайн в женкинс для автобилда при мерже в гитлаб шаги линтовка тесты деплой на стейджинг",
+    "style": "typo",
+    "category": "education",
+    "simulated_context_tokens": 4000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Jenkins",
+      "GitLab"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "Можете предоставить пошаговое руководство по настройке CI/CD в Jenkins: триггер от GitLab merge request, этапы lint, unit tests, deploy to staging server.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 8,
+    "tools_used": [
+      "Jenkins",
+      "GitLab",
+      "Docker"
+    ],
+    "estimated_manual_time_minutes": 150,
+    "status": "success"
+  },
+  {
+    "user_query": "как настроить ci cd для моего проекта линтер тесты и деплой и чтобы дженкинс сам запускался при пулл реквесте в гитлаб",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 2500,
+    "agent_steps": 3,
+    "tools_used": [
+      "Jenkins",
+      "GitLab"
+    ],
+    "estimated_manual_time_minutes": 100,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Объясните, пожалуйста, как работает модель атрибуции в Google Analytics 4. Меня интересует, как учитываются касания по каналам: email, контекстная реклама и соцсети. Также нужно понять, как интерпретировать отчет по атрибуции.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 8500,
+    "agent_steps": 6,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "ну блин объясни мне модель атрибуции в GA4 как там касания по каналам считаются email контекстная реклама соцсети и отчет по атрибуции как читать",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 5,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "Обьясни мадель атрибуции в GA4, как учитваются касания по каналам: имейл, контекстная реклама, соцсети. Как интпретировать отчет?",
+    "style": "typo",
+    "category": "education",
+    "simulated_context_tokens": 9000,
+    "agent_steps": 7,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "Подскажите, какие модели атрибуции доступны в Google Analytics 4? Нам нужно разобраться, как распределяется ценность конверсии между email-маркетингом, контекстной рекламой и соцсетями. И как правильно читать отчет по атрибуции?",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 8,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 50,
+    "status": "success"
+  },
+  {
+    "user_query": "ага а как там в GA4 атрибуция работает ну эти касания по каналам типа email реклама соцсети как понять какой канал лучше отчет посмотреть",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 7000,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 20,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Добрый день. Я, как директор магазина, хочу изучить функционал Oracle Retail. Мне нужно понять, как проверить текущие остатки на складе и как создать заказ на пополнение, учитывая минимальный порог и сезонные прогнозы. Подскажите, пожалуйста, пошаговую инструкцию.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 8500,
+    "agent_steps": 5,
+    "tools_used": [
+      "Confluence",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "э привет слушай я тут в oracle retail разобраться хочу как мне посмотреть остатки на складе и сделать заказ на пополнение чтобы не было пересорта а то сезонный прогноз сами знаете какой подскажи плиз",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 3200,
+    "agent_steps": 4,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "Привет! Нужна помощь с Оракл Ритейл. Как проверить остатки на скалде и создать заказ на пополнение? Важно учеть минмальный порог и сезонные прогнозы.",
+    "style": "typo",
+    "category": "education",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Confluence",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "Здравствуйте. Я начал изучать Oracle Retail. Прошу предоставить обучающие материалы или инструкцию по проверке складских остатков и формированию заказа на пополнение с учётом минимального порога и сезонных прогнозов. Спасибо.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 42000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Mail",
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "ой блин oracle retail этот как там остатки глянуть и заказ сделать чтобы не было излишков ну и чтобы сезонный спрос учесть помоги разобраться",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 1800,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 30,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Можете объяснить, как интерпретировать показатели конверсии из лидов в сделки и среднего размера сделки на дашборде Tableau? Особенно интересуют данные по разным сегментам клиентов.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "эй научи меня читать этот дашборд в таблоу конверсия там и средняя сделка по сегментам а то нифига не понятно",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Помогите разобраться с дашбордом в Таблу конверсия лиды-сделки размер сделок по сегментам клиентов",
+    "style": "typo",
+    "category": "education",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 5,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "Добрый день. Прошу провести обучение по чтению дашборда в Tableau, а именно: расчет конверсии (лиды -> сделки) и среднего чека по сегментам.",
+    "style": "formal",
+    "category": "education",
+    "simulated_context_tokens": 20000,
+    "agent_steps": 6,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай а покажи как там считать конверсию и среднюю сделку в таблике по сегментам да",
+    "style": "voice",
+    "category": "education",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 15,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Собери все отчеты по операционным рискам за 2024 год из RMS, где уровень риска выше среднего.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 2800,
+    "agent_steps": 4,
+    "tools_used": [
+      "RMS",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "а дай отчёты по рискам операционным за 2024 из RMS только которые выше среднего уровня срочно нужно",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 3,
+    "tools_used": [
+      "RMS"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "нужны отчёты по операционным рискам из RMS за 2024 год уровень выше среднего",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 3,
+    "tools_used": [
+      "RMS"
+    ],
+    "estimated_manual_time_minutes": 35,
+    "status": "success"
+  },
+  {
+    "user_query": "Экспортируй из RMS все отчеты по операционным рискам за 2024 год с уровнем риска 'высокий' и 'критический', без среднего и низкого.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 3200,
+    "agent_steps": 5,
+    "tools_used": [
+      "RMS",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "ай найди в рмс отчёты риск операционный 2024 выше среднего плиз быстрее",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 800,
+    "agent_steps": 2,
+    "tools_used": [
+      "RMS"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Сформируй оборотно-сальдовую ведомость по счету 60 за февраль 2025 года в 1С. Выгрузи в Excel и отправь на почту.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 4500,
+    "agent_steps": 4,
+    "tools_used": [
+      "1С",
+      "Mail",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "нужна осв по 60 счету за февраль 2025 из 1с, скинь пж в эксель на почту",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 3200,
+    "agent_steps": 3,
+    "tools_used": [
+      "1С",
+      "Mail",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 12,
+    "status": "success"
+  },
+  {
+    "user_query": "осв по счету 60 за фев 2025 из 1с выгрузи в эксель и отправь",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 2800,
+    "agent_steps": 3,
+    "tools_used": [
+      "1С",
+      "Mail",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "Сформируй ОСВ по счету 60 за февраль 2025, но у меня нет доступа к 1С. Сделай запрос в техподдержку и пришли результат.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 5200,
+    "agent_steps": 5,
+    "tools_used": [
+      "1С",
+      "Jira",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "ай осв 60 февраль 2025 из 1с быстрей выгрузи",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 2,
+    "tools_used": [
+      "1С",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 8,
+    "status": "success"
+  },
+  {
+    "user_query": "Собери из Jira все задачи по проекту «Гамма», которые назначены на команду DevOps и имеют статус «In Progress». Выгрузи в таблицу.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Jira"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "найди в жире все задачи по гамме для девопсов в работе срочно",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 32000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Jira"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "Вытяни из джиры тикеты проекта Гамма, девопсы, статус ин прогресс",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 28000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Jira"
+    ],
+    "estimated_manual_time_minutes": 18,
+    "status": "success"
+  },
+  {
+    "user_query": "Пожалуйста, сформируй отчёт по задачам проекта «Гамма»: фильтр — назначены на DevOps, статус «In Progress». Нужны все поля: заголовок, исполнитель, приоритет, дата создания.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 55000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Jira",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "гамма девопс активные таски из джиры дай список",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 18000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Jira"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "Пожалуйста, выполните поиск в TMS всех маршрутов за последнюю неделю, где задержка превышает 2 часа. Нужен отчёт с деталями.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 3,
+    "tools_used": [
+      "TMS"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "найди в тмс все маршруты за прошлую неделю у которых задержка больше 2 часов срочно",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 500,
+    "agent_steps": 2,
+    "tools_used": [
+      "TMS"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Найти в TMS машруты с задержкой более 2 часов за последнию неделю",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 800,
+    "agent_steps": 2,
+    "tools_used": [
+      "TMS"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "Добрый день, необходимо получить список всех рейсов в системе управления транспортом за прошедшие 7 дней, которые были выполнены с опозданием более 120 минут. Желательно в виде таблицы.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 4,
+    "tools_used": [
+      "TMS",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "тмс покажи маршруты где задержка больше 2 часов за неделю а то отчет надо сделать",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 600,
+    "agent_steps": 2,
+    "tools_used": [
+      "TMS"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Выгрузи из Salesforce список клиентов, которые участвовали в акции 'Черная пятница', укажи их контактные данные (email, телефон) и сумму покупок. Нужно для маркетингового анализа.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Salesforce",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай вытащи из сейлсфорса тех кто в черную пятницу покупал контакты и суммы покупок давай",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Salesforce"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "нужен список учасников черной пятницы из сейлсфорса с емейлами и суммой покупок побыстрее",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 9500,
+    "agent_steps": 3,
+    "tools_used": [
+      "Salesforce"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Экспортируй данные по клиентам из Salesforce, фильтр: участие в Черной пятнице. Включи поля: Имя, Email, Телефон, Сумма покупки. Формат — таблица.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Salesforce",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "а дай список тех кто покупал в черную пятницу контакты и бабло сколько потратили",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 6000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Salesforce"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Запросите из SAP все проводки по департаменту R&D за январь 2024 года. Нужны все поля: дата, сумма, контрагент, статья затрат. Выгрузить в Excel.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 4,
+    "tools_used": [
+      "SAP",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "Сергей, срочно надо вытащить из SAP все проводки по R&D за январь 2024. Скинь файл.",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 3,
+    "tools_used": [
+      "SAP",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "достань из сап все проводки по ренд за январь 2024 плиз быстрее",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 2,
+    "tools_used": [
+      "SAP"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "Добрый день. Необходимо собрать проводки по R&D за январь 2024 из системы SAP. Желательно с группировкой по контрагентам. Спасибо.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 32000,
+    "agent_steps": 5,
+    "tools_used": [
+      "SAP",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 150,
+    "status": "success"
+  },
+  {
+    "user_query": "эй агент дай проводки по рнд за январь 2024 из сап быро",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 2,
+    "tools_used": [
+      "SAP"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "Please retrieve all incidents in ServiceNow related to Microsoft Exchange from last month and group them by priority level.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 4500,
+    "agent_steps": 4,
+    "tools_used": [
+      "ServiceNow"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "ээ скажи найди в сервиснау все инциденты по эксчейндж за прошлый месяц и сгруппируй по приоритетам",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 3,
+    "tools_used": [
+      "ServiceNow"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "найди в сервисноу инциденты по майкрософт эксчендж за прошлый месяц сгруппируй по приоритету",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 800,
+    "agent_steps": 5,
+    "tools_used": [
+      "ServiceNow"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "I need a report of all Exchange-related incidents in ServiceNow from the previous month, grouped by priority.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 25000,
+    "agent_steps": 6,
+    "tools_used": [
+      "ServiceNow",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай мне нужно все инциденты по эксченжу в сервиснау за прошлый месяц сгруппированные по приоритету ага",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 300,
+    "agent_steps": 2,
+    "tools_used": [
+      "ServiceNow"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "Собери, пожалуйста, резюме кандидатов на позицию Java-разработчика из Talantix за последние 2 недели.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 500,
+    "agent_steps": 3,
+    "tools_used": [
+      "Talantix"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "а нужно резюме по джава разрабам из талантикс за последние две недели собери да",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 200,
+    "agent_steps": 2,
+    "tools_used": [
+      "Talantix"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Собери рзюме кандидатов на джава разработчика из Талнтикс за 2 недели",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 300,
+    "agent_steps": 4,
+    "tools_used": [
+      "Talantix"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Прошу предоставить список резюме кандидатов на вакансию Java-разработчик из системы Talantix за последние 14 дней.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 600,
+    "agent_steps": 3,
+    "tools_used": [
+      "Talantix"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "нужны резюме на джава разраба из талантикс за последние две недели давай быстрее",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 150,
+    "agent_steps": 2,
+    "tools_used": [
+      "Talantix"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Найди в Doculite все договоры с Ростелеком за 2023 год, сумма больше 5 млн рублей",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 3,
+    "tools_used": [
+      "Doculite"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "эй агент найди в doculite договоры с ростелеком за 2023 год сумма больше 5 лямов пж",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 800,
+    "agent_steps": 2,
+    "tools_used": [
+      "Doculite"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "Найти в Doculite все договоры с Ростелекомом за 2023, сумма > 5 млн",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 3,
+    "tools_used": [
+      "Doculite"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "докулайт договоры ростелеком 2023 больше 5 мил",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 600,
+    "agent_steps": 2,
+    "tools_used": [
+      "Doculite"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "Сергей просит найти контракты с Ростелеком за прошлый год, сумма свыше 5 млн. Проверь в Doculite.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Doculite"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "Необходимо подготовить отчет по среднему чеку в регионе «Сибирь» за последний квартал с понедельной разбивкой. Данные в ClickHouse. Выгрузить в Excel.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 5,
+    "tools_used": [
+      "SQL",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "эй агент мне нужен отчет по среднему чеку сибирь последний квартал по неделям давай быстро",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 800,
+    "agent_steps": 3,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "выгрузи из кликхауса отчет по среднму чеку в сибири за последний квартал разбей по неделям пж",
+    "style": "typo",
+    "category": "information_search",
+    "simulated_context_tokens": 500,
+    "agent_steps": 4,
+    "tools_used": [
+      "SQL",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "Сформируйте, пожалуйста, выборку из ClickHouse: средний чек по региону 'Сибирь' за прошедший квартал, группировка по календарным неделям.",
+    "style": "formal",
+    "category": "information_search",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 6,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 50,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "слушай нужно средний чек сибирь раз в неделю за квартал сделай",
+    "style": "voice",
+    "category": "information_search",
+    "simulated_context_tokens": 300,
+    "agent_steps": 2,
+    "tools_used": [
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "Создайте новый эпик в Jira для спринта по внедрению модуля аутентификации. Включите в него задачи: разработка формы входа, интеграция с LDAP, тестирование и документирование.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 85000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Jira",
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "заведи эпик в джире для спринта по аутентификации задачи логин ldap тесты документы",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 120000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Jira"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "создай эпик в жире для спринта модуль аутентификации, задачи: вход, лдап, тесты, докум",
+    "style": "typo",
+    "category": "task_management",
+    "simulated_context_tokens": 95000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Jira"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "Необходимо создать эпик в Jira для спринта, посвященного внедрению модуля аутентификации. Включите задачи: фронтенд логина, бэкенд аутентификации, написание автотестов, создание документации.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 140000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Jira",
+      "Confluence",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 35,
+    "status": "success"
+  },
+  {
+    "user_query": "эпик в джиру по аутентификации спринт задачи сделай плиз",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 70000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Jira"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Сформируй реестр платежей на август в 1С и отправь на согласование руководителю. Включи все платежи по поставщикам и налогам.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 6,
+    "tools_used": [
+      "1C",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "сделай реестр платежей на следующий месяц в 1с и скинь шефу на согласование пожалуйста",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 4,
+    "tools_used": [
+      "1C",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "В 1С сформируй реестр платежей на сентябрь. Отправь на согласование руководителю. Только срочные платежи.",
+    "style": "typo",
+    "category": "task_management",
+    "simulated_context_tokens": 28000,
+    "agent_steps": 5,
+    "tools_used": [
+      "1C",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "Нужно сформировать реестр платежей на октябрь в 1С и отправить его на согласование с руководителем отдела. Учти только платежи с датой до 15 числа.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 61000,
+    "agent_steps": 7,
+    "tools_used": [
+      "1C",
+      "Mail",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "сделай реестр платежей в 1с на ноябрь и отправь на согласование начальнику, только контрагентов из группы А",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 19000,
+    "agent_steps": 5,
+    "tools_used": [
+      "1C",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Создай в Confluence страницу с планом-графиком миграции данных на новое хранилище. Укажи этапы: анализ текущей схемы, подготовка ETL-процессов, тестовая миграция, валидация, продуктивный запуск. Для каждого этапа укажи сроки и ответственного.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 25000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "Оформи план миграции данных в Confluence этапы анализ etl тест валидация запуск сроки ответственных добавь",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 18000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "Сделай план-график миграции в конфлюенс этпаы: аналз, подг ETL, тест, валид, запск. сроки назначь",
+    "style": "typo",
+    "category": "task_management",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "В Confluence создай план миграции данных с этапами, сроками и ответственными. Используй шаблон проектного плана. Добавь ссылки на связанные задачи в Jira.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 35000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Confluence",
+      "Jira"
+    ],
+    "estimated_manual_time_minutes": 150,
+    "status": "success"
+  },
+  {
+    "user_query": "Нужно в Confluence расписать этапы миграции но по-быстрому просто список сроки и кто делает анализ etl тест запуск",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 10000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "Please set up my Outlook calendar to automatically schedule candidate interviews for the upcoming week. Integrate with the candidate tracking system and send meeting invites.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 25000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Outlook",
+      "CRM",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "эй агент настрой календарь в аутлуке на следующую неделю для встреч с кандидатами автоматически отправляй приглашения",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 18000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Outlook",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "настройка календаря outlook для собеседований с кандидатами на следующую неделю, автоматом планируй встречи",
+    "style": "typo",
+    "category": "task_management",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Outlook"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "I need to configure Outlook calendar to auto-schedule interviews with candidates for next week. Please use the list from our ATS and set up reminders.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 30000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Outlook",
+      "Mail",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 50,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай мне нужно чтобы календарь сам назначал встречи с кандидатами на следующую неделю в аутлуке сделай это пожалуйста",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Outlook",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 35,
+    "status": "success"
+  },
+  {
+    "user_query": "Сформируй дашборд в Tableau для прогноза выполнения KPI отдела аналитики на Q3. Нужны фактические данные, прогноз по тренду и отклонения от плана. Интегрируй с CRM и SQL-источниками.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 85000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Tableau",
+      "SQL",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "Блин срочно сделай дашборд в tableau по KPI команды аналитиков на квартал чтобы видно было прогноз ну там факт план отклонения давай быстрее",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Tableau",
+      "SQL"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "таблио дашборд KPI анелитики прогноз за квартал подготовь срочно",
+    "style": "typo",
+    "category": "task_management",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Tableau"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "Необходимо создать дашборд для отслеживания выполнения KPI отдела аналитики в текущем квартале с прогнозом до конца квартала. Использовать данные из CRM и нашей SQL-базы.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 78000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Tableau",
+      "SQL",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 150,
+    "status": "success"
+  },
+  {
+    "user_query": "эй агент сделай дашборд в таблице для прогноза KPI аналитиков на квартал важное совещание через час",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 30000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Tableau"
+    ],
+    "estimated_manual_time_minutes": 100,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Загрузил в Trello доску с контент-планом на июль. Нужно распределить все задачи по исполнителям: копирайтерам, дизайнерам, редакторам. У каждой задачи есть дедлайн и приоритет. Пожалуйста, назначь ответственных.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Trello"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай я тут загрузил в трелло доску с контент планом на месяц распредели пожалуйста задачи по людям кто свободен там ну копирайтер дизайнер и редактор да",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 4,
+    "tools_used": [
+      "Trello"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "загрузил в трелло доску контент план на меся сам рапредели задачи по исполнитилям плиз",
+    "style": "typo",
+    "category": "task_management",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Trello"
+    ],
+    "estimated_manual_time_minutes": 40,
+    "status": "success"
+  },
+  {
+    "user_query": "Прошу распределить задачи из загруженной Trello доски «Контент-план июль» по исполнителям. Учитывать загрузку каждого сотрудника.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 62000,
+    "agent_steps": 8,
+    "tools_used": [
+      "Trello",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "а где там контент план в трелло распредели задачи я загрузил плиз сделай",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Trello"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "Пожалуйста, сформируйте в SAP отчёт по плановым и фактическим расходам за второй квартал 2026 года для сверки бюджета. Необходимо сравнение по статьям затрат.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 45200,
+    "agent_steps": 5,
+    "tools_used": [
+      "SAP",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "эй сап нужно отчёт по расходам за прошлый квартал плановые и фактические срочно для бюджета там по статьям",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 12800,
+    "agent_steps": 3,
+    "tools_used": [
+      "SAP"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "Сформируй в сап отчет по плановым и фатическим расходам за 2 кв 2026 для сверкиюдюджета",
+    "style": "typo",
+    "category": "task_management",
+    "simulated_context_tokens": 8700,
+    "agent_steps": 4,
+    "tools_used": [
+      "SAP",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Запросить в SAP отчёт о плановых и фактических затратах за Q2 2026. Требуется сводка для анализа отклонений бюджета.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 102400,
+    "agent_steps": 7,
+    "tools_used": [
+      "SAP",
+      "Excel",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай мне нужен отчёт из сап по расходам плановым и фактическим за квартал для сверки бюджета сделай побыстрее",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 34500,
+    "agent_steps": 2,
+    "tools_used": [
+      "SAP"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "Создай план закупок расходных материалов на второе полугодие 2026 года в Битрикс24. Учти текущие остатки на складах, минимальные уровни запасов и ожидаемое потребление на основе исторических данных. Используй модуль Закупки.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 8,
+    "tools_used": [
+      "Bitrix24",
+      "CRM",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "бля ну типа надо план закупок расходников на пол года в битриксе сделай учти остатки на складе а то вечно закупаем лишнее короче помоги",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 30000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Bitrix24"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "создай плн закупок расход матер на полгода в бирикс24. учти остатки на складах. там табица с запасами",
+    "style": "typo",
+    "category": "task_management",
+    "simulated_context_tokens": 20000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Bitrix24",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "Пожалуйста, сформируй в Битрикс24 долгосрочный план закупок канцелярии и расходников на 6 месяцев. Важно включить только те позиции, которые имеют низкий уровень запаса по данным отчета остатков.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 60000,
+    "agent_steps": 10,
+    "tools_used": [
+      "Bitrix24",
+      "CRM",
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 150,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай мне нужно план закупок расходников на полгода в битриксе сделай сам с остатками там чтобы не было пересорта ну ты понял давай",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 25000,
+    "agent_steps": 7,
+    "tools_used": [
+      "Bitrix24",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Производственный менеджер просит агента запланировать загрузку оборудования в MS Project и экспортировать график в Excel для цеха.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 6,
+    "tools_used": [
+      "MS_Project",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай мне нужно загрузить оборудование в ms project чтобы потом выгрузить эксель для цеха сделай это пожалуйста",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 20000,
+    "agent_steps": 8,
+    "tools_used": [
+      "MS_Project",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "success"
+  },
+  {
+    "user_query": "производственный менеджер просит загарузку оборудования в мс проекте и эксепорт в эксель для цеха",
+    "style": "typo",
+    "category": "task_management",
+    "simulated_context_tokens": 800,
+    "agent_steps": 4,
+    "tools_used": [
+      "MS_Project",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "Помогите спланировать загрузку станков в MS Project и выгрузить календарь в Excel для передачи в цех.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 7,
+    "tools_used": [
+      "MS_Project",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "але планирование загрзки оборудования в мс проект выгрузка в эксель для цеха сделай",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 100000,
+    "agent_steps": 10,
+    "tools_used": [
+      "MS_Project",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 180,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Технический директор поручил создать в Asana проект 'Аудит безопасности' с задачами для отделов разработки, системного администрирования и комплаенса. Добавьте необходимые подзадачи и дедлайны.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 8,
+    "tools_used": [
+      "Asana"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "ну технический директор сказал в асане сделать проект аудит безопасности и задачи всем отделам ну типа разработка админы комплаенс да давай быстренько",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 150,
+    "agent_steps": 5,
+    "tools_used": [
+      "Asana"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "Технический директор просит в асане создать проект аудит безопасности и задачи для отделов разрабоки сист админ и комплаенс добавь дедлайны",
+    "style": "typo",
+    "category": "task_management",
+    "simulated_context_tokens": 3000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Asana"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "По запросу технического директора создайте в Asana проект 'Аудит безопасности', включив задачи для каждого отдела: разработки, системного администрирования, комплаенса и юридического отдела. Установите сроки и ответственных.",
+    "style": "formal",
+    "category": "task_management",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 10,
+    "tools_used": [
+      "Asana"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "ой технический директор просил в асане проект аудит безопасности с задачами по отделам ну сделай пожалуйста",
+    "style": "voice",
+    "category": "task_management",
+    "simulated_context_tokens": 200,
+    "agent_steps": 4,
+    "tools_used": [
+      "Asana"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Уточните, пожалуйста, срок действия промокодов на скидку в интернет-магазине 'Техномир'.",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 25000,
+    "agent_steps": 3,
+    "tools_used": [
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "а сколько там действуют промокоды в техномире на скидку",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 18000,
+    "agent_steps": 3,
+    "tools_used": [
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "Скокко действуют промокоды на скидку в техномире?",
+    "style": "typo",
+    "category": "other",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 3,
+    "tools_used": [
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "Подскажите, какой срок действия у промокодов 'Техномира'?",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 22000,
+    "agent_steps": 3,
+    "tools_used": [
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "а че промокоды в техномире сколько валидны",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 12000,
+    "agent_steps": 3,
+    "tools_used": [
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "Добрый день! Подскажите, пожалуйста, как забронировать переговорную комнату 'Сириус' для командообразующего мероприятия на следующую пятницу?",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 3,
+    "tools_used": [
+      "Calendar"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "а как забронировать сириус для тимбилдинга? компания 20 человек, нужно на два часа",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 800,
+    "agent_steps": 4,
+    "tools_used": [
+      "Calendar",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "забронируй переговорку сиреус для командообразующего мероприятия на эту среду",
+    "style": "typo",
+    "category": "other",
+    "simulated_context_tokens": 600,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 10,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Коллеги, нужна помощь: как зарезервировать комнату 'Сириус' под тимбилдинг? Какие есть доступные слоты после 18:00?",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Calendar",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "забронировать сириус для командообразования нужно срочно тимбилдинг важный скажи когда свободно",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 6,
+    "tools_used": [
+      "Calendar",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Добрый день! Прошу предоставить шаблон офферного письма для стажера в формате Word. Заранее спасибо.",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 500,
+    "agent_steps": 2,
+    "tools_used": [
+      "Mail",
+      "Word"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "а шаблон офферного письма для стажера в ворде срочно нужно",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 200,
+    "agent_steps": 1,
+    "tools_used": [
+      "Word"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "Нужн шаблон оферного писма для стажера в ворде, плиз",
+    "style": "typo",
+    "category": "other",
+    "simulated_context_tokens": 300,
+    "agent_steps": 2,
+    "tools_used": [
+      "Word"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "Коллеги, нужен шаблон офферного письма для стажера в Word. Благодарю.",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 400,
+    "agent_steps": 3,
+    "tools_used": [
+      "Mail",
+      "Word"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "дай шаблон офферного письма стажеру ворд",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 150,
+    "agent_steps": 1,
+    "tools_used": [
+      "Word"
+    ],
+    "estimated_manual_time_minutes": 5,
+    "status": "success"
+  },
+  {
+    "user_query": "I noticed an unusual spike in sales data from Salesforce CRM over the weekend. Could you analyze the source of this anomaly?",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 5,
+    "tools_used": [
+      "SQL",
+      "CRM",
+      "Excel"
+    ],
+    "estimated_manual_time_minutes": 120,
+    "status": "success"
+  },
+  {
+    "user_query": "hey check this out i see a weird jump in sales numbers in crm from saturday and sunday can you find out why",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 32000,
+    "agent_steps": 3,
+    "tools_used": [
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 60,
+    "status": "success"
+  },
+  {
+    "user_query": "notised abnrmal salse spike in CRM on weekend. plz analize",
+    "style": "typo",
+    "category": "other",
+    "simulated_context_tokens": 28000,
+    "agent_steps": 4,
+    "tools_used": [
+      "SQL",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 90,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "There's a suspicious surge in weekend sales reported in Salesforce. Please investigate the data for irregularities.",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 55000,
+    "agent_steps": 6,
+    "tools_used": [
+      "SQL",
+      "CRM",
+      "Excel",
+      "Mail"
+    ],
+    "estimated_manual_time_minutes": 150,
+    "status": "success"
+  },
+  {
+    "user_query": "so i was looking at the weekend numbers in salesforce and there's a huge spike something off can you look into it",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 30000,
+    "agent_steps": 2,
+    "tools_used": [
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 45,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Здравствуйте, я тимлид. После сдачи жесткого дедлайна испытываю сильное напряжение. Посоветуйте эффективные методы снятия стресса, подходящие для руководителя команды.",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 45000,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "блин дедлайн сдали но я выжат как лимон посоветуй как стресс снять быстро без отрыва от работы",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 2500,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "тимлид после дэдлайна стресс методы снятия пажалуста посоветуй",
+    "style": "typo",
+    "category": "other",
+    "simulated_context_tokens": 800,
+    "agent_steps": 1,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 5,
+    "status": "success"
+  },
+  {
+    "user_query": "Добрый день. Я руководитель разработки. После жесткого дедлайна нужно быстро снять стресс. Какие техники релаксации вы рекомендуете? Можно ли что-то сделать прямо на рабочем месте за 5-10 минут?",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 120000,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "ой дедлайн сдан но голова раскалывается как успокоиться дай совет по дыханию или медитации",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "В отчете по зарплате за февраль в 1С обнаружено расхождение в сумме начислений. Прошу предоставить детальный анализ причин.",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 30,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай у меня тут расхождение в зарплатном отчете за февраль в 1С че за фигня объясни",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 1000,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "В отчте по з/п за фев в 1С расхождние. Объясните плиз",
+    "style": "typo",
+    "category": "other",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 15,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Добрый день. Обнаружил несоответствие данных по заработной плате за февраль в учетной системе. Требуется разъяснение.",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 5,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 45,
+    "status": "success"
+  },
+  {
+    "user_query": "эй агент помоги разобраться с отчетом по зарплате февраль 1С какая-то ошибка почему сумма не сходится объясни",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 800,
+    "agent_steps": 1,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 5,
+    "status": "success"
+  },
+  {
+    "user_query": "I encountered a '500 Internal Server Error' in Mailchimp. Could you explain what this error means and how to resolve it?",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 800,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "hey what's that 500 internal server error in mailchimp like i keep getting it",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 3,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "wtf does '500 Internal Server Error' mean in Maiclhimp?",
+    "style": "typo",
+    "category": "other",
+    "simulated_context_tokens": 500,
+    "agent_steps": 1,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 5,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Please provide the definition and troubleshooting steps for Mailchimp's 500 Internal Server Error.",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 4,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "so mailchimp is giving me error 500 internal server error what do i do",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 1000,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "Здравствуйте, предоставьте, пожалуйста, пошаговую инструкцию по подключению к корпоративному VPN из дома. Нужно для удаленной работы.",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 500,
+    "agent_steps": 3,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "слушай мне нужна инструкция как подключиться к нашему впн из дома а то я не могу зайти в систему срочно",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 1200,
+    "agent_steps": 4,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "Привет! Скиньте интсрукцию по впн подключению из дома, очень надо.",
+    "style": "typo",
+    "category": "other",
+    "simulated_context_tokens": 8000,
+    "agent_steps": 5,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "Добрый день. Прошу направить регламент подключения к корпоративной VPN-сети для работы из дома.",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 15000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 25,
+    "status": "success"
+  },
+  {
+    "user_query": "эй агент дай инструкцию как настроить впн дома я менеджер продаж и мне надо работать",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 100000,
+    "agent_steps": 6,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 30,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "Здравствуйте, я хотел бы уточнить график корпоративных праздников на следующий год. Где можно найти этот документ?",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 5000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "да когда там праздники в следующем году в компании скажи где посмотреть",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 2000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "график корпоративвых празников на след год где найти?",
+    "style": "typo",
+    "category": "other",
+    "simulated_context_tokens": 3000,
+    "agent_steps": 2,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "success"
+  },
+  {
+    "user_query": "Подскажите, пожалуйста, утвержден ли уже план корпоративных мероприятий на 2027 год? Если да, где с ним можно ознакомиться?",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 10000,
+    "agent_steps": 3,
+    "tools_used": [
+      "Confluence",
+      "CRM"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "error_tool"
+  },
+  {
+    "user_query": "слушай а есть у нас календарь праздников внутренних на будущий год выложили уже или нет",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 1500,
+    "agent_steps": 4,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 10,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "Hello, I have a question about company policy. As a developer, am I allowed to use neural network models (like GPT) for personal projects during work hours? Thank you.",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 500,
+    "agent_steps": 3,
+    "tools_used": [
+      "Confluence"
+    ],
+    "estimated_manual_time_minutes": 15,
+    "status": "success"
+  },
+  {
+    "user_query": "hey yeah so like can i use ai like chatgpt for my side project while im at work is that okay i mean not for work but personal stuff",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 150,
+    "agent_steps": 1,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 5,
+    "status": "success"
+  },
+  {
+    "user_query": "hey can i ue neurla netwrks for persnal projecs durin work tim? pls let me knowk",
+    "style": "typo",
+    "category": "other",
+    "simulated_context_tokens": 120,
+    "agent_steps": 2,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 10,
+    "status": "hallucination_loop"
+  },
+  {
+    "user_query": "I am a developer and I would like to clarify if it's permitted to utilize machine learning APIs for my own hobby projects during office hours. Please advise.",
+    "style": "formal",
+    "category": "other",
+    "simulated_context_tokens": 800,
+    "agent_steps": 2,
+    "tools_used": [
+      "HR_Portal"
+    ],
+    "estimated_manual_time_minutes": 20,
+    "status": "success"
+  },
+  {
+    "user_query": "yo bro is it allowed to use ai for personal coding during work time just asking quick",
+    "style": "voice",
+    "category": "other",
+    "simulated_context_tokens": 100,
+    "agent_steps": 1,
+    "tools_used": [],
+    "estimated_manual_time_minutes": 5,
+    "status": "success"
+  }
+]
