@@ -1,5 +1,6 @@
 export interface DashboardSummary {
   period: { from: string; to: string };
+  generated_at?: string;
   total_logs: number;
   success_rate_percent: number;
   by_category: {

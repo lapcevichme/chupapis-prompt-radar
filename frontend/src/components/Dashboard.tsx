@@ -8,7 +8,7 @@ import { Activity, AlertTriangle, FileText, Target, Loader2 } from 'lucide-react
 const COLORS = ['#2563EB', '#635BFF', '#3B82F6', '#8B5CF6', '#0EA5E9', '#64748B'];
 
 interface DashboardProps {
-  onFetchSuccess?: () => void;
+  onFetchSuccess?: (timestamp?: string) => void;
   refreshTrigger?: number;
 }
 
@@ -21,7 +21,7 @@ export default function Dashboard({ onFetchSuccess, refreshTrigger }: DashboardP
       if (!silent && !data) setLoading(true);
       const res = await fetchDashboard();
       setData(res);
-      onFetchSuccess?.();
+      onFetchSuccess?.(res.generated_at);
     } catch (err) {
       console.error('Failed to load dashboard', err);
     } finally {
@@ -54,7 +54,9 @@ export default function Dashboard({ onFetchSuccess, refreshTrigger }: DashboardP
             <FileText className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold text-primary">{data.total_logs.toLocaleString()}</div>
+            <div className="text-3xl font-semibold text-primary truncate" title={data.total_logs.toString()}>
+              {data.total_logs.toLocaleString()}
+            </div>
             <p className="text-sm text-secondary mt-1">For selected period</p>
           </CardContent>
         </Card>
@@ -64,7 +66,9 @@ export default function Dashboard({ onFetchSuccess, refreshTrigger }: DashboardP
             <Target className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold text-primary">{data.success_rate_percent}%</div>
+            <div className="text-3xl font-semibold text-primary truncate" title={`${data.success_rate_percent}%`}>
+              {Number(data.success_rate_percent).toFixed(1).replace(/\.0$/, '')}%
+            </div>
             <p className="text-sm text-secondary mt-1">Completed successfully</p>
           </CardContent>
         </Card>
@@ -74,8 +78,12 @@ export default function Dashboard({ onFetchSuccess, refreshTrigger }: DashboardP
             <AlertTriangle className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold text-primary">{data.outliers_summary.total_outliers_count}</div>
-            <p className="text-sm text-secondary mt-1">{data.outliers_summary.outlier_percentage}% of total traffic</p>
+            <div className="text-3xl font-semibold text-primary truncate" title={data.outliers_summary.total_outliers_count.toString()}>
+              {data.outliers_summary.total_outliers_count.toLocaleString()}
+            </div>
+            <p className="text-sm text-secondary mt-1 truncate" title={`${data.outliers_summary.outlier_percentage}% of total traffic`}>
+              {Number(data.outliers_summary.outlier_percentage).toFixed(1).replace(/\.0$/, '')}% of total traffic
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -84,8 +92,12 @@ export default function Dashboard({ onFetchSuccess, refreshTrigger }: DashboardP
             <Activity className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold text-primary">{data.failure_analysis.total_requests_with_failure_signals}</div>
-            <p className="text-sm text-secondary mt-1">{data.failure_analysis.failure_signal_percentage}% error rate</p>
+            <div className="text-3xl font-semibold text-primary truncate" title={data.failure_analysis.total_requests_with_failure_signals.toString()}>
+              {data.failure_analysis.total_requests_with_failure_signals.toLocaleString()}
+            </div>
+            <p className="text-sm text-secondary mt-1 truncate" title={`${data.failure_analysis.failure_signal_percentage}% error rate`}>
+              {Number(data.failure_analysis.failure_signal_percentage).toFixed(1).replace(/\.0$/, '')}% error rate
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -109,7 +121,7 @@ export default function Dashboard({ onFetchSuccess, refreshTrigger }: DashboardP
                   <YAxis tickLine={false} axisLine={false} fontSize={12} stroke="var(--color-secondary)" />
                   <CartesianGrid vertical={false} stroke="var(--color-divider)" strokeDasharray="4 4" />
                   <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--color-divider)', backgroundColor: 'var(--color-surface)', color: 'var(--color-primary)', fontSize: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
-                  <Area type="monotone" dataKey="count" stroke="var(--color-accent)" strokeWidth={2} fillOpacity={1} fill="url(#colorCount)" />
+                  <Area type="monotone" dataKey="count" stroke="var(--color-accent)" strokeWidth={2} fillOpacity={1} fill="url(#colorCount)" isAnimationActive={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -133,6 +145,7 @@ export default function Dashboard({ onFetchSuccess, refreshTrigger }: DashboardP
                     paddingAngle={2}
                     dataKey="count"
                     stroke="none"
+                    isAnimationActive={false}
                   >
                     {data.by_category.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

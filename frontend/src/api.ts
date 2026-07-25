@@ -52,6 +52,7 @@ export async function fetchDashboard(): Promise<DashboardSummary> {
   const failureRate = raw.failure_analysis?.failure_signal_percentage ?? 0;
   return {
     period: { from: '', to: '' },
+    generated_at: raw.generated_at,
     total_logs: raw.totals?.records_processed ?? 0,
     success_rate_percent: Math.max(0, 100 - failureRate),
     by_category: raw.tasks_distribution ?? [],
