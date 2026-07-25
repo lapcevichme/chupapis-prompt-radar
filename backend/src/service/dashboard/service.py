@@ -92,23 +92,27 @@ class DashboardService:
         if not assignments:
             return 0
 
-        rows = []
+        unique_rows = {}
         for item in assignments:
             src = item.get("source_id", source_id)
             if src is None:
                 continue
-            rows.append(
-                {
-                    "source_id": _as_uuid(src),
-                    "request_id": str(item.get("request_id")),
-                    "task_type": item.get("task_type"),
-                    "classification_confidence": item.get("classification_confidence"),
-                    "scenario_id": item.get("scenario_id"),
-                    "scenario_name": item.get("scenario_name"),
-                    "is_outlier": bool(item.get("is_outlier", False)),
-                    "has_failure_signals": bool(item.get("has_failure_signals", False)),
-                }
-            )
+            
+            s_id = _as_uuid(src)
+            req_id = str(item.get("request_id"))
+            
+            unique_rows[(s_id, req_id)] = {
+                "source_id": s_id,
+                "request_id": req_id,
+                "task_type": item.get("task_type"),
+                "classification_confidence": item.get("classification_confidence"),
+                "scenario_id": item.get("scenario_id"),
+                "scenario_name": item.get("scenario_name"),
+                "is_outlier": bool(item.get("is_outlier", False)),
+                "has_failure_signals": bool(item.get("has_failure_signals", False)),
+            }
+
+        rows = list(unique_rows.values())
 
         if not rows:
             return 0
