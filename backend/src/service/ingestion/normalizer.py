@@ -198,7 +198,7 @@ def normalize(
                 tokens=tokens,
                 manual_time_minutes=manual_time,
                 tools_used=list(tools_used) if tools_used else [],
-                status=str(raw_status) if raw_status is not None else None,
+                status=str(raw_status) if raw_status is not None else "success",
                 timestamp=timestamp,
             )
         )
