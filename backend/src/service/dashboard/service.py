@@ -30,6 +30,13 @@ logger = logging.getLogger(__name__)
 
 _FAILURE_STATUSES = ("error_tool", "hallucination_loop", "error")
 
+# asyncpg caps one statement at 32767 bind parameters, and this upsert costs 11 per
+# row (8 explicit columns + the id/created_at/updated_at Python-side defaults), so a
+# single statement tops out at ~2978 rows. A full-store sync after recompute is well
+# past that (~4.9k assignments across the preloaded workspaces), so the upsert is
+# chunked. Kept comfortably below the cap rather than at it.
+_UPSERT_CHUNK_SIZE = 1000
+
 
 class DashboardService:
     def __init__(self, session: AsyncSession, settings: Settings) -> None:
@@ -117,20 +124,23 @@ class DashboardService:
         if not rows:
             return 0
 
-        stmt = pg_insert(LogAssignment).values(rows)
-        stmt = stmt.on_conflict_do_update(
-            index_elements=["source_id", "request_id"],
-            set_={
-                "task_type": stmt.excluded.task_type,
-                "classification_confidence": stmt.excluded.classification_confidence,
-                "scenario_id": stmt.excluded.scenario_id,
-                "scenario_name": stmt.excluded.scenario_name,
-                "is_outlier": stmt.excluded.is_outlier,
-                "has_failure_signals": stmt.excluded.has_failure_signals,
-                "updated_at": func.now(),
-            },
-        )
-        await self._session.execute(stmt)
+        for start in range(0, len(rows), _UPSERT_CHUNK_SIZE):
+            stmt = pg_insert(LogAssignment).values(
+                rows[start : start + _UPSERT_CHUNK_SIZE]
+            )
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["source_id", "request_id"],
+                set_={
+                    "task_type": stmt.excluded.task_type,
+                    "classification_confidence": stmt.excluded.classification_confidence,
+                    "scenario_id": stmt.excluded.scenario_id,
+                    "scenario_name": stmt.excluded.scenario_name,
+                    "is_outlier": stmt.excluded.is_outlier,
+                    "has_failure_signals": stmt.excluded.has_failure_signals,
+                    "updated_at": func.now(),
+                },
+            )
+            await self._session.execute(stmt)
         await self._session.commit()
         return len(rows)
 

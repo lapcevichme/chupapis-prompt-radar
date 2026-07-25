@@ -258,6 +258,12 @@ class IngestionService:
                             self._session, self._settings
                         ).sync_assignments(str(source.id))
                     except Exception as exc:
+                        # A failed statement leaves the transaction aborted, so every
+                        # later query in this request would raise
+                        # InFailedSQLTransactionError and turn a logged warning into a
+                        # 500 on /ingest/status. Roll back so the poll degrades to
+                        # "no new mirror rows" instead of failing the whole banner.
+                        await self._session.rollback()
                         logger.warning(
                             "progress re-sync failed source_id=%s: %s", source.id, exc
                         )
