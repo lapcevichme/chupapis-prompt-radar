@@ -1,4 +1,4 @@
-import type { DashboardSummary, Scenario, LogItem, RoiData, Source, UserAnalyticsData, ModelAnalyticsData } from './types';
+import type { DashboardSummary, Scenario, LogItem, RoiData, Source, UserAnalyticsData, ModelAnalyticsData, ProcessingStatus } from './types';
 
 const BASE = '/api/v1';
 
@@ -84,6 +84,11 @@ export async function uploadFile(file: File): Promise<Source> {
   return request<Source>('/ingest', { method: 'POST', body: form });
 }
 
+/** Re-stream a source's stored records to finish a stalled indexing run. */
+export async function resumeSource(id: string): Promise<Source> {
+  return request<Source>(`/sources/${encodeURIComponent(id)}/resume`, { method: 'POST' });
+}
+
 /* ── Recompute ── */
 
 export async function triggerRecompute(): Promise<{ job_id?: string; status: string }> {
@@ -92,6 +97,12 @@ export async function triggerRecompute(): Promise<{ job_id?: string; status: str
 
 export async function fetchRecomputeStatus(): Promise<{ status: string; job_id?: string; scenarios_named?: number }> {
   return request('/recompute/status');
+}
+
+/* ── Processing (global indexing progress) ── */
+
+export async function fetchProcessingStatus(): Promise<ProcessingStatus> {
+  return request<ProcessingStatus>('/ingest/status');
 }
 
 /* ── Scenarios ── */

@@ -52,6 +52,12 @@ export default function Scenarios({ onFetchSuccess, refreshTrigger }: ScenariosP
     }
   };
 
+  // Before recompute, ML holds one raw online cluster per record: unnamed,
+  // unsummarized, count=1. Those are pipeline internals, not scenarios — hide
+  // them and tell the user what to do instead of rendering blank cards.
+  const namedScenarios = scenarios.filter((s) => s.name && s.name.trim().length > 0);
+  const rawClusterCount = scenarios.length - namedScenarios.length;
+
   if (loading) {
     return (
       <div className="flex justify-center p-12">
@@ -170,8 +176,22 @@ export default function Scenarios({ onFetchSuccess, refreshTrigger }: ScenariosP
         <h2 className="text-sm font-medium text-secondary">Auto-discovered user interaction clusters</h2>
       </div>
 
+      {namedScenarios.length === 0 && (
+        <Card>
+          <CardContent className="py-16 flex flex-col items-center text-center gap-3">
+            <Target className="w-10 h-10 text-secondary opacity-40" />
+            <p className="text-sm font-semibold text-primary">Scenarios not built yet</p>
+            <p className="text-sm text-secondary max-w-md">
+              {rawClusterCount > 0
+                ? `${rawClusterCount.toLocaleString()} records are classified and waiting to be grouped. Run "Recompute Scenarios" on the Ingestion & Sources page to cluster them and generate names and summaries.`
+                : 'Upload a dataset on the Ingestion & Sources page, then run "Recompute Scenarios" to discover interaction clusters.'}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {scenarios.map((scenario) => (
+        {namedScenarios.map((scenario) => (
           <Card 
             key={scenario.scenario_id} 
             className="flex flex-col hover:border-accent/50 transition-colors cursor-pointer group"

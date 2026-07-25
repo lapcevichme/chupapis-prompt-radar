@@ -6,6 +6,7 @@ import Logs from './components/Logs';
 import RoiView from './components/RoiView';
 import Ingestion from './components/Ingestion';
 import UsersModelsView from './components/UsersModelsView';
+import ProcessingBanner from './components/ProcessingBanner';
 import { cn } from './lib/utils';
 import { ensureAuth } from './api';
 
@@ -154,7 +155,10 @@ export default function App() {
             </button>
           </div>
         </header>
-        
+
+        {/* Global indexing/recompute progress — visible on every tab */}
+        <ProcessingBanner refreshTrigger={refreshTrigger} />
+
         <div className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto pb-12">
             {activeTab === 'dashboard' && <Dashboard onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} />}

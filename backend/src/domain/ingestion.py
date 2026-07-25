@@ -24,6 +24,15 @@ class NormalizationReport(BaseModel):
     rejected_reasons: dict[str, int] = Field(default_factory=dict)
 
 
+class SourceProgress(BaseModel):
+    """How far ML has classified this source's valid records (live progress)."""
+
+    classified: int = 0
+    total: int = 0
+    percent: float = 0.0
+    done: bool = False
+
+
 class SourceOut(BaseModel):
     source_id: str
     name: str
@@ -36,6 +45,36 @@ class SourceOut(BaseModel):
     status: SourceStatus
     created_at: datetime
     normalization_report: NormalizationReport | None = None
+    progress: SourceProgress | None = None
+
+
+class ProcessingSourceItem(BaseModel):
+    """Per-source indexing progress used by the global processing banner."""
+
+    source_id: str
+    name: str
+    origin: str
+    status: SourceStatus
+    records_total: int
+    records_valid: int
+    records_rejected: int
+    classified: int
+    percent: float
+    done: bool
+
+
+class ProcessingStatus(BaseModel):
+    """Aggregate indexing/recompute state for a live, app-wide progress banner."""
+
+    indexing: bool
+    total_valid: int
+    total_classified: int
+    percent: float
+    recompute_status: str
+    recompute_pending: bool
+    logs_since_last_recompute: int
+    scenarios_named: int
+    sources: list[ProcessingSourceItem] = Field(default_factory=list)
 
 
 

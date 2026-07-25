@@ -3,12 +3,18 @@ import json
 from fastapi import APIRouter, BackgroundTasks, Request, status
 
 from core.errors import DatasetInvalidError
-from domain.ingestion import SourceOut
+from domain.ingestion import ProcessingStatus, SourceOut
 from service.ingestion.service import stream_source_logs
 
 from .deps import IngestionServiceDep, SettingsDep
 
 router = APIRouter(tags=["ingestion"])
+
+
+@router.get("/ingest/status", response_model=ProcessingStatus)
+async def ingest_status(service: IngestionServiceDep) -> ProcessingStatus:
+    """Live indexing progress across all sources + recompute state (app-wide banner)."""
+    return await service.processing_status()
 
 
 @router.post("/ingest", response_model=SourceOut, status_code=status.HTTP_202_ACCEPTED)

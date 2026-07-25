@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { fetchSources, fetchSource, uploadFile, triggerRecompute, fetchRecomputeStatus } from '../api';
+import { fetchSources, fetchSource, uploadFile, triggerRecompute, fetchRecomputeStatus, resumeSource } from '../api';
 import type { Source } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Badge } from './ui/Badge';
-import { UploadCloud, FileText, CheckCircle, Clock, Loader2, RefreshCw, Database } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle, Clock, Loader2, RefreshCw, Database, PlayCircle } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 interface IngestionProps {
   onFetchSuccess?: () => void;
@@ -15,7 +16,22 @@ export default function Ingestion({ onFetchSuccess, refreshTrigger }: IngestionP
   const [isUploading, setIsUploading] = useState(false);
   const [recomputeStatus, setRecomputeStatus] = useState<{ status: string; job_id?: string; scenarios_named?: number }>({ status: 'idle' });
   const [selectedSource, setSelectedSource] = useState<Source | null>(null);
+  const [isResuming, setIsResuming] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleResume = async (sourceId: string) => {
+    setIsResuming(true);
+    try {
+      await resumeSource(sourceId);
+      const fresh = await fetchSource(sourceId);
+      setSelectedSource(fresh);
+      loadSources();
+    } catch (err) {
+      console.error('Resume failed', err);
+    } finally {
+      setIsResuming(false);
+    }
+  };
 
   const loadSources = async () => {
     try {
@@ -253,28 +269,50 @@ export default function Ingestion({ onFetchSuccess, refreshTrigger }: IngestionP
                       </div>
                     </div>
 
-                    <div>
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-xs font-medium text-primary">ML Classification Progress</span>
-                        <span className="text-xs font-mono text-emerald-400 font-bold">
-                          {selectedSource.status === 'recomputed' || selectedSource.status === 'classified'
-                            ? '100%'
-                            : `${selectedSource.classification_percentage ?? 0}%`}
-                        </span>
-                      </div>
-                      <div className="w-full h-2 bg-surface-hover rounded-full overflow-hidden flex">
-                        <div 
-                          className="h-full bg-accent transition-all duration-500" 
-                          style={{
-                            width: `${
-                              selectedSource.status === 'recomputed' || selectedSource.status === 'classified'
-                                ? 100
-                                : (selectedSource.classification_percentage ?? 0)
-                            }%`
-                          }}
-                        />
-                      </div>
-                    </div>
+                    {(() => {
+                      // Prefer the authoritative progress (asks ML) over status alone:
+                      // "classified" only means streaming finished, not that every
+                      // record was indexed.
+                      const prog = selectedSource.progress;
+                      const classified = prog?.classified ?? selectedSource.records_classified ?? 0;
+                      const total = prog?.total ?? selectedSource.records_valid ?? 0;
+                      const pct = prog?.percent ?? selectedSource.classification_percentage ?? 0;
+                      const done = prog?.done ?? (total > 0 && classified >= total);
+                      const stalled = !done && total > 0 && selectedSource.status !== 'ingesting';
+
+                      return (
+                        <div>
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-xs font-medium text-primary">ML Classification Progress</span>
+                            <span className={cn('text-xs font-mono font-bold', done ? 'text-emerald-400' : 'text-accent')}>
+                              {classified.toLocaleString()} / {total.toLocaleString()} · {pct}%
+                            </span>
+                          </div>
+                          <div className="w-full h-2 bg-surface-hover rounded-full overflow-hidden flex">
+                            <div
+                              className={cn('h-full transition-all duration-500', done ? 'bg-emerald-500' : 'bg-accent')}
+                              style={{ width: `${Math.min(100, pct)}%` }}
+                            />
+                          </div>
+                          {stalled && (
+                            <div className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
+                              <p className="text-xs text-secondary">
+                                {(total - classified).toLocaleString()} records are not indexed. This happens when the
+                                backend restarts mid-ingest. Resuming re-sends them; already-indexed records are skipped.
+                              </p>
+                              <button
+                                onClick={() => handleResume(selectedSource.source_id)}
+                                disabled={isResuming}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-accent text-white rounded-md text-xs font-semibold hover:bg-accent/90 disabled:opacity-50 transition-colors"
+                              >
+                                {isResuming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlayCircle className="w-3.5 h-3.5" />}
+                                Resume indexing
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-surface-hover rounded-lg p-3 border border-divider">

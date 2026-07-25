@@ -66,7 +66,39 @@ Response `202`:
 
 ### `GET /api/v1/sources/{source_id}` → `200`
 
-Детали + прогресс ingestion (`ingested`, `classified`, `assigned` счётчики). Фронт поллит.
+Детали + прогресс индексации: `records_classified`, `classification_percentage` (из локального
+зеркала assignments) и объект `progress` `{ classified, total, percent, done }` (спрашивает ML,
+fallback на зеркало). Фронт поллит.
+
+### `GET /api/v1/ingest/status` → `200`
+
+Агрегированный прогресс индексации по всем источникам + состояние recompute. Нужен для
+глобального индикатора: пользователь видит стадию анализа на любом экране, не заходя в Sources.
+
+```json
+{
+  "indexing": true,
+  "total_valid": 2083, "total_classified": 667, "percent": 32.0,
+  "recompute_status": "idle", "recompute_pending": false,
+  "logs_since_last_recompute": 0, "scenarios_named": 0,
+  "sources": [
+    { "source_id": "...", "name": "prompt_radar_dataset.json", "origin": "upload",
+      "status": "classified", "records_total": 2084, "records_valid": 2083,
+      "records_rejected": 1, "classified": 667, "percent": 32.0, "done": false }
+  ]
+}
+```
+
+> Побочный эффект: запрос до-синхронизирует assignments для источников, которые ML успел
+> классифицировать дальше нашего зеркала — поэтому `/logs` наполняется по мере индексации.
+> `indexing == false && recompute_pending == false` → индикатор скрыт.
+
+### `POST /api/v1/sources/{source_id}/resume` → `202`
+
+Дослать в ML сохранённые записи источника. Нужен, когда индексация встала на половине: стриминг
+живёт в `BackgroundTasks` и **не переживает рестарт backend**, а записи уже лежат в Postgres.
+ML дедуплицирует по `request_id`, поэтому повторно обрабатывается только «хвост». Источник в
+статусе `failed` переводится обратно в `ingesting`. Ответ — обновлённый `SourceOut`.
 
 ## 2b. Live ingestion (webhook, machine-to-machine)
 
@@ -172,6 +204,11 @@ Backend проксирует в ML. `{ "job_id": "rc_01", "status": "running" }`
     "is_outlier": false, "has_failure_signals": false, "timestamp": "..." }
 ], "total": 348 }
 ```
+
+> **`task_type`/`classification_confidence` могут быть `null`** — запись загружена, но ML её ещё не
+> классифицировал (индексация идёт). Это честное «пока нет данных»: **запрещено** подставлять
+> placeholder-уверенность вместо реального выхода модели — дашборд защищает методику, и показанная
+> цифра обязана быть настоящей. Фронт в этом случае рисует «awaiting classification».
 
 ## 5. ROI / FTE (киллер-фича, считает backend)
 

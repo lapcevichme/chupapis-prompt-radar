@@ -4,6 +4,7 @@ import type { LogItem } from '../types';
 import { Card, CardContent } from './ui/Card';
 import { Badge } from './ui/Badge';
 import { Loader2 } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 interface LogsProps {
   onFetchSuccess?: () => void;
@@ -82,9 +83,13 @@ export default function Logs({ onFetchSuccess, refreshTrigger }: LogsProps) {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
-                        <span className="font-medium text-primary">{log.scenario_name || log.task_type || 'General QA'}</span>
+                        <span className={cn('font-medium', log.task_type ? 'text-primary' : 'text-secondary italic')}>
+                          {log.scenario_name || log.label || log.task_type || 'Not classified yet'}
+                        </span>
                         <span className="text-xs text-secondary">
-                          {Math.round((log.classification_confidence != null && log.classification_confidence > 0 ? log.classification_confidence : (log.task_type ? 0.92 : 0.50)) * 100)}% confidence
+                          {log.classification_confidence != null
+                            ? `${Math.round(log.classification_confidence * 100)}% confidence`
+                            : 'awaiting classification'}
                         </span>
                       </div>
                     </td>

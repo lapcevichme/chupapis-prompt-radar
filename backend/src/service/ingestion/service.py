@@ -4,17 +4,29 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import Settings
 from core.errors import DatasetInvalidError, SourceNotFoundError
-from database.relational_db import DatasetRecord, IngestionSource, get_session_factory
+from database.relational_db import (
+    DatasetRecord,
+    IngestionSource,
+    LogAssignment,
+    get_session_factory,
+)
 from domain.common import Paginated
-from domain.ingestion import NormalizationReport, SourceOut, SourceStatus
+from domain.ingestion import (
+    NormalizationReport,
+    ProcessingSourceItem,
+    ProcessingStatus,
+    SourceOut,
+    SourceProgress,
+    SourceStatus,
+)
 from service.ml import MlClient
 
-from .normalizer import NormalizationResult, normalize, parse_raw
+from .normalizer import _STATUS_MAP, NormalizationResult, normalize, parse_raw
 from .preloaded import PreloadedDatasetSpec, load_preloaded_records
 
 logger = logging.getLogger(__name__)
@@ -161,20 +173,197 @@ class IngestionService:
         if source is None:
             raise SourceNotFoundError()
         asgn_map = await self._get_assignments_counts(sid)
-        return _to_out(source, source.normalization_report, classified_count=asgn_map.get(sid))
+        progress = await self._source_progress(source)
+        return _to_out(
+            source,
+            source.normalization_report,
+            classified_count=asgn_map.get(sid),
+            progress=progress,
+        )
 
-    async def _get_assignments_counts(self, source_id: UUID | None = None) -> dict[UUID, int]:
-        from database.relational_db import LogAssignment
-        from sqlalchemy import func
-
-        stmt = select(LogAssignment.source_id, func.count().label("cnt")).where(
-            LogAssignment.task_type.is_not(None)
-        ).group_by(LogAssignment.source_id)
+    async def _get_assignments_counts(
+        self, source_id: UUID | None = None
+    ) -> dict[UUID, int]:
+        """Classified-record counts per source from our local assignment mirror."""
+        stmt = (
+            select(LogAssignment.source_id, func.count().label("cnt"))
+            .where(LogAssignment.task_type.is_not(None))
+            .group_by(LogAssignment.source_id)
+        )
         if source_id:
             stmt = stmt.where(LogAssignment.source_id == source_id)
         res = await self._session.execute(stmt)
         return {row[0]: row[1] for row in res.all()}
 
+    async def _mirrored_count(self, source_id: UUID) -> int:
+        """How many of this source's records already have a log_assignments row."""
+        return int((await self._get_assignments_counts(source_id)).get(source_id, 0))
+
+    async def _source_progress(self, source: IngestionSource) -> SourceProgress:
+        total = int(source.records_valid or 0)
+        if source.status == SourceStatus.recomputed.value:
+            classified = total
+        else:
+            try:
+                classified = await MlClient(self._settings).get_assignment_count(
+                    str(source.id)
+                )
+            except Exception:
+                classified = await self._mirrored_count(source.id)
+        display = min(classified, total) if total else classified
+        done = total > 0 and classified >= total
+        percent = round(display / total * 100, 1) if total else 0.0
+        return SourceProgress(
+            classified=display, total=total, percent=percent, done=done
+        )
+
+    async def processing_status(self) -> ProcessingStatus:
+        """Aggregate live indexing progress for the app-wide banner.
+
+        Side effect: re-mirrors assignments for any source ML has classified further
+        than our local mirror, so ``/logs`` fills in as indexing progresses.
+        """
+        from service.dashboard import DashboardService
+        from service.recompute import RecomputeService
+
+        rows = (
+            (
+                await self._session.execute(
+                    select(IngestionSource).order_by(
+                        IngestionSource.created_at.desc()
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        client = MlClient(self._settings)
+        items: list[ProcessingSourceItem] = []
+        total_valid = 0
+        total_classified = 0
+        indexing = False
+
+        for source in rows:
+            valid = int(source.records_valid or 0)
+            if source.status == SourceStatus.recomputed.value:
+                classified = valid
+            else:
+                try:
+                    classified = await client.get_assignment_count(str(source.id))
+                except Exception:
+                    classified = await self._mirrored_count(source.id)
+                if classified > await self._mirrored_count(source.id):
+                    try:
+                        await DashboardService(
+                            self._session, self._settings
+                        ).sync_assignments(str(source.id))
+                    except Exception as exc:
+                        logger.warning(
+                            "progress re-sync failed source_id=%s: %s", source.id, exc
+                        )
+
+            display = min(classified, valid) if valid else classified
+            done = valid > 0 and classified >= valid
+            percent = round(display / valid * 100, 1) if valid else 0.0
+            if not done and source.status != SourceStatus.recomputed.value:
+                indexing = True
+            total_valid += valid
+            total_classified += display
+            items.append(
+                ProcessingSourceItem(
+                    source_id=str(source.id),
+                    name=source.name,
+                    origin=source.origin,
+                    status=SourceStatus(source.status),
+                    records_total=source.records_total,
+                    records_valid=valid,
+                    records_rejected=source.records_rejected,
+                    classified=display,
+                    percent=percent,
+                    done=done,
+                )
+            )
+
+        recompute = await RecomputeService(self._settings).status()
+        overall_pct = (
+            round(total_classified / total_valid * 100, 1) if total_valid else 0.0
+        )
+        # Real "new logs since last recompute" comes from the ML read-model; if ML is
+        # unreachable we report 0 rather than guessing.
+        logs_since = 0
+        try:
+            freshness = (await client.get_statistics()).get("freshness") or {}
+            logs_since = int(freshness.get("logs_since_last_recompute", 0) or 0)
+        except Exception as exc:
+            logger.warning("freshness lookup failed: %s", exc)
+
+        return ProcessingStatus(
+            indexing=indexing,
+            total_valid=total_valid,
+            total_classified=total_classified,
+            percent=overall_pct,
+            recompute_status=recompute.status,
+            recompute_pending=recompute.status in ("running", "pending", "processing"),
+            logs_since_last_recompute=logs_since,
+            scenarios_named=int(recompute.scenarios_named or 0),
+            sources=items,
+        )
+
+    async def rebuild_log_records(self, source_id: str) -> list[dict[str, Any]]:
+        """Rebuild ML log records for a source from stored dataset_records.
+
+        Ingestion streams in a FastAPI BackgroundTask, which does not survive a
+        backend restart — a large upload can be left half-indexed with no way to
+        finish. Records are persisted at ingest time, so we can re-stream them;
+        ML deduplicates by ``request_id``, so already-classified rows come back as
+        duplicates and only the missing tail is processed.
+        """
+        sid = _as_uuid(source_id)
+        source = await self._session.get(IngestionSource, sid)
+        if source is None:
+            raise SourceNotFoundError()
+
+        # A previous run may have left this source `failed`; we are re-ingesting it
+        # now, so reflect that instead of showing a stale terminal state.
+        if source.status == SourceStatus.failed.value:
+            source.status = SourceStatus.ingesting.value
+            await self._session.commit()
+
+        rows = (
+            (
+                await self._session.execute(
+                    select(DatasetRecord).where(DatasetRecord.source_id == sid)
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+        records: list[dict[str, Any]] = []
+        for row in rows:
+            response_status, error_code = _STATUS_MAP.get(
+                str(row.status), ("success", None)
+            )
+            records.append(
+                {
+                    "request_id": str(row.request_id),
+                    "query_text": row.query_text,
+                    "timestamp": row.timestamp.isoformat() if row.timestamp else None,
+                    "response_status": response_status,
+                    "error_code": error_code,
+                    "metadata": {
+                        "gold_category": row.gold_category,
+                        "style": row.style,
+                        "user_id": row.user_id,
+                        "user_name": row.user_name,
+                        "department": row.department,
+                        "tokens": row.tokens,
+                        "tools_used": row.tools_used or [],
+                        "manual_time_minutes": row.manual_time_minutes,
+                    },
+                }
+            )
+        return records
 
     def _load_demo(self) -> tuple[bytes, str]:
         path = Path(self._settings.DEMO_DATASET_PATH)
@@ -259,14 +448,30 @@ class IngestionService:
 async def stream_source_logs(
     settings: Settings, source_id: str, log_records: list[dict[str, Any]]
 ) -> None:
-    """Background: stream logs to ML, then set source status classified | failed."""
+    """Background: stream logs to ML, then mirror assignments into log_assignments.
+
+    A slow/large dataset (real online embeddings) can outlast the assignment-wait
+    without being a failure — ML keeps classifying in the background. We therefore
+    only mark ``failed`` when *streaming itself* raises, and always sync best-effort
+    so ``/logs`` shows real task_type/confidence even mid-processing. The rest is
+    caught up incrementally by ``IngestionService.processing_status`` polls.
+    """
     client = MlClient(settings)
     status = SourceStatus.classified.value
+    streamed = False
     try:
         totals = await client.stream_logs(source_id, log_records)
+        streamed = True
         logger.info("streamed source_id=%s totals=%s", source_id, totals)
         expected = int(totals.get("accepted", 0)) + int(totals.get("duplicates", 0))
-        await client.wait_for_assignment_count(source_id, expected)
+        try:
+            await client.wait_for_assignment_count(source_id, expected)
+        except Exception as wait_exc:
+            # Not fatal: ML is still classifying a large batch. Keep status classified;
+            # progress polls re-sync the remainder as it lands.
+            logger.warning(
+                "assignment wait incomplete for source_id=%s: %s", source_id, wait_exc
+            )
     except Exception as exc:
         if "timed out" in str(exc).lower() or "timeout" in str(exc).lower():
             logger.warning("streaming wait timed out for source_id=%s, setting classified anyway: %s", source_id, exc)
@@ -277,14 +482,17 @@ async def stream_source_logs(
 
     await _set_status(source_id, status)
 
-    if status == SourceStatus.classified.value:
-        # Online assignments exist right after streaming; pull them for /logs and ROI.
+    # Best-effort mirror of whatever ML has classified so far (independent of wait).
+    if streamed:
         try:
             from service.dashboard import DashboardService
 
             factory = get_session_factory(settings)
             async with factory() as session:
-                await DashboardService(session, settings).sync_assignments(source_id)
+                synced = await DashboardService(session, settings).sync_assignments(
+                    source_id
+                )
+            logger.info("synced source_id=%s assignments=%s", source_id, synced)
         except Exception as exc:
             logger.warning(
                 "assignment sync failed for source_id=%s: %s", source_id, exc
@@ -310,6 +518,7 @@ def _to_out(
     source: IngestionSource,
     report: dict[str, Any] | None = None,
     classified_count: int | None = None,
+    progress: SourceProgress | None = None,
 ) -> SourceOut:
     normalization = (
         NormalizationReport.model_validate(report) if report is not None else None
@@ -340,6 +549,7 @@ def _to_out(
         status=SourceStatus(source.status),
         created_at=source.created_at,
         normalization_report=normalization,
+        progress=progress,
     )
 
 
