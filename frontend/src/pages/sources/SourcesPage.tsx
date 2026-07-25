@@ -317,12 +317,15 @@ function SourceDetailsCard({source, isLoading, error}: {source: Source | null; i
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <DetailMetric label="Total" value={source.records_total.toLocaleString()} />
-              <DetailMetric label="Valid" value={source.records_valid.toLocaleString()} />
-              <DetailMetric label="Rejected" value={source.records_rejected.toLocaleString()} />
-              <DetailMetric label="Origin" value={source.origin} />
-            </div>
+            <CompactDetails
+              title="Source Summary"
+              items={[
+                ['records total', source.records_total.toLocaleString()],
+                ['records valid', source.records_valid.toLocaleString()],
+                ['records rejected', source.records_rejected.toLocaleString()],
+                ['origin', source.origin],
+              ]}
+            />
 
             <div className="space-y-3 border-t border-divider pt-5">
               <DetailLine icon={Clock3} label="Created" value={formatDateTime(source.created_at)} />
@@ -400,15 +403,6 @@ function SourceStatusBadge({status}: {status: string}) {
   );
 }
 
-function DetailMetric({label, value}: {label: string; value: string}) {
-  return (
-    <div className="rounded-md border border-divider bg-background/40 p-3">
-      <div className="text-xs text-secondary">{label}</div>
-      <div className="mt-1 truncate text-lg font-semibold text-primary">{value}</div>
-    </div>
-  );
-}
-
 function DetailLine({icon: Icon, label, value}: {icon: LucideIcon; label: string; value: string}) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm">
@@ -428,16 +422,29 @@ function NormalizationReport({report}: {report: Record<string, unknown> | null |
 
   return (
     <div className="border-t border-divider pt-5">
-      <h4 className="mb-3 text-sm font-semibold text-primary">Normalization Report</h4>
-      <div className="space-y-2">
-        {Object.entries(report).slice(0, 6).map(([key, value]) => (
-          <div key={key} className="flex items-start justify-between gap-3 text-xs">
-            <span className="text-secondary">{key.replaceAll('_', ' ')}</span>
-            <span className="max-w-[180px] truncate text-right font-medium text-primary">{formatReportValue(value)}</span>
+      <CompactDetails
+        title="Normalization Report"
+        items={Object.entries(report)
+          .slice(0, 6)
+          .map(([key, value]) => [key.replaceAll('_', ' '), formatReportValue(value)])}
+      />
+    </div>
+  );
+}
+
+function CompactDetails({title, items}: {title: string; items: Array<[string, string]>}) {
+  return (
+    <section className="space-y-3">
+      <h4 className="text-sm font-semibold text-primary">{title}</h4>
+      <div className="space-y-2.5">
+        {items.map(([label, value]) => (
+          <div key={label} className="flex items-start justify-between gap-4 text-sm">
+            <span className="text-secondary">{label}</span>
+            <span className="max-w-[190px] truncate text-right font-semibold text-primary">{value}</span>
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
