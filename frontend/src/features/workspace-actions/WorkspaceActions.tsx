@@ -2,6 +2,7 @@ import {useState} from 'react';
 import {DatabaseZap, RefreshCcw} from 'lucide-react';
 import {promptRadarApi} from '@/shared/api/promptRadarApi';
 import {cn} from '@/shared/lib/cn';
+import {SystemHealth} from '@/features/system-health/SystemHealth';
 
 interface WorkspaceActionsProps {
   onRefresh: () => void;
@@ -28,6 +29,7 @@ export function WorkspaceActions({onRefresh}: WorkspaceActionsProps) {
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
+      <SystemHealth />
       {message && <span className="max-w-[220px] truncate text-xs text-secondary">{message}</span>}
       <button
         className="inline-flex h-9 items-center gap-2 rounded-md border border-divider bg-surface px-3 text-sm font-medium text-primary hover:bg-surface-hover disabled:opacity-60"

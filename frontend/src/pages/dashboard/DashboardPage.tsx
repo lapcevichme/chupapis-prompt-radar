@@ -11,10 +11,11 @@ const COLORS = ['#2563EB', '#635BFF', '#3B82F6', '#8B5CF6', '#0EA5E9', '#64748B'
 
 interface DashboardPageProps {
   filters: WorkspaceFilters;
+  onOpenSources: () => void;
   refreshKey: number;
 }
 
-export default function DashboardPage({filters, refreshKey}: DashboardPageProps) {
+export default function DashboardPage({filters, onOpenSources, refreshKey}: DashboardPageProps) {
   const {data, error, isLoading} = useApiResource(() => promptRadarApi.getDashboard(filters), [filters, refreshKey]);
 
   if (isLoading) {
@@ -31,6 +32,22 @@ export default function DashboardPage({filters, refreshKey}: DashboardPageProps)
 
   return (
     <div className="space-y-6">
+      {(data.freshness.recompute_pending || data.freshness.logs_since_last_recompute > 0) && (
+        <div className="flex flex-col gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div>
+              <p className="text-sm font-semibold text-primary">Scenario recompute recommended</p>
+              <p className="mt-1 text-sm text-secondary">
+                {data.freshness.logs_since_last_recompute.toLocaleString()} logs arrived since the last recompute.
+              </p>
+            </div>
+          </div>
+          <button className="h-9 rounded-md bg-accent px-4 text-sm font-semibold text-white hover:opacity-90" onClick={onOpenSources} type="button">
+            Open sources
+          </button>
+        </div>
+      )}
       <div className="flex flex-col gap-1">
         <p className="text-sm text-secondary">
           Taxonomy {data.taxonomy_version} · last recompute {formatDateTime(data.freshness.last_recompute_at)}

@@ -47,6 +47,7 @@ export default function SourcesPage({refreshKey, onWorkspaceChanged}: SourcesPag
   );
 
   const sources = sourcesState.data?.items ?? [];
+  const hasIngestingSource = sources.some((source) => source.status === 'ingesting');
   const selectedSource = selectedSourceState.data ?? sources.find((source) => source.source_id === selectedSourceId) ?? null;
   const lastUpdated = useMemo(() => {
     const latestCreatedAt = sources
@@ -74,7 +75,7 @@ export default function SourcesPage({refreshKey, onWorkspaceChanged}: SourcesPag
   }, [selectedSourceId, sources]);
 
   useEffect(() => {
-    if (recomputeState.data?.status !== 'running') {
+    if (recomputeState.data?.status !== 'running' && !hasIngestingSource) {
       return;
     }
 
@@ -85,7 +86,7 @@ export default function SourcesPage({refreshKey, onWorkspaceChanged}: SourcesPag
     }, 4000);
 
     return () => window.clearInterval(intervalId);
-  }, [onWorkspaceChanged, recomputeState.data?.status]);
+  }, [hasIngestingSource, onWorkspaceChanged, recomputeState.data?.status]);
 
   const handleUpload = async (file: File | undefined) => {
     if (!file) {

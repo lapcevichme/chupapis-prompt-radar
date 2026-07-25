@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {lazy, Suspense, useCallback, useEffect, useRef, useState} from 'react';
 import {Activity, Database, DollarSign, LayoutDashboard, Target} from 'lucide-react';
 import {promptRadarApi} from '@/shared/api/promptRadarApi';
 import {ApiError} from '@/shared/api/http';
@@ -12,16 +12,17 @@ import {
 import type {User} from '@/entities/user/types';
 import type {WorkspaceFilters as WorkspaceFilterValues} from '@/entities/workspace/types';
 import {WorkspaceFilters} from '@/features/workspace-filters/WorkspaceFilters';
-import DashboardPage from '@/pages/dashboard/DashboardPage';
-import LogsPage from '@/pages/logs/LogsPage';
 import LoginPage from '@/pages/auth/LoginPage';
-import RoiPage from '@/pages/roi/RoiPage';
-import ScenariosPage from '@/pages/scenarios/ScenariosPage';
-import SourcesPage from '@/pages/sources/SourcesPage';
 import {AppShell, type NavItem} from '@/widgets/app-shell/AppShell';
 import {LoadingState} from '@/widgets/data-state/DataState';
 
 type TabId = 'dashboard' | 'sources' | 'scenarios' | 'logs' | 'roi';
+
+const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
+const LogsPage = lazy(() => import('@/pages/logs/LogsPage'));
+const RoiPage = lazy(() => import('@/pages/roi/RoiPage'));
+const ScenariosPage = lazy(() => import('@/pages/scenarios/ScenariosPage'));
+const SourcesPage = lazy(() => import('@/pages/sources/SourcesPage'));
 
 const navItems: NavItem<TabId>[] = [
   {id: 'dashboard', label: 'Overview', icon: LayoutDashboard},
@@ -128,6 +129,18 @@ export default function App() {
     document.documentElement.classList.toggle('dark', isDark);
   }, [isDark]);
 
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshData();
+      }
+    }, 15_000);
+    return () => window.clearInterval(intervalId);
+  }, [refreshData, user]);
+
   if (isBootstrapping) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -165,11 +178,15 @@ export default function App() {
       onSelectTab={(tab) => setActiveTab(tab)}
       onToggleTheme={() => setIsDark((value) => !value)}
     >
-      {activeTab === 'dashboard' && <DashboardPage filters={filters} refreshKey={refreshKey} />}
-      {activeTab === 'sources' && <SourcesPage refreshKey={refreshKey} onWorkspaceChanged={refreshData} />}
-      {activeTab === 'scenarios' && <ScenariosPage filters={filters} refreshKey={refreshKey} />}
-      {activeTab === 'logs' && <LogsPage filters={filters} refreshKey={refreshKey} />}
-      {activeTab === 'roi' && <RoiPage filters={filters} refreshKey={refreshKey} />}
+      <Suspense fallback={<LoadingState title="Loading workspace" />}>
+        {activeTab === 'dashboard' && (
+          <DashboardPage filters={filters} onOpenSources={() => setActiveTab('sources')} refreshKey={refreshKey} />
+        )}
+        {activeTab === 'sources' && <SourcesPage refreshKey={refreshKey} onWorkspaceChanged={refreshData} />}
+        {activeTab === 'scenarios' && <ScenariosPage filters={filters} refreshKey={refreshKey} />}
+        {activeTab === 'logs' && <LogsPage filters={filters} refreshKey={refreshKey} />}
+        {activeTab === 'roi' && <RoiPage filters={filters} refreshKey={refreshKey} />}
+      </Suspense>
     </AppShell>
   );
 }
