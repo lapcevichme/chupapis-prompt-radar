@@ -28,6 +28,12 @@ services:
       - "${QDRANT_HOST_PORT:-6333}:6333"
     volumes:
       - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "bash", "-c", ": </dev/tcp/127.0.0.1/6333"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
     restart: unless-stopped
 
   ml-service:
@@ -49,7 +55,7 @@ services:
       - "${ML_HOST_PORT:-8000}:8000"
     depends_on:
       qdrant:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
 
   backend:
@@ -72,7 +78,7 @@ services:
       db:
         condition: service_healthy
       ml-service:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test:
         - CMD
@@ -83,6 +89,19 @@ services:
       timeout: 5s
       retries: 12
       start_period: 20s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_AUTO_DEMO_LOGIN: ${FRONTEND_AUTO_DEMO_LOGIN:-true}
+    ports:
+      - "${FRONTEND_HOST_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   # Optional local embedding provider: docker compose --profile ollama up -d
