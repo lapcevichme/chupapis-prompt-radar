@@ -6,7 +6,7 @@ import re
 import random
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 
@@ -32,8 +32,16 @@ CATEGORIES = {
 
 
 def generate_contextual_timestamp(category: str, style: str) -> str:
-    """Генерирует время в зависимости от категории задачи и стиля."""
+    """Генерирует дату и время за последнюю неделю с распределением по дням (пик в среду, спад в пятницу)."""
     now = datetime.now(timezone.utc)
+
+    # 7 дней недели (от -6 дней до сегодня)
+    day_offsets = [-6, -5, -4, -3, -2, -1, 0]
+    # Веса дней недели [Пн, Вт, Ср (пик), Чт, Пт (спад), Сб, Вс]
+    day_weights = [15, 20, 35, 20, 8, 1, 1]
+
+    chosen_offset = random.choices(day_offsets, weights=day_weights, k=1)[0]
+    base_date = now + timedelta(days=chosen_offset)
 
     if category == "task_management":
         hour = random.choice([9, 10, 11])
@@ -47,8 +55,9 @@ def generate_contextual_timestamp(category: str, style: str) -> str:
     minute = random.randint(0, 59)
     second = random.randint(0, 59)
 
-    simulated_date = now.replace(hour=hour, minute=minute, second=second)
+    simulated_date = base_date.replace(hour=hour, minute=minute, second=second)
     return simulated_date.isoformat()
+
 
 
 USERS_DB = [
@@ -166,16 +175,10 @@ SYSTEM_PROMPT_TEMPLATE = """Ты — генератор синтетически
 СТРУКТУРА ОБЪЕКТА:
 - "query_text": текст запроса (максимально реалистичный, грязный, жизненный).
 - "style": выбери ('formal' - официально, 'voice' - голос без знаков препинания, 'typo' - опечатки/телефон, 'jargon' - суржик/айтишный сленг, 'copypaste' - вброс куска лога/текста).
-- "response_text": ответ агента. ЗАВИСИТ ОТ СТАТУСА (см. ниже).
+- "response_text": развернутый, полезный ответ ИИ-агента.
 - "tools_used": массив строк (названия систем, например ["Jira", "Confluence"]). Для "other" всегда [].
-- "status": выбери один из статусов (важен баланс: ~70% success, ~15% error_tool, ~15% hallucination_loop).
-- "error_reason": если статус не success, опиши причину коротко (например, "Jira 500 API Error", "Agent stuck in infinite search loop"). Иначе null.
-
-ПРАВИЛА ДЛЯ СТАТУСОВ (СТРОГО!):
-- "success": Успешное выполнение. Ответ агента должен быть полезным и по делу.
-- "error_tool": Инструмент сломался или нет доступов. Ответ агента: "Я попытался выполнить запрос, но система [Имя системы] вернула ошибку: [описание ошибки, например 403 Forbidden]".
-- "hallucination_loop": Агент сошел с ума или зациклился. Ответ агента должен выглядеть как сбой LLM: повторение слов ("Выполняю... Выполняю... Выполняю..."), пустой ответ, или галлюцинация ("Контракт подписан с Далай Ламой").
 """
+
 
 
 def extract_json(text: str) -> Any:
@@ -341,16 +344,17 @@ async def fetch_dataset_batch(session: aiohttp.ClientSession, topic: str, catego
 
 def calculate_tokens(category: str, tools: List[str]) -> int:
     """Умный расчет потраченных токенов с симуляцией аномалий."""
-    base_min, base_max = TOKEN_DISTRIBUTION.get(category, (10000, 50000))
+    base_min, base_max = TOKEN_DISTRIBUTION.get(category, (2000, 15000))
     tokens = random.randint(base_min, base_max)
 
     if tools:
-        tokens += len(tools) * random.randint(15000, 40000)
+        tokens += len(tools) * random.randint(2000, 8000)
 
-    if category in ["other", "text_generation"] and random.random() < 0.10:
-        tokens = random.randint(150000, 350000)
+    if category in ["other", "text_generation"] and random.random() < 0.05:
+        tokens = random.randint(25000, 50000)
 
     return tokens
+
 
 
 def append_to_dataset(filepath: str, new_data: List[Dict]):
@@ -434,6 +438,37 @@ async def main():
                         tokens = calculate_tokens(cat_key, tools)
                         selected_model = random.choice(["gpt-4o", "claude-3-5-sonnet", "deepseek-r1", "llama-3-8b-ollama"])
 
+                        # Программное управление статусом (точный контроль генерации ошибок без вмешательства LLM)
+                        rnd_status = random.random()
+                        if rnd_status < 0.04:
+                            status_val = "error_tool"
+                            tool_name = random.choice(tools) if tools else "External API"
+                            error_reason_val = random.choice([
+                                f"{tool_name} 500 Internal Server Error",
+                                f"{tool_name} 403 Forbidden: Insufficient permissions",
+                                f"{tool_name} connection timeout after 30000ms",
+                                f"{tool_name} rate limit exceeded (429)"
+                            ])
+                            resp_text = f"Я пытался обратится к сервису {tool_name}, но произошел сбой: {error_reason_val}. Попробуйте повторить запрос позже."
+                        elif rnd_status < 0.06:
+                            status_val = "hallucination_loop"
+                            error_reason_val = random.choice([
+                                "Agent stuck in repetitive loop",
+                                "Context window overflow / nonsense hallucination",
+                                "Infinite token loop"
+                            ])
+                            resp_text = random.choice([
+                                "Обрабатываю запрос... Обрабатываю запрос... Обрабатываю запрос... [Превышен максимальный лимит итераций]",
+                                "Запрос выполнен согласно приказу Министерства Галактических Дел №404-ФЗ от 1812 года. Данные сохранены в квантовом хранилище.",
+                                "Повторяю... Повторяю... Повторяю... Ошибка цикла генерации LLM.",
+                                "..."
+                            ])
+                        else:
+                            status_val = "success"
+                            error_reason_val = None
+                            resp_text = item.get("response_text", "Запрос обработан.")
+
+
                         final_record = {
                             "request_id": f"req_{int(time.time() * 1000)}_{uuid.uuid4().hex[:6]}",
                             "timestamp": generate_contextual_timestamp(cat_key, item.get("style", "formal")),
@@ -442,14 +477,15 @@ async def main():
                             "department": user["department"],
                             "model": selected_model,
                             "query_text": item.get("query_text", ""),
-                            "response_text": item.get("response_text", ""),
-                            "status": item.get("status", "success"),
-                            "error_reason": item.get("error_reason", None),
+                            "response_text": resp_text,
+                            "status": status_val,
+                            "error_reason": error_reason_val,
                             "category": cat_key,
                             "style": item.get("style", "formal"),
                             "tools_used": tools,
                             "total_tokens": tokens,
                         }
+
                         category_results.append(final_record)
 
                     print(f"  [+] +{len(batch)} логов от {user['name']} ({user['department']})")
