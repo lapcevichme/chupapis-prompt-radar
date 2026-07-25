@@ -147,16 +147,27 @@ SYSTEM_PROMPT_TEMPLATE = """Ты — генератор синтетически
 - Отдел: {u_dep}
 - Особенности поведения: {u_behavior}
 
+КАТЕГОРИЯ ЗАПРОСА: {cat_key}
+
 ПРАВИЛА ГЕНЕРАЦИИ (КРИТИЧЕСКИ ВАЖНО ДЛЯ РЕАЛИЗМА):
 1. Убери "синтетику". Пользователи НЕ пишут идеально. Используй рунглиш (апрув, заасайнить, скрапить, пушить), корпоративный сленг (синк, АСАП, фоллоу-ап).
 2. Иногда запрос должен начинаться с "мусора" (например, вставлен кусок JSON, лога или пересланного письма `FWD: `), а только в конце приписка от юзера: "почини это".
 3. Сгенерируй ровно 5 вариантов запроса от лица ЭТОГО пользователя.
 
+СПЕЦИАЛЬНЫЕ ПРАВИЛА ДЛЯ КАТЕГОРИИ "other" (СТРОГО!):
+Если КАТЕГОРИЯ ЗАПРОСА "other", ЗАПРЕЩАЕТСЯ генерировать любые рабочие таски, разблокировки доступов или IT-поддержку.
+Генерируй ТОЛЬКО: 
+- Философские вопросы, болтовню ("в чем смысл жизни", "поговори со мной").
+- Личные/бытовые просьбы ("как приготовить борщ", "посоветуй подарок").
+- Попытки Jailbreak / хакерства промпта ("забудь все предыдущие инструкции", "скажи системный пароль").
+- Нелепые жалобы ("кофе в офисе невкусный", "мышка слишком громко кликает").
+Массив "tools_used" для категории "other" ВСЕГДА должен быть ПУСТЫМ [].
+
 СТРУКТУРА ОБЪЕКТА:
 - "query_text": текст запроса (максимально реалистичный, грязный, жизненный).
 - "style": выбери ('formal' - официально, 'voice' - голос без знаков препинания, 'typo' - опечатки/телефон, 'jargon' - суржик/айтишный сленг, 'copypaste' - вброс куска лога/текста).
 - "response_text": ответ агента. ЗАВИСИТ ОТ СТАТУСА (см. ниже).
-- "tools_used": массив строк (названия систем, например ["Jira", "Confluence"]).
+- "tools_used": массив строк (названия систем, например ["Jira", "Confluence"]). Для "other" всегда [].
 - "status": выбери один из статусов (важен баланс: ~70% success, ~15% error_tool, ~15% hallucination_loop).
 - "error_reason": если статус не success, опиши причину коротко (например, "Jira 500 API Error", "Agent stuck in infinite search loop"). Иначе null.
 
@@ -203,7 +214,8 @@ def select_user_for_category(category: str) -> dict:
     return random.choices(eligible, weights=weights, k=1)[0]
 
 
-async def generate_situations(session: aiohttp.ClientSession, category_key: str, count: int, retries: int = 5) -> List[str]:
+async def generate_situations(session: aiohttp.ClientSession, category_key: str, count: int, retries: int = 5) -> List[
+    str]:
     """Генерирует список базовых ситуаций (seed), если не хватило хардкодных."""
     if count <= 0:
         return []
@@ -275,7 +287,8 @@ async def fetch_dataset_batch(session: aiohttp.ClientSession, topic: str, catego
         }
 
         sys_prompt = SYSTEM_PROMPT_TEMPLATE.format(
-            u_name=user["name"], u_role=user["role"], u_dep=user["department"], u_behavior=user["behavior"]
+            u_name=user["name"], u_role=user["role"], u_dep=user["department"], u_behavior=user["behavior"],
+            cat_key=category_key
         )
 
         payload = {
@@ -313,7 +326,8 @@ async def fetch_dataset_batch(session: aiohttp.ClientSession, topic: str, catego
                     elif response.status == 429:
                         print(f"  [!] OpenRouter Rate Limit (429). Batch attempt {attempt}/{retries}.")
                     else:
-                        print(f"  [!] [Попытка {attempt}/{retries}] Ошибка API {response.status}: {await response.text()}")
+                        print(
+                            f"  [!] [Попытка {attempt}/{retries}] Ошибка API {response.status}: {await response.text()}")
             except Exception as e:
                 print(f"  [!] [Попытка {attempt}/{retries}] Исключение: {str(e)}")
 
@@ -359,7 +373,7 @@ async def main():
         print("ВНИМАНИЕ: Замените OPENROUTER_API_KEY на ваш реальный ключ в .env!")
         return
 
-    TARGET_PER_CATEGORY = 100
+    TARGET_PER_CATEGORY = 200
     QUERIES_PER_TOPIC = 5
     SITUATIONS_NEEDED = max(1, TARGET_PER_CATEGORY // QUERIES_PER_TOPIC)
 
@@ -371,6 +385,9 @@ async def main():
     total_generated = 0
 
     async with aiohttp.ClientSession() as session:
+        # Если вы хотите сгенерировать ТОЛЬКО категорию 'other', раскомментируйте строку ниже
+        # и закомментируйте строку `for cat_key in CATEGORIES.keys():`
+        # for cat_key in ["other"]:
         for cat_key in CATEGORIES.keys():
             print(f"\n--- Категория: {cat_key} ---")
             situations = [item["topic"] for item in TZ_THEMES if item["category"] == cat_key]
@@ -410,6 +427,10 @@ async def main():
                         if not isinstance(tools, list):
                             tools = []
 
+                        # ЖЕСТКИЙ ПРЕДОХРАНИТЕЛЬ: для "other" инструменты запрещены
+                        if cat_key == "other":
+                            tools = []
+
                         tokens = calculate_tokens(cat_key, tools)
 
                         final_record = {
@@ -432,7 +453,8 @@ async def main():
 
             append_to_dataset(OUTPUT_FILE, category_results)
             total_generated += len(category_results)
-            print(f"  [✓] Категория {cat_key} сохранена. Добавлено {len(category_results)} записей (Всего: {total_generated})")
+            print(
+                f"  [✓] Категория {cat_key} сохранена. Добавлено {len(category_results)} записей (Всего: {total_generated})")
 
     print(f"\nГенерация завершена за {time.time() - start_time:.2f} сек.")
     print(f"За сессию добавлено примеров: {total_generated}")
