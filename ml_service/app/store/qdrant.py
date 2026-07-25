@@ -84,7 +84,9 @@ class QdrantStore:
     def ensure_collection(self, vector_size: Optional[int] = None) -> None:
         size = int(vector_size or self.vector_size)
         self.vector_size = size
-        if self._mock or self.client is None:
+        # During __init__ the store remains in mock mode until the connection and
+        # collection are both ready. A real client is sufficient to bootstrap it.
+        if self.client is None:
             return
         if not self.client.collection_exists(self.collection):
             self.client.create_collection(

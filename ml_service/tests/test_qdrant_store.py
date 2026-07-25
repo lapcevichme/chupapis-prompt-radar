@@ -1,14 +1,10 @@
 """QdrantStore mock mode tests."""
 from __future__ import annotations
 
-import os
-
 import pytest
 
-# force mock before import of store usage
-os.environ["ALLOW_INMEMORY_STORE"] = "true"
-
-from app.store.qdrant import QdrantStore  # noqa: E402
+from app.store import qdrant as qdrant_module
+from app.store.qdrant import QdrantStore
 
 
 def test_mock_upsert_search_count():
@@ -59,3 +55,38 @@ def test_mock_upsert_search_count():
         ]
     )
     assert store.get_count() == 4
+
+
+def test_real_client_creates_collection_during_initialization(monkeypatch):
+    calls: dict[str, object] = {}
+
+    class FakeClient:
+        def __init__(self, *, url: str, timeout: float):
+            calls["init"] = (url, timeout)
+
+        def collection_exists(self, collection_name: str) -> bool:
+            calls["checked"] = collection_name
+            return False
+
+        def create_collection(self, *, collection_name: str, vectors_config: object):
+            calls["created"] = (collection_name, vectors_config)
+
+    monkeypatch.delenv("ALLOW_INMEMORY_STORE", raising=False)
+    monkeypatch.delenv("QDRANT_URL", raising=False)
+    monkeypatch.setattr(qdrant_module, "_HAS_QDRANT", True)
+    monkeypatch.setattr(qdrant_module, "QdrantClient", FakeClient)
+
+    store = QdrantStore(
+        {
+            "qdrant_url": "http://qdrant.test:6333",
+            "qdrant_collection": "test_vectors",
+        },
+        vector_size=4,
+    )
+
+    assert store.is_mock is False
+    assert calls["init"] == ("http://qdrant.test:6333", 2.0)
+    assert calls["checked"] == "test_vectors"
+    collection_name, vector_config = calls["created"]
+    assert collection_name == "test_vectors"
+    assert vector_config.size == 4
