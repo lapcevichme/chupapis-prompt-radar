@@ -47,9 +47,9 @@ class Settings(BaseSettings):
     ML_SERVICE_TOKEN: str = "change-me-ml-token"
     ML_INGEST_BATCH_SIZE: int = 200
     ML_HTTP_TIMEOUT_SEC: int = 30
-    ML_PROCESSING_TIMEOUT_SEC: int = 600
+    ML_PROCESSING_TIMEOUT_SEC: int = 86400
     ML_PROCESSING_POLL_INTERVAL_SEC: float = 1.0
-    ML_RECOMPUTE_TIMEOUT_SEC: int = 1800
+    ML_RECOMPUTE_TIMEOUT_SEC: int = 3600
 
     # --- Preloaded analytical workspaces ---
     PRELOAD_DATASETS_ENABLED: bool = False
