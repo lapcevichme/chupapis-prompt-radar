@@ -61,6 +61,21 @@ class _Bucket:
     tools: dict[str, int] = field(default_factory=dict)
 
 
+DEFAULT_CATEGORY_MANUAL_MINUTES: dict[str, float] = {
+    "text_generation": 15.0,
+    "code_generation": 30.0,
+    "code_help": 30.0,
+    "debugging": 30.0,
+    "data_transformation": 45.0,
+    "data_analysis": 45.0,
+    "document_analysis": 30.0,
+    "task_management": 25.0,
+    "information_search": 15.0,
+    "education": 20.0,
+}
+DEFAULT_FALLBACK_MANUAL_MINUTES: float = 15.0
+
+
 def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
     """Merged ROI calculator: session coefficients, MAU/Depts, and style analytics (D6)."""
     assumptions = Assumptions(
@@ -100,7 +115,13 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
 
     for rec in records:
         tokens = rec.tokens or 0
-        manual = rec.manual_time_minutes or 0.0
+        cat_key = rec.task_type or "unknown"
+        manual = rec.manual_time_minutes
+        if not manual or manual <= 0.0:
+            manual = DEFAULT_CATEGORY_MANUAL_MINUTES.get(
+                cat_key, DEFAULT_FALLBACK_MANUAL_MINUTES
+            )
+
         total_tokens += tokens
         cost_for_log = (tokens / 1000.0) * config.token_cost_per_1k_rub
 
@@ -120,7 +141,6 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
         log_style = rec.style or "formal"
         style_stats[log_style] = style_stats.get(log_style, 0) + 1
 
-        cat_key = rec.task_type or "unknown"
         cat = by_category.setdefault(cat_key, _Bucket(task_type=cat_key))
         cat.count += 1
         cat.tokens_used += tokens
@@ -133,7 +153,8 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
             scenario.count += 1
             scenario.tokens_used += tokens
 
-        if rec.status == "success":
+        rec_status = (rec.status or "").strip().lower()
+        if rec_status in ("success", "ok", "completed"):
             saved = manual * config.session_coeff(tokens)
             success_count += 1
             total_saved_minutes += saved

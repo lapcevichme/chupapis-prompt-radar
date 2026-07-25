@@ -130,4 +130,19 @@ def test_rate_overrides_change_costs(make_record) -> None:
     )
     roi = compute_roi([make_record(tokens=10000, manual_time_minutes=30.0)], config)
     assert roi.summary.total_manual_cost_rub == 1200.0  # 0.5h * 2400
-    assert roi.summary.total_agent_cost_rub == 0.3  # 10 * 0.03
+    assert roi.summary.total_agent_cost_rub == 0.3  # 10 * 0.3
+
+
+def test_missing_manual_time_uses_category_fallback(roi_config: RoiConfig, make_record) -> None:
+    # None manual_time_minutes on code_help -> 30 min fallback * 1.0 coeff = 0.5h
+    rec = make_record(tokens=10000, manual_time_minutes=None, task_type="code_help")
+    roi = compute_roi([rec], roi_config)
+    assert roi.summary.total_fte_hours_saved == 0.5
+
+
+def test_case_insensitive_and_completed_status(roi_config: RoiConfig, make_record) -> None:
+    rec1 = make_record(status="SUCCESS", tokens=10000, manual_time_minutes=30.0)
+    rec2 = make_record(status="completed", tokens=10000, manual_time_minutes=30.0)
+    roi = compute_roi([rec1, rec2], roi_config)
+    assert roi.summary.success_rate_percent == 100.0
+    assert roi.summary.total_fte_hours_saved == 1.0

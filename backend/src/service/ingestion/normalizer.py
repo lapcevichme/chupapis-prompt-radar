@@ -76,10 +76,16 @@ def _parse_csv(text: str) -> list[dict[str, Any]]:
     reader = csv.DictReader(io.StringIO(text))
     for raw in reader:
         row = dict(raw)
-        for int_key in ("simulated_context_tokens", "estimated_manual_time_minutes"):
+        for int_key in (
+            "simulated_context_tokens",
+            "total_tokens",
+            "estimated_manual_time_minutes",
+            "manual_time_minutes",
+            "manual_time",
+        ):
             if row.get(int_key) not in (None, ""):
                 try:
-                    row[int_key] = int(float(row[int_key]))
+                    row[int_key] = float(row[int_key])
                 except (TypeError, ValueError):
                     row[int_key] = None
         tools = row.get("tools_used")
@@ -146,13 +152,19 @@ def normalize(
             timestamp = _synthesize_timestamp(index, total, settings, now)
 
         raw_status = raw.get("status")
+        raw_status_str = str(raw_status).lower() if raw_status is not None else "success"
         response_status, error_code = _STATUS_MAP.get(
-            str(raw_status), ("success", None)
+            raw_status_str, ("success", None)
         )
         tokens = _as_int(raw.get("total_tokens"))
         if tokens is None:
             tokens = _as_int(raw.get("simulated_context_tokens"))
-        manual_time = _as_float(raw.get("estimated_manual_time_minutes"))
+        manual_time = _as_float(
+            raw.get("estimated_manual_time_minutes")
+            or raw.get("manual_time_minutes")
+            or raw.get("manual_time")
+            or raw.get("estimated_manual_time")
+        )
         tools_used = list(raw.get("tools_used") or [])
         raw_model = str(raw.get("model") or raw.get("model_name") or raw.get("agent_id") or "").strip()
         if raw_model and not any(isinstance(t, str) and t.startswith("model:") for t in tools_used):
