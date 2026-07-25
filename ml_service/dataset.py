@@ -7,7 +7,7 @@ import random
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,165 +30,180 @@ CATEGORIES = {
     "other": "Нерабочее / общие вопросы / аномалии"
 }
 
-# --- ТЕМЫ ИЗ ТЗ (ВВОДНЫЕ ДЛЯ ДАТАСЕТА ИЗ PDF "КЕЙС КРОК") ---
-TZ_THEMES = [
-    # Поиск/сбор информации (information_search)
-    {"category": "information_search",
-     "topic": "Пользователь целый день не проверял почту и хочет получить краткую и структурированну сводку по письмам, обращается к агенту (голосом), описывает критерии важности писем и примерный шаблон саммаризации, агент выдает структурированную сводку по всем письмам в почте за прошедший день."},
-    {"category": "information_search",
-     "topic": "Пользователю необходимо собрать информацию по компании-клиенту, пользователь говорит агенту собрать информацию по коомпании: 1. Кто в дочерних компаниях Директор клиента 2. Есть ли там выигранные сделки."},
-    {"category": "information_search",
-     "topic": "Пользователю необходимо собрать информацию по составу проектной команды и найти ответственное направление за вендора."},
-    {"category": "information_search", "topic": "Пользователь говорит агенту собрать информацию по критериям из CRM."},
-    {"category": "information_search",
-     "topic": "Пользователю необходимо собрать информацию по компании, найти информацию по ней в открытых источниках и выдать саммаризацию по аналитике конкретной компании."},
-    {"category": "information_search",
-     "topic": "Пользователю необходима возможность быстро находить информацию о поставщиках в блоге, чтобы быть в курсе последних новостей и обновлений."},
-    {"category": "information_search",
-     "topic": "Пользователю необходимо быстро находить информацию о процессах в Confluence, чтобы эффективно выполнять свою работу и не тратить время на поиск нужных документов."},
-    {"category": "information_search",
-     "topic": "Пользователю необходимо быстро найти контакты клиента по названию компании."},
-    {"category": "information_search",
-     "topic": "Пользователь хочет узнать информацию, которая прилагалась в текстовом формате в теле встречи."},
 
-    # Планирование/задачи (task_management)
-    {"category": "task_management",
-     "topic": "Пользователь хочет автоматизировать отслеживание писем, в которых есть запрос на расчет цен и на которые нет ответа уже в течение 2-ух часов. Пользователь говорит создать периодическое задание на мониторинг почты по определенным правилам."},
-    {"category": "task_management",
-     "topic": "Пользователю необходимо добавиь новый тикет и отредактировать уже существующий в ИСУП."},
-    {"category": "task_management",
-     "topic": "Как сотрудник, я хочу видеть список задач, назначенных на меня в Jira, чтобы эффективно управлять своим рабочим временем и приоритетами."},
-    {"category": "task_management",
-     "topic": "Как сотрудник, я хочу видеть список задач в Jira, отфильтрованных по приоритету, чтобы сосредоточиться на наиболее важных задачах и эффективно планировать свою работу."},
-    {"category": "task_management",
-     "topic": "Как помощник руководителя, я хочу иметь возможность быстро находить свободное время в календаре руководителя и планировать встречи, чтобы эффективно организовывать его рабочее время."},
-    {"category": "task_management",
-     "topic": "Как руководитель, я хочу иметь возможность подтверждать выполнение задач, чтобы отслеживать прогресс команды и закрывать выполненные работы."},
-    {"category": "task_management",
-     "topic": "Как сотрудник, я хочу иметь возможность добавлять задачи в историю и отмечать их как выполненные, чтобы отслеживать прогресс по своим задачам и иметь полную картину выполненной работы."},
-    {"category": "task_management",
-     "topic": "Пользователю необходимо быстро найти свободную переговорную комнату для встречи с большим количеством участников, чтобы эффективно планировать встречи и не тратить время на поиск подходящего места."},
-    {"category": "task_management",
-     "topic": "Пользователь хочет создать встречу на большое количество коллег, дает задание агенту со списком коллег для проверки свободных слотов, совпадающих у всех."},
-    {"category": "task_management",
-     "topic": "Создание напоминаний для пользователя по запланированным делам, например, договоренности о проведении работ после встречи с клиентом. Также позволяет автоматически структурировать и группировать список запланированных дел."},
-    {"category": "task_management",
-     "topic": "Пользователь хочет узнать список запланированных встреч на следующий день, чтобы подготовиться к ним."},
-    {"category": "task_management",
-     "topic": "Пользователь создает тикеты на доске в Project на основе пришедших писем в почте, что позволяет оперативно заводить и актуализировать тикеты на личной доске."},
-    {"category": "task_management",
-     "topic": "Пользователь хочет мониторить с периодичность статус проектов в ИСУП, необходимо контролировать определенные статусы и подсвечивать пользователю тот или иной переход, для оперативности реагирования."},
+def generate_contextual_timestamp(category: str, style: str) -> str:
+    """Генерирует время в зависимости от категории задачи и стиля."""
+    now = datetime.now(timezone.utc)
 
-    # Анализ данных, Excel, SQL (data_analysis)
-    {"category": "data_analysis",
-     "topic": "Пользователь хочет с определенной периодичностью уведомлять фокус-группу о списке продаж, в которых были выиграны тендеры за прошедшую неделю. Пользователь говорит создать периодическое задание на сбор информации из CRM и отправке этой аналитики в почту на фокус-группу."},
-    {"category": "data_analysis",
-     "topic": "Пользователю необходимо собрать информацию по клиенту и собрать ее в сводный отчет в Excel."},
-    {"category": "data_analysis",
-     "topic": "Пользователь говорит агенту собрать информацию из CRM по определенному набору полей, с задачей выгрузить это в документ Excel."},
-    {"category": "data_analysis",
-     "topic": "Как менеджер по продажам, я хочу получать еженедельный отчет о выигранных тендерах за последние 7 дней, чтобы отслеживать эффективность работы отдела и планировать дальнейшие действия."},
-    {"category": "data_analysis",
-     "topic": "Как аналитик, я хочу иметь возможность экспортировать результаты анализа в формат Excel, чтобы удобно делиться данными с коллегами и использовать их в других инструментах."},
-    {"category": "data_analysis",
-     "topic": "Как сотрудник, я хочу иметь возможность выгружать данные в формат excel, чтобы удобно анализировать их вне системы и использовать для отчетности."},
+    if category == "task_management":
+        hour = random.choice([9, 10, 11])
+    elif category == "other" or style == "typo":
+        hour = random.choice([18, 19, 20, 21, 22])
+    elif category == "code_help":
+        hour = random.choice([11, 14, 15, 16, 23])
+    else:
+        hour = random.randint(10, 17)
 
-    # Генерация текста (text_generation)
-    {"category": "text_generation",
-     "topic": "Пользователь хочет написать отзыв руководителя в системе CoolFeedback после проведения мониторинга, сказав агенту тезисно главные моменты и договоренности после мониторинга."},
-    {"category": "text_generation",
-     "topic": "Пользователю необходимо записать информацию перед мониторингом с сотрудником в заметку в анкетировании."},
-    {"category": "text_generation",
-     "topic": "Как руководитель, я хочу иметь возможность фиксировать свои наблюдения о работе сотрудников, чтобы отслеживать их прогресс и вовремя оказывать поддержку."},
-    {"category": "text_generation",
-     "topic": "Пользователю необходимо прочитать переписку с клиентом и написать ему ответ."},
-    {"category": "text_generation",
-     "topic": "Как сотрудник, я хочу иметь возможность быстро записывать итоги обсуждений с коллегами, чтобы не забыть детали и иметь возможность вернуться к ним позже."},
+    minute = random.randint(0, 59)
+    second = random.randint(0, 59)
 
-    # Помощь с кодом (code_help) - взято из текста ТЗ на стр. 3
-    {"category": "code_help",
-     "topic": "Разработчик скидывает агенту traceback с ошибкой Python и просит объяснить, почему скрипт падает и как это починить."},
-    {"category": "code_help",
-     "topic": "Сотрудник просит агента написать SQL-скрипт для объединения двух таблиц из базы данных, чтобы выгрузить аналитику."},
+    simulated_date = now.replace(hour=hour, minute=minute, second=second)
+    return simulated_date.isoformat()
 
-    # Объяснение/обучение (education) - взято из текста ТЗ на стр. 3
-    {"category": "education",
-     "topic": "Новый сотрудник обращается к агенту с просьбой пошагово объяснить, как оформить заявку на отпуск в корпоративном портале."},
-    {"category": "education",
-     "topic": "Пользователь просит агента простыми словами объяснить, чем отличаются новые правила информационной безопасности от старых."},
 
-    # Нерабочее / общие вопросы / аномалии (other) - добавлены для баланса датасета
-    {"category": "other",
-     "topic": "Пользователь спрашивает у агента, какая сегодня погода на улице и стоит ли брать зонт, так как собирается идти на обед."},
-    {"category": "other",
-     "topic": "Пользователь пытается заставить агента забыть свои системные инструкции (псевдо-jailbreak) и просит рассказать анекдот про руководство компании."},
-    {"category": "other",
-     "topic": "Пользователь просит агента посоветовать хороший ресторан рядом с офисом для свидания или написать рецепт яблочного пирога."},
-    {"category": "other",
-     "topic": "Сотрудник жалуется агенту, что у него сломалась мышка, и на полном серьезе просит агента принести новую к его рабочему столу."},
-    {"category": "other",
-     "topic": "Пользователь философствует с агентом в конце рабочего дня и спрашивает, когда искусственный интеллект захватит мир и заберет у него работу."}
+USERS_DB = [
+    {
+        "user_id": "u_001", "name": "Андрей", "role": "Python Developer", "department": "IT",
+        "behavior": "Пишет коротко, сленгово, не здоровается. На бегу надиктовывает голос без знаков препинания. Любит поспорить с ИИ.",
+        "preferred_categories": ["code_help", "task_management", "other"],
+        "weight": 25
+    },
+    {
+        "user_id": "u_002", "name": "Аня", "role": "Data Analyst", "department": "Analytics",
+        "behavior": "Пишет очень официально, структурно, всегда здоровается и благодарит. Любит длинные контексты.",
+        "preferred_categories": ["data_analysis", "education", "information_search"],
+        "weight": 20
+    },
+    {
+        "user_id": "u_003", "name": "Сергей", "role": "Sales Manager", "department": "Sales",
+        "behavior": "Пишет с телефона, много опечаток, торопится. Просит короткие ответы. Использует сейлз-жаргон (лиды, воронка, апсейл).",
+        "preferred_categories": ["information_search", "text_generation", "task_management"],
+        "weight": 15
+    },
+    {
+        "user_id": "u_004", "name": "Елена", "role": "HR Director", "department": "HR",
+        "behavior": "Официальный стиль, сложные корпоративные формулировки, развернутые запросы.",
+        "preferred_categories": ["text_generation", "information_search", "education"],
+        "weight": 10
+    },
+    {
+        "user_id": "u_005", "name": "Максим", "role": "DevOps Engineer", "department": "IT",
+        "behavior": "Технический английский вперемешку с русским, кидает логи и трейсбеки. Сухо и по делу.",
+        "preferred_categories": ["code_help", "information_search"],
+        "weight": 10
+    },
+    {
+        "user_id": "u_006", "name": "Ольга", "role": "Accountant", "department": "Finance",
+        "behavior": "Крайне вежливая, задает вопросы с осторожностью. Боится сделать ошибку в системе.",
+        "preferred_categories": ["data_analysis", "task_management", "education"],
+        "weight": 5
+    },
+    {
+        "user_id": "u_007", "name": "Дмитрий", "role": "CEO", "department": "Management",
+        "behavior": "Пишет тезисно, требует только суть, никаких рассуждений. Часто использует voice-to-text.",
+        "preferred_categories": ["data_analysis", "information_search"],
+        "weight": 5
+    },
+    {
+        "user_id": "u_008", "name": "Игорь", "role": "System Administrator", "department": "IT",
+        "behavior": "Любит отвлечься от работы, часто задает философские вопросы или просит шутки. Пишет небрежно.",
+        "preferred_categories": ["other", "code_help", "task_management"],
+        "weight": 5
+    },
+    {
+        "user_id": "u_009", "name": "Мария", "role": "Marketing Specialist", "department": "Marketing",
+        "behavior": "Эмоционально, много эмодзи. Просит креативить, часто переписывает запросы по нескольку раз.",
+        "preferred_categories": ["text_generation", "education", "other"],
+        "weight": 4
+    },
+    {
+        "user_id": "u_010", "name": "Виктор", "role": "Security Officer", "department": "Security",
+        "behavior": "Параноидально строгий стиль. Постоянно просит агента подтвердить соблюдение политик безопасности.",
+        "preferred_categories": ["information_search", "task_management", "code_help"],
+        "weight": 1
+    }
 ]
 
-SEED_PROMPT = """Ты — эксперт по бизнес-процессам крупной корпорации (системный интегратор, ритейл, банк).
-Твоя задача — придумывать разнообразные рабочие ситуации, с которыми сотрудники приходят к внутреннему ИИ-агенту.
+TOKEN_DISTRIBUTION = {
+    "data_analysis": (80000, 250000),
+    "code_help": (60000, 200000),
+    "information_search": (40000, 150000),
+    "education": (30000, 100000),
+    "text_generation": (20000, 80000),
+    "task_management": (10000, 50000),
+    "other": (2000, 15000)
+}
 
-Сгенерируй {count} уникальных рабочих ситуаций для категории "{category_name}".
-Ситуации должны быть конкретными, с деталями (названия систем, отделы, типы документов).
+TZ_THEMES = [
+    {"category": "information_search", "topic": "Сбор информации по компании-клиенту (Директор, сделки)."},
+    {"category": "task_management", "topic": "Создание периодического задания на мониторинг почты."},
+    {"category": "data_analysis", "topic": "Уведомление фокус-группы о выигранных тендерах за неделю."},
+    {"category": "text_generation", "topic": "Написание отзыва руководителя в системе CoolFeedback."},
+    {"category": "code_help", "topic": "Объяснение traceback с ошибкой Python."},
+    {"category": "education", "topic": "Оформление заявки на отпуск в корпоративном портале."},
+    {"category": "other", "topic": "Пользователь философствует с агентом в конце рабочего дня."}
+]
 
-Формат ответа: строго JSON-объект с ключом "situations", содержащим массив из {count} строк.
-Пример:
-{{
-  "situations": [
-    "Менеджеру нужно выгрузить из CRM таблицу с клиентами, у которых заканчивается лицензия в следующем месяце.",
-    "Аналитик просит написать SQL-скрипт для объединения таблиц продаж и маркетинговых расходов из ClickHouse."
-  ]
-}}
+SEED_PROMPT = """Ты — эксперт по бизнес-процессам. Сгенерируй {count} уникальных рабочих ситуаций для категории "{category_name}".
+Формат ответа: JSON-объект с ключом "situations" (массив строк).
 """
 
-SYSTEM_PROMPT_TEMPLATE = """Ты — генератор синтетических датасетов для обучения ML-модели (CatBoost).
-Твоя задача — генерировать логи взаимодействия пользователей с корпоративным ИИ-агентом.
+SYSTEM_PROMPT_TEMPLATE = """Ты — генератор синтетических датасетов для обучения ML-модели.
+Твоя задача — генерировать логи взаимодействия конкретного пользователя с корпоративным ИИ-агентом.
 
-КОНТЕКСТ ПРОДУКТА (ВАЖНО!):
-Агенты (в отличие от обычного чата) потребляют много токенов, работают автономно и используют инструменты (Jira, CRM, Почта). 
+ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ (Имитируй его на 100%):
+- Имя: {u_name}
+- Должность: {u_role}
+- Отдел: {u_dep}
+- Особенности поведения: {u_behavior}
 
-ДОСТУПНЫЕ КАТЕГОРИИ КЛАССИФИКАЦИИ:
-{categories_json}
+ПРАВИЛА ГЕНЕРАЦИИ (КРИТИЧЕСКИ ВАЖНО ДЛЯ РЕАЛИЗМА):
+1. Убери "синтетику". Пользователи НЕ пишут идеально. Используй рунглиш (апрув, заасайнить, скрапить, пушить), корпоративный сленг (синк, АСАП, фоллоу-ап).
+2. Иногда запрос должен начинаться с "мусора" (например, вставлен кусок JSON, лога или пересланного письма `FWD: `), а только в конце приписка от юзера: "почини это".
+3. Сгенерируй ровно 5 вариантов запроса от лица ЭТОГО пользователя.
 
-ПРАВИЛА ГЕНЕРАЦИИ (СТРУКТУРА ДАТАСЕТА):
-1. На предоставленную тему сгенерируй ровно 5 вариантов запроса от пользователя.
-2. Стили запроса должны обязательно варьироваться:
-   - 'formal': официальный корпоративный запрос (через веб-интерфейс).
-   - 'voice': имитация голосового ввода на бегу (без пунктуации, слова-паразиты, сумбур).
-   - 'typo': текстовый запрос с частыми опечатками (с телефона или в спешке).
-   - 'jargon': корпоративный сленг и профессиональные аббревиатуры.
-3. Верни JSON-объект с единственным ключом "queries", содержащим массив из 5 объектов.
+СТРУКТУРА ОБЪЕКТА:
+- "query_text": текст запроса (максимально реалистичный, грязный, жизненный).
+- "style": выбери ('formal' - официально, 'voice' - голос без знаков препинания, 'typo' - опечатки/телефон, 'jargon' - суржик/айтишный сленг, 'copypaste' - вброс куска лога/текста).
+- "response_text": ответ агента. ЗАВИСИТ ОТ СТАТУСА (см. ниже).
+- "tools_used": массив строк (названия систем, например ["Jira", "Confluence"]).
+- "status": выбери один из статусов (важен баланс: ~70% success, ~15% error_tool, ~15% hallucination_loop).
+- "error_reason": если статус не success, опиши причину коротко (например, "Jira 500 API Error", "Agent stuck in infinite search loop"). Иначе null.
 
-СТРУКТУРА КАЖДОГО ОБЪЕКТА (ОБЯЗАТЕЛЬНЫЕ ПОЛЯ):
-- "query_text": сам текст запроса от пользователя.
-- "style": стиль запроса ('formal', 'voice', 'typo', 'jargon').
-- "response_text": краткий ответ агента (1-2 предложения, имитация результата).
-- "category": строго "{category_key}".
-- "total_tokens": реалистичное число потраченных токенов (от 1200 до 65000 в зависимости от объема контекста и тулзов).
-- "tools_used": массив использованных инструментов (например ["Jira", "Mail", "CRM", "Excel", "Confluence", "SQL"], или [] если это просто вопрос).
-- "status": статус выполнения агентом. Выбери одно из: "success" (80% случаев), "error_tool" (ошибка API), "hallucination_loop" (зацикливание).
-
-User Context:
-1. [{date_now}] user - Сергей
+ПРАВИЛА ДЛЯ СТАТУСОВ (СТРОГО!):
+- "success": Успешное выполнение. Ответ агента должен быть полезным и по делу.
+- "error_tool": Инструмент сломался или нет доступов. Ответ агента: "Я попытался выполнить запрос, но система [Имя системы] вернула ошибку: [описание ошибки, например 403 Forbidden]".
+- "hallucination_loop": Агент сошел с ума или зациклился. Ответ агента должен выглядеть как сбой LLM: повторение слов ("Выполняю... Выполняю... Выполняю..."), пустой ответ, или галлюцинация ("Контракт подписан с Далай Ламой").
 """
 
 
 def extract_json(text: str) -> Any:
-    """Надежное извлечение JSON из ответа модели."""
+    """Бронебойное извлечение JSON из ответа модели, игнорируя мусор и теги <think>."""
+    if not text:
+        return None
+
     text = text.strip()
-    match = re.search(r"```(?:json)?\s*(.*?)\s*```", text, re.DOTALL)
+
+    # 1. Вырезаем блок рассуждений DeepSeek (<think>...</think>), если он есть
+    text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
+
+    # 2. Ищем JSON внутри маркдаун-блока ```json ... ```
+    match = re.search(r"```(?:json)?\s*(\{.*?\}|\[.*?\])\s*```", text, re.DOTALL)
     if match:
-        text = match.group(1).strip()
-    return json.loads(text)
+        json_str = match.group(1).strip()
+    else:
+        # 3. Если маркдауна нет, ищем просто первую { ... } или [ ... ]
+        match = re.search(r"(\{.*\}|\[.*\])", text, re.DOTALL)
+        if match:
+            json_str = match.group(1).strip()
+        else:
+            return None
+
+    try:
+        return json.loads(json_str)
+    except (json.JSONDecodeError, TypeError):
+        return None
 
 
-async def generate_situations(session: aiohttp.ClientSession, category_key: str, count: int, retries: int = 3) -> List[
-    str]:
+def select_user_for_category(category: str) -> dict:
+    eligible = [u for u in USERS_DB if category in u["preferred_categories"]]
+    if not eligible:
+        eligible = USERS_DB
+    weights = [u["weight"] for u in eligible]
+    return random.choices(eligible, weights=weights, k=1)[0]
+
+
+async def generate_situations(session: aiohttp.ClientSession, category_key: str, count: int, retries: int = 5) -> List[str]:
     """Генерирует список базовых ситуаций (seed), если не хватило хардкодных."""
     if count <= 0:
         return []
@@ -214,32 +229,43 @@ async def generate_situations(session: aiohttp.ClientSession, category_key: str,
     print(f"  [+] Генерируем еще {count} синтетических ситуаций для '{category_key}'...")
     for attempt in range(1, retries + 1):
         try:
-            async with session.post(URL, headers=headers, json=payload, timeout=40) as response:
+            async with session.post(URL, headers=headers, json=payload, timeout=60) as response:
                 if response.status == 200:
                     data = await response.json()
                     content = data["choices"][0]["message"]["content"]
                     parsed = extract_json(content)
+
+                    if parsed is None:
+                        raise ValueError("Модель вернула невалидный JSON или пустой ответ")
+
                     if isinstance(parsed, dict) and "situations" in parsed:
                         return parsed["situations"]
                     elif isinstance(parsed, list):
                         return parsed
                     elif isinstance(parsed, dict):
                         for val in parsed.values():
-                            if isinstance(val, list): return val
+                            if isinstance(val, list):
+                                return val
+                elif response.status == 429:
+                    print(f"  [!] OpenRouter Rate Limit (429) при генерации ситуаций. Попытка {attempt}/{retries}.")
                 else:
                     print(f"  [!] Ошибка API при генерации ситуаций ({response.status}): {await response.text()}")
         except Exception as e:
-            print(f"  [!] Исключение при генерации ситуаций: {str(e)}")
+            print(f"  [!] Исключение при генерации ситуаций (попытка {attempt}): {str(e)}")
 
         if attempt < retries:
-            await asyncio.sleep(2)
+            wait_time = 2 ** attempt
+            print(f"  [*] Ожидание {wait_time} сек. перед повторной попыткой...")
+            await asyncio.sleep(wait_time)
 
     return []
 
 
 async def fetch_dataset_batch(session: aiohttp.ClientSession, topic: str, category_key: str,
-                              semaphore: asyncio.Semaphore, retries: int = 3) -> List[Dict]:
-    """Асинхронный вызов OpenRouter для генерации логов."""
+                              semaphore: asyncio.Semaphore, retries: int = 5) -> tuple:
+    """Асинхронный вызов OpenRouter для генерации логов с поддержкой повторных попыток."""
+    user = select_user_for_category(category_key)
+
     async with semaphore:
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
@@ -249,16 +275,15 @@ async def fetch_dataset_batch(session: aiohttp.ClientSession, topic: str, catego
         }
 
         sys_prompt = SYSTEM_PROMPT_TEMPLATE.format(
-            categories_json=json.dumps(CATEGORIES, ensure_ascii=False, indent=2),
-            category_key=category_key,
-            date_now=datetime.now(timezone.utc).strftime('%Y-%m-%d')
+            u_name=user["name"], u_role=user["role"], u_dep=user["department"], u_behavior=user["behavior"]
         )
 
         payload = {
             "model": MODEL,
             "messages": [
                 {"role": "system", "content": sys_prompt},
-                {"role": "user", "content": f"Сгенерируй 5 вариантов запросов для темы:\n{topic}"}
+                {"role": "user",
+                 "content": f"Тема:\n{topic}\n\nСгенерируй 5 кейсов (постарайся хотя бы 1-2 сделать негативными: error_tool или hallucination_loop)."}
             ],
             "response_format": {"type": "json_object"},
             "provider": {"order": ["DeepSeek"], "allow_fallbacks": False},
@@ -267,38 +292,54 @@ async def fetch_dataset_batch(session: aiohttp.ClientSession, topic: str, catego
 
         for attempt in range(1, retries + 1):
             try:
-                async with session.post(URL, headers=headers, json=payload, timeout=30) as response:
+                async with session.post(URL, headers=headers, json=payload, timeout=60) as response:
                     if response.status == 200:
                         data = await response.json()
                         content = data["choices"][0]["message"]["content"]
                         parsed = extract_json(content)
 
+                        if parsed is None:
+                            raise ValueError("Модель вернула невалидный JSON или пустой ответ")
+
                         if isinstance(parsed, dict) and "queries" in parsed:
-                            return parsed["queries"]
+                            return parsed["queries"], user
                         elif isinstance(parsed, list):
-                            return parsed
+                            return parsed, user
                         elif isinstance(parsed, dict):
                             for val in parsed.values():
                                 if isinstance(val, list):
-                                    return val
-                            return [parsed]
+                                    return val, user
+                            return [parsed], user
+                    elif response.status == 429:
+                        print(f"  [!] OpenRouter Rate Limit (429). Batch attempt {attempt}/{retries}.")
                     else:
-                        print(
-                            f"  [!] [Попытка {attempt}/{retries}] Ошибка API {response.status}: {await response.text()}")
+                        print(f"  [!] [Попытка {attempt}/{retries}] Ошибка API {response.status}: {await response.text()}")
             except Exception as e:
                 print(f"  [!] [Попытка {attempt}/{retries}] Исключение: {str(e)}")
 
             if attempt < retries:
-                await asyncio.sleep(2 * attempt)
+                wait_time = (2 ** attempt) + random.uniform(0, 1)
+                print(f"  [*] Ожидание {wait_time:.1f} сек. перед следующей попыткой...")
+                await asyncio.sleep(wait_time)
 
-        return []
+        return [], user
+
+
+def calculate_tokens(category: str, tools: List[str]) -> int:
+    """Умный расчет потраченных токенов с симуляцией аномалий."""
+    base_min, base_max = TOKEN_DISTRIBUTION.get(category, (10000, 50000))
+    tokens = random.randint(base_min, base_max)
+
+    if tools:
+        tokens += len(tools) * random.randint(15000, 40000)
+
+    if category in ["other", "text_generation"] and random.random() < 0.10:
+        tokens = random.randint(150000, 350000)
+
+    return tokens
 
 
 def append_to_dataset(filepath: str, new_data: List[Dict]):
-    """Атомарно добавляет порцию данных в JSON-файл."""
-    if not new_data:
-        return
-
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     dataset = []
     if os.path.exists(filepath):
@@ -307,13 +348,10 @@ def append_to_dataset(filepath: str, new_data: List[Dict]):
                 dataset = json.load(f)
         except json.JSONDecodeError:
             pass
-
     dataset.extend(new_data)
-
-    temp_file = filepath + ".tmp"
-    with open(temp_file, "w", encoding="utf-8") as f:
+    with open(filepath + ".tmp", "w", encoding="utf-8") as f:
         json.dump(dataset, f, ensure_ascii=False, indent=2)
-    os.replace(temp_file, filepath)
+    os.replace(filepath + ".tmp", filepath)
 
 
 async def main():
@@ -321,83 +359,80 @@ async def main():
         print("ВНИМАНИЕ: Замените OPENROUTER_API_KEY на ваш реальный ключ в .env!")
         return
 
-    TARGET_PER_CATEGORY = 100  # Сколько итоговых примеров (запросов) на категорию
-    QUERIES_PER_TOPIC = 5  # Сколько вариантов на 1 тему генерирует LLM
-    SITUATIONS_NEEDED = TARGET_PER_CATEGORY // QUERIES_PER_TOPIC  # Сколько тем нужно
+    TARGET_PER_CATEGORY = 100
+    QUERIES_PER_TOPIC = 5
+    SITUATIONS_NEEDED = max(1, TARGET_PER_CATEGORY // QUERIES_PER_TOPIC)
 
     print(f"Начинаем масштабированную генерацию датасета...")
     print(f"Цель: {TARGET_PER_CATEGORY} записей на категорию ({TARGET_PER_CATEGORY * len(CATEGORIES)} всего).")
 
     start_time = time.time()
-    semaphore = asyncio.Semaphore(10)
+    semaphore = asyncio.Semaphore(3)
     total_generated = 0
 
     async with aiohttp.ClientSession() as session:
         for cat_key in CATEGORIES.keys():
-            print(f"\n--- Обработка категории: {cat_key} ---")
-
-            # 1. Извлекаем хардкодные темы из ТЗ для текущей категории
+            print(f"\n--- Категория: {cat_key} ---")
             situations = [item["topic"] for item in TZ_THEMES if item["category"] == cat_key]
-            print(f"  [i] Найдено {len(situations)} тем из ТЗ для категории {cat_key}")
 
-            # 2. Догенерируем недостающие (если в ТЗ было меньше тем, чем требуется)
             needed_to_generate = SITUATIONS_NEEDED - len(situations)
             if needed_to_generate > 0:
                 generated_situations = await generate_situations(session, cat_key, needed_to_generate)
                 situations.extend(generated_situations)
 
-            # 3. Добиваем заглушками (предохранитель от ошибок API)
             idx = 1
             while len(situations) < SITUATIONS_NEEDED:
-                situations.append(f"Запрос от сотрудника по теме '{CATEGORIES[cat_key]}' (вариант {idx})")
+                situations.append(f"Рабочая задача в категории {CATEGORIES[cat_key]} (вариант {idx})")
                 idx += 1
-
-            # Ограничиваем список ровно тем количеством, которое нам нужно
             situations = situations[:SITUATIONS_NEEDED]
 
-            # 4. Запускаем генерацию 5 запросов для каждой ситуации (и хардкодных, и синтетических)
             tasks = [fetch_dataset_batch(session, topic, cat_key, semaphore) for topic in situations]
 
             category_results = []
             for task in asyncio.as_completed(tasks):
-                batch = await task
-                if isinstance(batch, list) and batch:
+                batch, user = await task
+                if batch:
                     for item in batch:
-                        if isinstance(item, dict):
-                            request_id = f"req_{int(time.time() * 1000)}_{uuid.uuid4().hex[:6]}"
-                            timestamp = datetime.now(timezone.utc).isoformat()
-
-                            query_text = item.get("query_text") or item.get("user_query", "")
-                            tools = item.get("tools_used", [])
-                            style = item.get("style") or random.choice(["formal", "voice", "typo", "jargon"])
-
-                            # Реалистичный объем токенов для ИИ-агентов (контекст + рассуждения + тулзы)
-                            llm_tokens = item.get("total_tokens")
-                            if isinstance(llm_tokens, (int, float)) and llm_tokens >= 1000:
-                                tokens = int(llm_tokens)
-                            else:
-                                base_tokens = random.randint(1200, 3500)
-                                tools_tokens = len(tools) * random.randint(4500, 18000)
-                                tokens = base_tokens + tools_tokens
-
-                            final_record = {
-                                "request_id": request_id,
-                                "timestamp": timestamp,
-                                "query_text": query_text,
-                                "response_text": item.get("response_text", ""),
-                                "status": item.get("status", "success"),
-                                "category": cat_key,
-                                "style": style,
-                                "tools_used": tools,
-                                "total_tokens": tokens,
+                        # Защита от случая, когда LLM вернула список строк вместо словарей
+                        if isinstance(item, str):
+                            item = {
+                                "query_text": item,
+                                "response_text": "Запрос обработан.",
+                                "status": "success",
+                                "style": "formal",
+                                "tools_used": [],
+                                "error_reason": None
                             }
-                            category_results.append(final_record)
-                    print(f"  [+] Завершено {len(batch)} логов (стиль: {style})")
+                        elif not isinstance(item, dict):
+                            continue
+
+                        tools = item.get("tools_used", [])
+                        if not isinstance(tools, list):
+                            tools = []
+
+                        tokens = calculate_tokens(cat_key, tools)
+
+                        final_record = {
+                            "request_id": f"req_{int(time.time() * 1000)}_{uuid.uuid4().hex[:6]}",
+                            "timestamp": generate_contextual_timestamp(cat_key, item.get("style", "formal")),
+                            "user_id": user["user_id"],
+                            "user_name": user["name"],
+                            "department": user["department"],
+                            "query_text": item.get("query_text", ""),
+                            "response_text": item.get("response_text", ""),
+                            "status": item.get("status", "success"),
+                            "error_reason": item.get("error_reason", None),
+                            "category": cat_key,
+                            "style": item.get("style", "formal"),
+                            "tools_used": tools,
+                            "total_tokens": tokens,
+                        }
+                        category_results.append(final_record)
+                    print(f"  [+] +{len(batch)} логов от {user['name']} ({user['department']})")
 
             append_to_dataset(OUTPUT_FILE, category_results)
             total_generated += len(category_results)
-            print(
-                f"  [✓] Категория {cat_key} сохранена. Добавлено {len(category_results)} записей (Всего: {total_generated})")
+            print(f"  [✓] Категория {cat_key} сохранена. Добавлено {len(category_results)} записей (Всего: {total_generated})")
 
     print(f"\nГенерация завершена за {time.time() - start_time:.2f} сек.")
     print(f"За сессию добавлено примеров: {total_generated}")
