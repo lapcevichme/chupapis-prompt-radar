@@ -27,15 +27,20 @@ def _summary_rows(roi: Roi) -> list[Row]:
         ["metric", "value"],
         ["total_logs", s.total_logs],
         ["success_rate_percent", s.success_rate_percent],
+        ["mau_count", s.mau_count],
         ["total_fte_hours_saved", s.total_fte_hours_saved],
         ["total_manual_cost_rub", s.total_manual_cost_rub],
         ["total_agent_cost_rub", s.total_agent_cost_rub],
         ["net_savings_rub", s.net_savings_rub],
         ["roi_multiplier", s.roi_multiplier],
+        ["cost_per_successful_action_rub", s.cost_per_successful_action_rub],
+        ["wasted_cost_rub", s.wasted_cost_rub],
         ["total_tokens_consumed", s.total_tokens_consumed],
         ["wasted_tokens_on_errors", s.wasted_tokens_on_errors],
         ["token_value_index", s.token_value_index],
         ["process_automation_rate", s.process_automation_rate],
+        ["mobile_voice_adoption_rate", s.mobile_voice_adoption_rate],
+        ["style_insight", s.style_insight],
         ["fte_hourly_rate_rub", a.fte_hourly_rate_rub],
         ["token_cost_per_1k_rub", a.token_cost_per_1k_rub],
         ["session_coeff_short", a.session_coefficients.short],
@@ -86,11 +91,20 @@ def _by_scenario_rows(roi: Roi) -> list[Row]:
     return rows
 
 
+def _by_style_rows(roi: Roi) -> list[Row]:
+    rows: list[Row] = [["style", "count", "percentage"]]
+    for st, count in roi.summary.style_breakdown.items():
+        pct = roi.summary.style_percentages.get(st, 0.0)
+        rows.append([st, count, pct])
+    return rows
+
+
 def _roi_sheets(roi: Roi) -> list[Sheet]:
     return [
         ("Summary", _summary_rows(roi)),
         ("ByCategory", _by_category_rows(roi)),
         ("ByScenario", _by_scenario_rows(roi)),
+        ("ByStyle", _by_style_rows(roi)),
     ]
 
 

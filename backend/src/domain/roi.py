@@ -15,6 +15,16 @@ class Assumptions(BaseModel):
     session_long_min_tokens: int
 
 
+class UserStats(BaseModel):
+    user_id: str
+    name: str
+    department: str
+    requests_count: int = 0
+    tokens_consumed: int = 0
+    wasted_tokens: int = 0
+    cost_rub: float = 0.0
+
+
 class RoiSummary(BaseModel):
     total_logs: int
     success_rate_percent: float
@@ -25,6 +35,20 @@ class RoiSummary(BaseModel):
     roi_multiplier: float
     total_tokens_consumed: int
     wasted_tokens_on_errors: int
+    wasted_cost_rub: float = 0.0
+    cost_per_successful_action_rub: float = 0.0
+
+    # MAU и разрезы по сотрудникам / департаментам
+    mau_count: int = 0
+    top_spenders: list[UserStats] = []
+    department_costs: dict[str, float] = {}
+
+    # Аналитика стилей речи (Voice / Mobile / Jargon / Formal)
+    style_breakdown: dict[str, int] = {}
+    style_percentages: dict[str, float] = {}
+    mobile_voice_adoption_rate: float = 0.0
+    style_insight: str = ""
+
     token_value_index: float
     process_automation_rate: float
     top_tools_used: dict[str, int]
