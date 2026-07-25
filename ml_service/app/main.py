@@ -228,6 +228,19 @@ async def lifespan(app: FastAPI):
         logger.warning("ollama bootstrap skipped: %s", exc)
         app.state.ollama_bootstrap = {"models": {}, "errors": [str(exc)]}
 
+    try:
+        from app.pipeline.clustering_batch.umap_hdbscan import _HAS_UMAP_HDBSCAN
+
+        if not _HAS_UMAP_HDBSCAN:
+            logger.error(
+                "UMAP/HDBSCAN not installed — recompute will NOT form real clusters. "
+                "pip install 'umap-learn>=0.5.6' 'hdbscan>=0.8.40'"
+            )
+        else:
+            logger.info("UMAP+HDBSCAN libraries available for recompute")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("could not probe UMAP/HDBSCAN: %s", exc)
+
     app.state.online = OnlinePipeline(settings=settings)
     app.state.qdrant = QdrantStore(
         _store_dict(),
@@ -330,8 +343,10 @@ def _agg_config() -> AggregationConfig:
         top_tasks_limit=int(getattr(ad, "top_tasks_limit", 7) if ad else 7),
         top_scenarios_limit=int(getattr(ad, "top_scenarios_limit", 9) if ad else 9),
         trend_threshold_percent=float(
-            getattr(ad, "trend_threshold_percent", 10.0) if ad else 10.0
+            getattr(ad, "trend_threshold_percent", 15.0) if ad else 15.0
         ),
+        trend_min_total=int(getattr(ad, "trend_min_total", 20) if ad else 20),
+        trend_min_previous=int(getattr(ad, "trend_min_previous", 5) if ad else 5),
         schema_version=SCHEMA_VERSION,
         taxonomy_version=TAXONOMY_VERSION,
         pipeline_version=PIPELINE_VERSION,
@@ -515,6 +530,9 @@ async def post_recompute(background: BackgroundTasks) -> dict[str, str]:
             "recompute": {
                 "umap": settings.pipeline_metadata_params().get("umap", {}),
                 "hdbscan": settings.pipeline_metadata_params().get("hdbscan", {}),
+                "max_clusters_per_task_type": getattr(
+                    settings.recompute, "max_clusters_per_task_type", 5
+                ),
             },
             "llm": {
                 "mode": settings.llm.mode,
@@ -528,31 +546,83 @@ async def post_recompute(background: BackgroundTasks) -> dict[str, str]:
     async def _run() -> None:
         global _LAST_RECOMPUTE_AT, _LOGS_AT_LAST_RECOMPUTE
         try:
+            logger.info(
+                "recompute start job_id=%s records=%s", job.job_id, len(data)
+            )
             result = await job.run(data)
             app.state.meta.put_job(result)
-            for rid, a in store.assignments.items():
-                app.state.meta.update_assignment_scenario(
-                    rid,
-                    scenario_id=a.get("scenario_id"),
-                    is_outlier=bool(a.get("is_outlier", False)),
-                )
+
+            # Batch meta updates (was N× commit)
+            assign_rows = [
+                {
+                    "request_id": rid,
+                    "scenario_id": a.get("scenario_id"),
+                    "is_outlier": bool(a.get("is_outlier", False)),
+                }
+                for rid, a in store.assignments.items()
+            ]
+            if hasattr(app.state.meta, "update_assignment_scenarios_batch"):
+                n_meta = app.state.meta.update_assignment_scenarios_batch(assign_rows)
+            else:
+                n_meta = 0
+                for row in assign_rows:
+                    app.state.meta.update_assignment_scenario(
+                        row["request_id"],
+                        scenario_id=row.get("scenario_id"),
+                        is_outlier=bool(row.get("is_outlier", False)),
+                    )
+                    n_meta += 1
+            logger.info("recompute meta assignments updated n=%s", n_meta)
+
             for sid, cluster in store.clusters.items():
                 payload = dict(cluster)
                 if sid in store.centroids:
                     payload["centroid"] = store.centroids[sid]
                 app.state.meta.upsert_cluster(payload)
+            logger.info("recompute clusters upserted n=%s", len(store.clusters))
+
+            # Batch Qdrant rewrite (was N× get + N× upsert hang)
             qdrant: Optional[QdrantStore] = getattr(app.state, "qdrant", None)
-            if qdrant is not None:
+            if qdrant is not None and store.assignments:
+                by_data = {str(d.get("request_id")): d for d in data}
+                points: list[dict[str, Any]] = []
                 for rid, a in store.assignments.items():
-                    existing = qdrant.get(rid) if hasattr(qdrant, "get") else None
-                    if not existing:
-                        continue
-                    payload = dict(existing.get("payload") or {})
-                    payload["scenario_id"] = a.get("scenario_id")
-                    payload["is_outlier"] = bool(a.get("is_outlier", False))
-                    qdrant.upsert(rid, existing.get("vector") or [], payload)
+                    d = by_data.get(str(rid)) or {}
+                    vec = d.get("embedding") or []
+                    if not vec:
+                        existing = qdrant.get(rid) if hasattr(qdrant, "get") else None
+                        if not existing:
+                            continue
+                        vec = existing.get("vector") or []
+                        base_payload = dict(existing.get("payload") or {})
+                    else:
+                        base_payload = {
+                            "request_id": rid,
+                            "task_type": a.get("task_type") or d.get("task_type"),
+                            "source_id": d.get("source_id"),
+                            "timestamp": str(d.get("timestamp") or ""),
+                            "query_text": d.get("query_text"),
+                        }
+                    base_payload["request_id"] = rid
+                    base_payload["task_type"] = a.get("task_type") or base_payload.get(
+                        "task_type"
+                    )
+                    base_payload["scenario_id"] = a.get("scenario_id")
+                    base_payload["is_outlier"] = bool(a.get("is_outlier", False))
+                    points.append(
+                        {"request_id": rid, "vector": vec, "payload": base_payload}
+                    )
+                n_qd = qdrant.upsert_batch(points, batch_size=64, wait=False)
+                logger.info("recompute qdrant batch upsert n=%s", n_qd)
+
             _LAST_RECOMPUTE_AT = result.get("completed_at")
             _LOGS_AT_LAST_RECOMPUTE = app.state.meta.count_assignments()
+            logger.info(
+                "recompute fully done job_id=%s status=%s clusters=%s",
+                job.job_id,
+                result.get("status"),
+                result.get("clusters_created"),
+            )
         except Exception:  # noqa: BLE001
             logger.exception("recompute failed job_id=%s", job.job_id)
             app.state.meta.put_job(job.result)

@@ -136,7 +136,7 @@ class ClassifierSettings:
     provider: str = "catboost"
     # Docker default; local resolve also scans app/models/ via classifier code when env set.
     model_path: str = "app/models/catboost_task_classifier.cbm"
-    confidence_threshold: float = 0.60
+    confidence_threshold: float = 0.30
     fallback_mode: str = "llm"  # fail_fast | llm | embedding_centroid
     taxonomy_version: str = "v1"
 
@@ -165,8 +165,8 @@ class UmapSettings:
 
 @dataclass
 class HdbscanSettings:
-    min_cluster_size: int = 5
-    min_samples: int = 3
+    min_cluster_size: int = 10
+    min_samples: int = 4
     metric: str = "euclidean"
     cluster_selection_method: str = "eom"
 
@@ -176,6 +176,7 @@ class RecomputeSettings:
     interval_hours: int = 2
     umap: UmapSettings = field(default_factory=UmapSettings)
     hdbscan: HdbscanSettings = field(default_factory=HdbscanSettings)
+    max_clusters_per_task_type: int = 5
 
 
 @dataclass
@@ -189,7 +190,9 @@ class SummarizationSettings:
 class AggregationDefaults:
     top_tasks_limit: int = 7
     top_scenarios_limit: int = 9
-    trend_threshold_percent: float = 10.0
+    trend_threshold_percent: float = 15.0
+    trend_min_total: int = 20
+    trend_min_previous: int = 5
 
 
 @dataclass
@@ -260,6 +263,7 @@ class Settings:
                 "metric": self.recompute.hdbscan.metric,
                 "cluster_selection_method": self.recompute.hdbscan.cluster_selection_method,
             },
+            "max_clusters_per_task_type": self.recompute.max_clusters_per_task_type,
             "summarization": {
                 "representative_examples_count": self.summarization.representative_examples_count,
                 "scenario_name_max_words": self.summarization.scenario_name_max_words,
@@ -376,7 +380,7 @@ def _classifier_from_yaml(raw: Mapping[str, Any]) -> ClassifierSettings:
     return ClassifierSettings(
         provider=_as_str(clf.get("provider"), "catboost"),
         model_path=_as_str(clf.get("model_path"), "/app/models/catboost_task_classifier.cbm"),
-        confidence_threshold=_as_float(clf.get("confidence_threshold"), 0.60),
+        confidence_threshold=_as_float(clf.get("confidence_threshold"), 0.30),
         fallback_mode=_as_str(clf.get("fallback_mode"), "llm"),
         taxonomy_version=_as_str(clf.get("taxonomy_version"), "v1"),
     )
@@ -426,12 +430,15 @@ def _settings_from_yaml(raw: Mapping[str, Any], path: Path) -> Settings:
                 random_state=_as_int(umap.get("random_state"), 42),
             ),
             hdbscan=HdbscanSettings(
-                min_cluster_size=_as_int(hdbscan.get("min_cluster_size"), 5),
-                min_samples=_as_int(hdbscan.get("min_samples"), 3),
+                min_cluster_size=_as_int(hdbscan.get("min_cluster_size"), 10),
+                min_samples=_as_int(hdbscan.get("min_samples"), 4),
                 metric=_as_str(hdbscan.get("metric"), "euclidean"),
                 cluster_selection_method=_as_str(
                     hdbscan.get("cluster_selection_method"), "eom"
                 ),
+            ),
+            max_clusters_per_task_type=_as_int(
+                recompute.get("max_clusters_per_task_type"), 5
             ),
         ),
         summarization=SummarizationSettings(
@@ -444,7 +451,9 @@ def _settings_from_yaml(raw: Mapping[str, Any], path: Path) -> Settings:
         aggregation_defaults=AggregationDefaults(
             top_tasks_limit=_as_int(agg.get("top_tasks_limit"), 7),
             top_scenarios_limit=_as_int(agg.get("top_scenarios_limit"), 9),
-            trend_threshold_percent=_as_float(agg.get("trend_threshold_percent"), 10.0),
+            trend_threshold_percent=_as_float(agg.get("trend_threshold_percent"), 15.0),
+            trend_min_total=_as_int(agg.get("trend_min_total"), 20),
+            trend_min_previous=_as_int(agg.get("trend_min_previous"), 5),
         ),
         long_text=LongTextSettings(
             max_direct_tokens=_as_int(long_text.get("max_direct_tokens"), 8000),

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from collections import defaultdict
@@ -177,14 +178,34 @@ class RecomputeJob:
             for task_type, records in by_type.items():
                 task_types.append(task_type)
                 embeddings = [r.get("embedding") or [0.0] * 10 for r in records]
-                out = run_umap_hdbscan(
+                max_clusters = int(
+                    recompute_cfg.get("max_clusters_per_task_type")
+                    or hdb_cfg.get("max_clusters")
+                    or 5
+                )
+                logger.info(
+                    "recompute UMAP+HDBSCAN task_type=%s n=%s dim=%s",
+                    task_type,
+                    len(embeddings),
+                    len(embeddings[0]) if embeddings else 0,
+                )
+                # CPU-heavy: keep event loop free for API poll / TestClient
+                out = await asyncio.to_thread(
+                    run_umap_hdbscan,
                     embeddings,
                     task_type=task_type,
                     random_state=int(umap_cfg.get("random_state", 42)),
-                    min_cluster_size=int(hdb_cfg.get("min_cluster_size", 5)),
-                    min_samples=int(hdb_cfg.get("min_samples", 3)),
+                    min_cluster_size=int(hdb_cfg.get("min_cluster_size", 10)),
+                    min_samples=int(hdb_cfg.get("min_samples", 4)),
                     n_neighbors=int(umap_cfg.get("n_neighbors", 15)),
                     n_components=int(umap_cfg.get("n_components", 10)),
+                    max_clusters=max_clusters,
+                )
+                logger.info(
+                    "recompute clustered task_type=%s clusters=%s fallback=%s",
+                    task_type,
+                    len(out.get("centroids") or {}),
+                    out.get("fallback_used"),
                 )
                 if out["fallback_used"] != "none":
                     any_fallback = True

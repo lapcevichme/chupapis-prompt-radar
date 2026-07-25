@@ -15,7 +15,8 @@ COPY entry.sh .
 
 ENV PYTHONPATH=/app/src
 
-RUN chmod +x entry.sh
+# Normalize CRLF (Windows checkouts) so shebang works in Linux containers.
+RUN sed -i 's/\r$//' entry.sh && chmod +x entry.sh
 
 EXPOSE 8080
 

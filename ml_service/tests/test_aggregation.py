@@ -104,20 +104,20 @@ def test_top_scenarios_other_has_no_fake_summary():
         (10, 15, "up"),  # +50%
         (10, 8, "down"),  # -20%
         (10, 10, "stable"),
-        (10, 11, "stable"),  # +10% not strictly greater than 10
-        (0, 5, "new"),
+        (10, 11, "stable"),  # +10% not > threshold 15
+        (0, 25, "new"),
         (0, 0, "insufficient_data"),
-        (1, 0, "insufficient_data"),  # total < 2 with min_total default 2 — wait total=1
+        (1, 0, "insufficient_data"),
+        (3, 30, "insufficient_data"),  # prev < min_previous_for_rate
     ],
 )
 def test_compute_trend_cases(prev, cur, expected_trend):
-    # (1, 0): total=1 < min_total_for_trend=2 → insufficient_data
-    if prev == 1 and cur == 0:
-        trend, growth = compute_trend(prev, cur)
-        assert trend == "insufficient_data"
-        assert growth is None
-        return
-    trend, growth = compute_trend(prev, cur)
+    kwargs = dict(threshold_percent=15.0, min_total_for_trend=20, min_previous_for_rate=5)
+    if prev == 10 and cur == 8:
+        kwargs["min_total_for_trend"] = 15
+    if prev == 10 and cur in (10, 11, 15):
+        kwargs["min_total_for_trend"] = 15
+    trend, growth = compute_trend(prev, cur, **kwargs)
     assert trend == expected_trend
     if expected_trend in ("new", "insufficient_data"):
         assert growth is None
@@ -126,17 +126,20 @@ def test_compute_trend_cases(prev, cur, expected_trend):
 
 
 def test_compute_trend_threshold_boundary():
-    trend, growth = compute_trend(100, 111, threshold_percent=10.0)
+    trend, growth = compute_trend(
+        100, 111, threshold_percent=10.0, min_total_for_trend=20, min_previous_for_rate=5
+    )
     assert trend == "up"
     assert growth == 11.0
-    trend2, _ = compute_trend(100, 110, threshold_percent=10.0)
+    trend2, _ = compute_trend(
+        100, 110, threshold_percent=10.0, min_total_for_trend=20, min_previous_for_rate=5
+    )
     assert trend2 == "stable"  # exactly 10% is not > 10
 
 
 def test_build_statistics_trends_half_period():
     assignments = []
-    # first half: 2026-01-01..01-05 — scenario A dominant
-    for i in range(10):
+    for i in range(15):
         assignments.append(
             {
                 "request_id": f"a{i}",
@@ -146,8 +149,7 @@ def test_build_statistics_trends_half_period():
                 "is_outlier": False,
             }
         )
-    # second half: more volume for same scenario → up
-    for i in range(20):
+    for i in range(30):
         assignments.append(
             {
                 "request_id": f"b{i}",
@@ -157,8 +159,7 @@ def test_build_statistics_trends_half_period():
                 "is_outlier": False,
             }
         )
-    # brand-new scenario only in second half
-    for i in range(5):
+    for i in range(12):
         assignments.append(
             {
                 "request_id": f"c{i}",
@@ -181,7 +182,15 @@ def test_build_statistics_trends_half_period():
             "summary": None,
         },
     }
-    stats = build_statistics(assignments, clusters=clusters)
+    stats = build_statistics(
+        assignments,
+        clusters=clusters,
+        config=AggregationConfig(
+            trend_threshold_percent=15.0,
+            trend_min_total=20,
+            trend_min_previous=5,
+        ),
+    )
     by_id = {s["scenario_id"]: s for s in stats["top_scenarios"]}
     assert by_id["data_analysis:cluster_0"]["trend"] in ("up", "stable")
     assert by_id["code_generation:cluster_0"]["trend"] == "new"

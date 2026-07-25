@@ -280,6 +280,36 @@ class MetaStore:
             )
             self._commit()
 
+    def update_assignment_scenarios_batch(
+        self,
+        rows: Sequence[Dict[str, Any]],
+    ) -> int:
+        """Bulk-update scenario_id / is_outlier in one transaction."""
+        if not rows:
+            return 0
+        now = _utcnow()
+        with self._lock:
+            cur = self._cursor()
+            cur.executemany(
+                """
+                UPDATE assignments
+                SET scenario_id = ?, is_outlier = ?, updated_at = ?
+                WHERE request_id = ?
+                """,
+                [
+                    (
+                        r.get("scenario_id"),
+                        1 if r.get("is_outlier") else 0,
+                        now,
+                        r["request_id"],
+                    )
+                    for r in rows
+                    if r.get("request_id")
+                ],
+            )
+            self._commit()
+            return len(rows)
+
     # ── clusters ─────────────────────────────────────────────────────────────
 
     def upsert_cluster(self, data: Dict[str, Any]) -> None:

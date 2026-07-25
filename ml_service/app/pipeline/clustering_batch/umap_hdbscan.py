@@ -1,20 +1,28 @@
-"""UMAP + HDBSCAN batch clustering with small-group fallback."""
+"""UMAP + HDBSCAN batch clustering with small-group fallback and cluster cap."""
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 try:
     from umap import UMAP
     from hdbscan import HDBSCAN
 
     _HAS_UMAP_HDBSCAN = True
-except ImportError:  # pragma: no cover
+except ImportError as _imp_err:  # pragma: no cover
     UMAP = None  # type: ignore
     HDBSCAN = None  # type: ignore
     _HAS_UMAP_HDBSCAN = False
+    logger.warning(
+        "umap-learn/hdbscan not available (%s) — recompute will use "
+        "single-centroid fallback per task_type. Install: pip install umap-learn hdbscan",
+        _imp_err,
+    )
 
 
 def make_scenario_id(task_type: str, cluster_n: int) -> str:
@@ -22,15 +30,87 @@ def make_scenario_id(task_type: str, cluster_n: int) -> str:
     return f"{task_type}:cluster_{cluster_n}"
 
 
+def _cap_clusters(
+    X: np.ndarray,
+    remapped: list[int],
+    is_outlier: list[bool],
+    scenario_ids: list[str | None],
+    centroids: dict[str, list[float]],
+    *,
+    task_type: str,
+    max_clusters: int,
+) -> tuple[list[int], list[bool], list[str | None], dict[str, list[float]]]:
+    """Keep largest ``max_clusters``; reassign smaller by nearest centroid."""
+    if max_clusters <= 0 or len(centroids) <= max_clusters:
+        return remapped, is_outlier, scenario_ids, centroids
+
+    sizes: dict[int, int] = {}
+    for lb in remapped:
+        if lb >= 0:
+            sizes[lb] = sizes.get(lb, 0) + 1
+    keep_labels = {
+        lb
+        for lb, _ in sorted(sizes.items(), key=lambda kv: (-kv[1], kv[0]))[:max_clusters]
+    }
+    keep_sorted = sorted(keep_labels)
+    label_remap = {old: new for new, old in enumerate(keep_sorted)}
+    kept_centroids_arr = {
+        new: np.asarray(centroids[make_scenario_id(task_type, old)], dtype=np.float64)
+        for old, new in label_remap.items()
+    }
+
+    new_remapped: list[int] = []
+    new_outliers: list[bool] = []
+    new_sids: list[str | None] = []
+    for i, lb in enumerate(remapped):
+        if is_outlier[i] or lb < 0:
+            new_remapped.append(-1)
+            new_outliers.append(True)
+            new_sids.append(None)
+            continue
+        if lb in label_remap:
+            nl = label_remap[lb]
+        else:
+            emb = X[i]
+            best_nl, best_sim = 0, -2.0
+            nrm = float(np.linalg.norm(emb)) or 1.0
+            for nl, cent in kept_centroids_arr.items():
+                cn = float(np.linalg.norm(cent)) or 1.0
+                sim = float(np.dot(emb, cent) / (nrm * cn))
+                if sim > best_sim:
+                    best_sim = sim
+                    best_nl = nl
+            nl = best_nl
+        new_remapped.append(nl)
+        new_outliers.append(False)
+        new_sids.append(make_scenario_id(task_type, nl))
+
+    new_centroids: dict[str, list[float]] = {}
+    for nl in sorted(set(new_remapped) - {-1}):
+        mask = np.array([r == nl for r in new_remapped])
+        if mask.any():
+            new_centroids[make_scenario_id(task_type, nl)] = X[mask].mean(axis=0).tolist()
+
+    logger.info(
+        "UMAP+HDBSCAN cap clusters task_type=%s %s → %s (max=%s)",
+        task_type,
+        len(centroids),
+        len(new_centroids),
+        max_clusters,
+    )
+    return new_remapped, new_outliers, new_sids, new_centroids
+
+
 def run_umap_hdbscan(
     embeddings: list[list[float]],
     *,
     task_type: str = "unknown",
     random_state: int = 42,
-    min_cluster_size: int = 5,
-    min_samples: int = 3,
+    min_cluster_size: int = 10,
+    min_samples: int = 4,
     n_neighbors: int = 15,
     n_components: int = 10,
+    max_clusters: int = 5,
 ) -> dict[str, Any]:
     """
     Cluster embeddings with UMAP → HDBSCAN.
@@ -57,6 +137,7 @@ def run_umap_hdbscan(
         "min_samples": min_samples,
         "metric": "euclidean",
         "cluster_selection_method": "eom",
+        "max_clusters": max_clusters,
     }
     base_meta = {"umap": umap_params, "hdbscan": hdbscan_params}
 
@@ -75,8 +156,7 @@ def run_umap_hdbscan(
     if X.ndim != 2:
         raise ValueError("embeddings must be 2D")
 
-    # Small-group fallback: not enough points for HDBSCAN
-    if n < min_cluster_size or not _HAS_UMAP_HDBSCAN:
+    if n < min_cluster_size:
         scenario_id = make_scenario_id(task_type, 0)
         centroid = X.mean(axis=0).tolist()
         return {
@@ -85,15 +165,52 @@ def run_umap_hdbscan(
             "scenario_ids": [scenario_id] * n,
             "centroids": {scenario_id: centroid},
             "statistical_reliability": "low",
-            "fallback_used": "small_group_centroid" if n < min_cluster_size else "libs_unavailable",
+            "fallback_used": "small_group_centroid",
             "metadata": base_meta,
         }
 
-    # Adaptive n_neighbors / n_components for small-but-valid sets
+    if not _HAS_UMAP_HDBSCAN:
+        logger.error(
+            "UMAP/HDBSCAN unavailable — single centroid for task_type=%s n=%s",
+            task_type,
+            n,
+        )
+        scenario_id = make_scenario_id(task_type, 0)
+        centroid = X.mean(axis=0).tolist()
+        return {
+            "labels": [0] * n,
+            "is_outlier": [False] * n,
+            "scenario_ids": [scenario_id] * n,
+            "centroids": {scenario_id: centroid},
+            "statistical_reliability": "low",
+            "fallback_used": "libs_unavailable",
+            "metadata": base_meta,
+        }
+
     eff_neighbors = max(2, min(n_neighbors, n - 1))
     eff_components = max(2, min(n_components, n - 2, X.shape[1]))
+    eff_min_cluster = max(2, min(min_cluster_size, max(2, n // 3)))
+    eff_min_samples = max(1, min(min_samples, eff_min_cluster))
     umap_params = {**umap_params, "n_neighbors": eff_neighbors, "n_components": eff_components}
+    hdbscan_params = {
+        **hdbscan_params,
+        "min_cluster_size": eff_min_cluster,
+        "min_samples": eff_min_samples,
+    }
     base_meta["umap"] = umap_params
+    base_meta["hdbscan"] = hdbscan_params
+
+    logger.info(
+        "UMAP+HDBSCAN start task_type=%s n=%s dim=%s n_neighbors=%s n_components=%s "
+        "min_cluster_size=%s min_samples=%s",
+        task_type,
+        n,
+        X.shape[1],
+        eff_neighbors,
+        eff_components,
+        eff_min_cluster,
+        eff_min_samples,
+    )
 
     reducer = UMAP(
         n_neighbors=eff_neighbors,
@@ -105,15 +222,14 @@ def run_umap_hdbscan(
     reduced = reducer.fit_transform(X)
 
     clusterer = HDBSCAN(
-        min_cluster_size=min(min_cluster_size, max(2, n // 2)),
-        min_samples=min(min_samples, max(1, n // 3)),
+        min_cluster_size=eff_min_cluster,
+        min_samples=eff_min_samples,
         metric="euclidean",
         cluster_selection_method="eom",
     )
     raw_labels = clusterer.fit_predict(reduced)
     labels = [int(x) for x in raw_labels]
 
-    # Remap positive labels to stable 0..k-1 (sorted by first appearance order of original label)
     positive = sorted({lb for lb in labels if lb >= 0})
     label_map = {old: new for new, old in enumerate(positive)}
 
@@ -131,7 +247,6 @@ def run_umap_hdbscan(
             is_outlier.append(False)
             scenario_ids.append(make_scenario_id(task_type, new_lb))
 
-    # Centroids in original embedding space
     centroids: dict[str, list[float]] = {}
     for new_lb in sorted(label_map.values()):
         mask = np.array([r == new_lb for r in remapped])
@@ -139,7 +254,6 @@ def run_umap_hdbscan(
             sid = make_scenario_id(task_type, new_lb)
             centroids[sid] = X[mask].mean(axis=0).tolist()
 
-    # All noise → single fallback cluster
     if not centroids:
         scenario_id = make_scenario_id(task_type, 0)
         centroids[scenario_id] = X.mean(axis=0).tolist()
@@ -156,6 +270,25 @@ def run_umap_hdbscan(
             "metadata": base_meta,
         }
 
+    if max_clusters > 0 and len(centroids) > max_clusters:
+        remapped, is_outlier, scenario_ids, centroids = _cap_clusters(
+            X,
+            remapped,
+            is_outlier,
+            scenario_ids,
+            centroids,
+            task_type=task_type,
+            max_clusters=max_clusters,
+        )
+
+    n_outliers = sum(1 for x in is_outlier if x)
+    logger.info(
+        "UMAP+HDBSCAN done task_type=%s clusters=%s outliers=%s/%s fallback=none",
+        task_type,
+        len(centroids),
+        n_outliers,
+        n,
+    )
     return {
         "labels": remapped,
         "is_outlier": is_outlier,

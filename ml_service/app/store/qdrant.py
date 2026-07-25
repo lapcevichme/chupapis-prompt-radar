@@ -86,7 +86,12 @@ class QdrantStore:
         last_exc: Optional[BaseException] = None
         for attempt in range(1, max(1, attempts) + 1):
             try:
-                self.client = QdrantClient(url=self.url, timeout=timeout)
+                try:
+                    self.client = QdrantClient(
+                        url=self.url, timeout=timeout, check_compatibility=False
+                    )
+                except TypeError:
+                    self.client = QdrantClient(url=self.url, timeout=timeout)
                 # cheap ping when available (real client); FakeClient tests may omit it
                 if hasattr(self.client, "get_collections"):
                     self.client.get_collections()
@@ -143,6 +148,8 @@ class QdrantStore:
         request_id: str,
         vector: Sequence[float],
         payload: Optional[Dict[str, Any]] = None,
+        *,
+        wait: bool = False,
     ) -> None:
         payload = dict(payload or {})
         payload.setdefault("request_id", request_id)
@@ -155,10 +162,22 @@ class QdrantStore:
             vector=vec,
             payload=payload,
         )
-        self.client.upsert(collection_name=self.collection, points=[point])
+        self.client.upsert(
+            collection_name=self.collection, points=[point], wait=wait
+        )
 
-    def upsert_batch(self, points: List[Dict[str, Any]]) -> None:
-        """points: [{request_id, vector, payload?}] or legacy flat dicts."""
+    def upsert_batch(
+        self,
+        points: List[Dict[str, Any]],
+        *,
+        batch_size: int = 64,
+        wait: bool = False,
+    ) -> int:
+        """Real multi-point upsert (not N×HTTP). Returns number written."""
+        if not points:
+            return 0
+        batch_size = max(1, int(batch_size))
+        prepared: List[Dict[str, Any]] = []
         for p in points:
             rid = p.get("request_id") or p.get("id")
             if not rid:
@@ -169,9 +188,42 @@ class QdrantStore:
                 payload = {
                     k: v
                     for k, v in p.items()
-                    if k not in ("vector", "embedding", "id")
+                    if k not in ("vector", "embedding", "id", "request_id")
                 }
-            self.upsert(str(rid), vector, payload)
+            payload = dict(payload or {})
+            payload.setdefault("request_id", str(rid))
+            prepared.append(
+                {
+                    "request_id": str(rid),
+                    "vector": [float(x) for x in vector],
+                    "payload": payload,
+                }
+            )
+
+        if self._mock or self.client is None:
+            for item in prepared:
+                self._vectors[item["request_id"]] = {
+                    "vector": item["vector"],
+                    "payload": item["payload"],
+                }
+            return len(prepared)
+
+        written = 0
+        for i in range(0, len(prepared), batch_size):
+            chunk = prepared[i : i + batch_size]
+            structs = [
+                PointStruct(
+                    id=_point_id(item["request_id"]),
+                    vector=item["vector"],
+                    payload=item["payload"],
+                )
+                for item in chunk
+            ]
+            self.client.upsert(
+                collection_name=self.collection, points=structs, wait=wait
+            )
+            written += len(structs)
+        return written
 
     def search(
         self,

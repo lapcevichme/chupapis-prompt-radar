@@ -25,7 +25,9 @@ from typing import Any, Iterable, Optional
 class AggregationConfig:
     top_tasks_limit: int = 7
     top_scenarios_limit: int = 9
-    trend_threshold_percent: float = 10.0
+    trend_threshold_percent: float = 15.0
+    trend_min_total: int = 20
+    trend_min_previous: int = 5
     schema_version: str = "2.0.0"
     taxonomy_version: str = "v1"
     pipeline_version: str = "0.1.0-mvp"
@@ -143,25 +145,30 @@ def compute_trend(
     previous_count: int,
     current_count: int,
     *,
-    threshold_percent: float = 10.0,
-    min_total_for_trend: int = 2,
+    threshold_percent: float = 15.0,
+    min_total_for_trend: int = 20,
+    min_previous_for_rate: int = 5,
 ) -> tuple[str, Optional[float]]:
     """
     Half-period trend (ТЗ §8.10).
 
     Returns (trend, growth_rate_percent).
-      - previous_count == 0 and current_count > 0 → new
+      - previous_count == 0 and current_count > 0 → new (no % rate)
       - total < min_total_for_trend → insufficient_data
+      - previous too small for a stable % → insufficient_data
       - growth > +threshold → up
       - growth < -threshold → down
       - else stable
     """
     total = previous_count + current_count
-    if total < min_total_for_trend:
-        return "insufficient_data", None
+    # "new" is qualitative — allow on cold-start without crazy rates
     if previous_count == 0:
         if current_count > 0:
             return "new", None
+        return "insufficient_data", None
+    if total < min_total_for_trend:
+        return "insufficient_data", None
+    if previous_count < min_previous_for_rate:
         return "insufficient_data", None
 
     growth = ((current_count - previous_count) / previous_count) * 100.0
@@ -258,6 +265,8 @@ def _scenario_trends(
     items: list[dict[str, Any]],
     *,
     threshold_percent: float,
+    min_total: int = 20,
+    min_previous: int = 5,
 ) -> dict[str, dict[str, Any]]:
     _, mid, _ = _half_period_bounds(items)
     if mid is None:
@@ -291,6 +300,8 @@ def _scenario_trends(
             first.get(sid, 0),
             second.get(sid, 0),
             threshold_percent=threshold_percent,
+            min_total_for_trend=min_total,
+            min_previous_for_rate=min_previous,
         )
         out[sid] = {"trend": trend, "growth_rate_percent": growth}
     return out
@@ -442,7 +453,12 @@ def build_statistics(
     scenarios_count = len(scenario_counts)
     outliers_pct = (outliers / records_total * 100.0) if records_total else 0.0
 
-    trends = _scenario_trends(items, threshold_percent=cfg.trend_threshold_percent)
+    trends = _scenario_trends(
+        items,
+        threshold_percent=cfg.trend_threshold_percent,
+        min_total=int(getattr(cfg, "trend_min_total", 20)),
+        min_previous=int(getattr(cfg, "trend_min_previous", 5)),
+    )
 
     tasks_distribution = top_n_distribution(
         dict(task_counts),
@@ -534,7 +550,12 @@ def build_scenarios_list(
         if qt and len(examples[sid]) < 5:
             examples[sid].append(str(qt))
 
-    trends = _scenario_trends(items, threshold_percent=cfg.trend_threshold_percent)
+    trends = _scenario_trends(
+        items,
+        threshold_percent=cfg.trend_threshold_percent,
+        min_total=int(getattr(cfg, "trend_min_total", 20)),
+        min_previous=int(getattr(cfg, "trend_min_previous", 5)),
+    )
 
     # Ensure cluster meta appears even with zero filtered counts
     sids = set(scenario_counts)
