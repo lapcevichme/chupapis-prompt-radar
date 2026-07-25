@@ -25,7 +25,10 @@ class DatasetRecord(UUIDPrimaryKeyMixin, Base):
     query_text: Mapped[str] = mapped_column(Text, nullable=False)
     gold_category: Mapped[str | None] = mapped_column(String(64), nullable=True)
     style: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    # source field: simulated_context_tokens
+    user_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    user_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    department: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    # source field: simulated_context_tokens / total_tokens
     tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # source field: estimated_manual_time_minutes
     manual_time_minutes: Mapped[float | None] = mapped_column(Float, nullable=True)

@@ -28,11 +28,14 @@ class DatasetRow:
     query_text: str
     gold_category: str | None
     style: str | None
-    tokens: int | None
-    manual_time_minutes: float | None
-    tools_used: list[Any] | None
-    status: str | None
-    timestamp: datetime
+    user_id: str | None = None
+    user_name: str | None = None
+    department: str | None = None
+    tokens: int | None = None
+    manual_time_minutes: float | None = None
+    tools_used: list[Any] | None = None
+    status: str | None = None
+    timestamp: datetime = None
 
 
 @dataclass
@@ -129,16 +132,33 @@ def normalize(
 
         external_request_id = str(raw.get("request_id") or f"{id_prefix}{index}")
         request_id = _canonical_request_id(request_namespace, external_request_id)
-        timestamp = _synthesize_timestamp(index, total, settings, now)
+        
+        raw_ts = raw.get("timestamp")
+        if raw_ts:
+            try:
+                ts_clean = str(raw_ts).replace("Z", "+00:00")
+                timestamp = datetime.fromisoformat(ts_clean)
+                if timestamp.tzinfo is None:
+                    timestamp = timestamp.replace(tzinfo=UTC)
+            except (ValueError, TypeError):
+                timestamp = _synthesize_timestamp(index, total, settings, now)
+        else:
+            timestamp = _synthesize_timestamp(index, total, settings, now)
+
         raw_status = raw.get("status")
         response_status, error_code = _STATUS_MAP.get(
             str(raw_status), ("success", None)
         )
-        tokens = _as_int(raw.get("simulated_context_tokens"))
+        tokens = _as_int(raw.get("total_tokens"))
+        if tokens is None:
+            tokens = _as_int(raw.get("simulated_context_tokens"))
         manual_time = _as_float(raw.get("estimated_manual_time_minutes"))
         tools_used = raw.get("tools_used") or []
         gold_category = raw.get("category")
         style = raw.get("style")
+        user_id = raw.get("user_id")
+        user_name = raw.get("user_name")
+        department = raw.get("department")
 
         result.log_records.append(
             {
@@ -150,6 +170,9 @@ def normalize(
                 "metadata": {
                     "gold_category": gold_category,
                     "style": style,
+                    "user_id": user_id,
+                    "user_name": user_name,
+                    "department": department,
                     "tokens": tokens,
                     "tools_used": tools_used,
                     "manual_time_minutes": manual_time,
@@ -164,6 +187,9 @@ def normalize(
                 query_text=query_text,
                 gold_category=gold_category,
                 style=style,
+                user_id=user_id,
+                user_name=user_name,
+                department=department,
                 tokens=tokens,
                 manual_time_minutes=manual_time,
                 tools_used=list(tools_used) if tools_used else [],

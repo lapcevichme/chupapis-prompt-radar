@@ -1,5 +1,5 @@
 import {useEffect, useMemo, useState} from 'react';
-import {Clock, Coins, Download, Loader2, Percent, RotateCcw, Wallet} from 'lucide-react';
+import {Building2, Clock, Coins, Download, Loader2, Mic, Percent, RotateCcw, UserCheck, Wallet} from 'lucide-react';
 import {Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import type {RoiData} from '@/entities/roi/types';
 import {promptRadarApi, type RoiQuery} from '@/shared/api/promptRadarApi';
@@ -86,6 +86,8 @@ export default function RoiPage({filters, refreshKey}: RoiPageProps) {
     return <EmptyState title="No ROI data found" />;
   }
 
+  const {summary} = data;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -144,14 +146,21 @@ export default function RoiPage({filters, refreshKey}: RoiPageProps) {
       {actionError && <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">{actionError}</div>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard icon={Wallet} label="Net Savings" value={formatCurrencyRub(data.summary.net_savings_rub)} detail={`ROI Multiplier: ${data.summary.roi_multiplier}x`} accent />
-        <MetricCard icon={Clock} label="FTE Hours Saved" value={`${data.summary.total_fte_hours_saved}h`} detail="Manual labor equivalent" />
-        <MetricCard icon={Coins} label="Agent Cost" value={formatCurrencyRub(data.summary.total_agent_cost_rub)} detail={`${data.summary.total_tokens_consumed.toLocaleString()} tokens`} />
-        <MetricCard icon={Percent} label="Automation Rate" value={formatPercent(data.summary.process_automation_rate)} detail="End-to-end task completion" />
+        <MetricCard icon={Wallet} label="Net Savings" value={formatCurrencyRub(summary.net_savings_rub)} detail={`ROI Multiplier: ${summary.roi_multiplier}x`} accent />
+        <MetricCard icon={Clock} label="FTE Hours Saved" value={`${summary.total_fte_hours_saved}h`} detail="Manual labor equivalent" />
+        <MetricCard icon={Coins} label="Agent Cost" value={formatCurrencyRub(summary.total_agent_cost_rub)} detail={`${summary.total_tokens_consumed.toLocaleString()} tokens`} />
+        <MetricCard icon={Percent} label="Automation Rate" value={formatPercent(summary.process_automation_rate)} detail="End-to-end task completion" />
       </div>
 
+      {summary.style_insight && (
+        <div className="flex items-center gap-3 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-sm text-primary">
+          <Mic className="h-5 w-5 shrink-0 text-accent" />
+          <span>{summary.style_insight}</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="flex h-full min-h-[500px] flex-col">
+        <Card className="flex h-full min-h-[450px] flex-col">
           <CardHeader>
             <CardTitle>Savings by Category</CardTitle>
           </CardHeader>
@@ -162,6 +171,55 @@ export default function RoiPage({filters, refreshKey}: RoiPageProps) {
 
         <TopScenarioRoiPager scenarios={data.by_scenario} />
       </div>
+
+      {(summary.top_spenders && summary.top_spenders.length > 0) || (summary.department_costs && Object.keys(summary.department_costs).length > 0) ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {summary.top_spenders && summary.top_spenders.length > 0 && (
+            <Card className="flex flex-col">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <UserCheck className="h-5 w-5 text-accent" />
+                  Heavy Users (Top Spenders)
+                </CardTitle>
+                {summary.mau_count ? <Badge variant="outline">{summary.mau_count} MAU</Badge> : null}
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {summary.top_spenders.map((user) => (
+                  <div key={user.user_id} className="flex items-center justify-between rounded-md border border-divider bg-surface px-4 py-3">
+                    <div>
+                      <h4 className="text-sm font-semibold text-primary">{user.name}</h4>
+                      <p className="text-xs text-secondary">{user.department} · {user.requests_count} requests</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-primary">{formatCurrencyRub(user.cost_rub)}</div>
+                      <div className="text-xs text-secondary">{user.tokens_consumed.toLocaleString()} tokens</div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {summary.department_costs && Object.keys(summary.department_costs).length > 0 && (
+            <Card className="flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-accent" />
+                  Costs by Department
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {Object.entries(summary.department_costs).map(([dept, cost]) => (
+                  <div key={dept} className="flex items-center justify-between rounded-md border border-divider bg-surface px-4 py-3">
+                    <span className="text-sm font-medium text-primary">{dept}</span>
+                    <span className="text-sm font-semibold text-accent">{formatCurrencyRub(cost)}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -179,7 +237,7 @@ function TopScenarioRoiPager({scenarios}: {scenarios: RoiData['by_scenario']}) {
   const rangeEnd = Math.min(pageStart + SCENARIOS_PER_PAGE, scenarios.length);
 
   return (
-    <Card className="flex h-full min-h-[500px] flex-col">
+    <Card className="flex h-full min-h-[450px] flex-col">
       <CardHeader>
         <div>
           <CardTitle>Top Scenarios ROI</CardTitle>
@@ -222,7 +280,7 @@ function CategorySavingsBars({categories}: {categories: RoiData['by_category']})
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-[330px] flex-1 w-full">
+      <div className="flex min-h-[300px] flex-1 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={sortedCategories} margin={{top: 28, right: 12, left: 4, bottom: 8}} barCategoryGap="34%">
             <CartesianGrid vertical={false} stroke="var(--color-divider)" strokeDasharray="4 4" />
