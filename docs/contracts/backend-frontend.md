@@ -10,6 +10,13 @@
 
 - **Auth:** cookie-based JWT (access+refresh). При 401 фронт дёргает `POST /auth/refresh`,
   при неудаче → на логин.
+- **CORS / credentials:** backend разрешает origins из `CORS_ORIGINS` (по умолчанию
+  `http://localhost:3000,5173,8080`) с `allow_credentials=true`. Фронт **обязан** слать запросы с
+  `credentials: 'include'` (fetch) / `withCredentials: true` (axios), иначе httpOnly-cookie не
+  прикрепится. Заголовок `Content-Disposition` открыт для чтения (имя файла экспорта).
+  Локально (`localhost:3000` → `:8080`) это один site → cookie `SameSite=lax` долетает. Для разных
+  доменов в проде нужен `COOKIE_SAMESITE=none` + `COOKIE_SECURE=true` (HTTPS) **или** dev-proxy
+  (Vite `server.proxy` / CRA `proxy`), который делает API same-origin — тогда CORS/cookie беспроблемны.
 - **Формат ошибки** (единый): `{ "error_code": "not_found", "message": "...", "details": null }`.
 - **Пагинация** (списки): `?limit=50&offset=0`, ответ `{ "items": [...], "total": 123 }`.
 - **Фильтры дашборда** (везде опц.): `source_id` (заливка), `from`/`to` (ISO-даты).

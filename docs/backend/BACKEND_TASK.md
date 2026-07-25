@@ -116,6 +116,9 @@ COOKIE_SAMESITE=lax
 DEMO_USER_EMAIL=demo@prompt-radar.local
 DEMO_USER_PASSWORD=DemoPass123!
 
+# CORS (frontend SPA). Cookie auth => explicit origins (no "*") + credentials.
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8080
+
 # ML integration
 ML_SERVICE_URL=http://ml-service:8000
 ML_SERVICE_TOKEN=change-me-ml-token
@@ -135,6 +138,9 @@ ROI_SESSION_LONG_MIN_TOKENS=30000
 # Normalization
 NORMALIZE_SYNTHESIZE_TIMESTAMPS=true
 NORMALIZE_TIMESTAMP_SPAN_DAYS=14
+
+# Read-model cache
+STATISTICS_CACHE_TTL_SEC=15        # dashboard statistics TTL cache (0 disables)
 ```
 
 Секреты только через env; конфиг валидируется при старте; `localhost` не зашивать в контейнер.

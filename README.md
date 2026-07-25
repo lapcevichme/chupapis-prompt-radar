@@ -25,9 +25,14 @@ docker compose up -d --build    # или: make up
 > разрешены). Без него ml идёт в offline mock-embeddings → низкое качество. Контракты и структура —
 > в `docs/`, задачи и статус — `TASKS.md`.
 
-**End-to-end одной командой:** `make demo` поднимает стек и гоняет сценарий
-`login → ingest demo → recompute (best-effort) → dashboard → ROI → export` с печатью саммари
-(скрипт `tools/demo.py`).
+**End-to-end прогон:** `python tools/demo.py --url http://localhost:8080` гоняет сценарий
+`login → ingest demo → recompute (best-effort) → dashboard → ROI → export` с печатью саммари.
+`make demo` поднимает стек и печатает шаги для ручного прогона.
+
+**Фронтенд (SPA):** ест только backend REST (контракт `docs/contracts/backend-frontend.md` +
+`openapi-backend.yaml`). CORS настроен (`CORS_ORIGINS`, по умолчанию localhost:3000/5173/8080),
+cookie-auth — фронт шлёт запросы с `credentials: 'include'`. Независимая разработка на моках —
+`docs/contracts/FRONTEND_MOCKING.md`.
 
 **Экспорт ROI в Excel/CSV** (кейсовая тема): `GET /api/v1/export?format=xlsx|csv` — выгрузка
 ROI-саммари, разрезов по категориям и сценариям. XLSX собирается нативно (stdlib, без доп.
