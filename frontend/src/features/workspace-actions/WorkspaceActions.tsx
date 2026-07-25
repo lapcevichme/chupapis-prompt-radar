@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {DatabaseZap, RefreshCcw, RotateCcw} from 'lucide-react';
+import {DatabaseZap, RefreshCcw} from 'lucide-react';
 import {promptRadarApi} from '@/shared/api/promptRadarApi';
 import {cn} from '@/shared/lib/cn';
 
@@ -17,7 +17,7 @@ export function WorkspaceActions({onRefresh}: WorkspaceActionsProps) {
 
     try {
       await action();
-      setMessage(name === 'ingest' ? 'Demo ingest started' : 'Recompute started');
+      setMessage('Demo ingest started');
       onRefresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Action failed');
@@ -47,17 +47,6 @@ export function WorkspaceActions({onRefresh}: WorkspaceActionsProps) {
       >
         <DatabaseZap className="h-4 w-4" />
         Demo ingest
-      </button>
-      <button
-        className={cn(
-          'inline-flex h-9 items-center gap-2 rounded-md bg-accent px-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60',
-          pendingAction === 'recompute' && 'opacity-80',
-        )}
-        disabled={pendingAction !== null}
-        onClick={() => void runAction('recompute', promptRadarApi.startRecompute)}
-      >
-        <RotateCcw className="h-4 w-4" />
-        Recompute
       </button>
     </div>
   );
