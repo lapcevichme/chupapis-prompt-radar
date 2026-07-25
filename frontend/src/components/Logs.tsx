@@ -5,16 +5,35 @@ import { Card, CardContent } from './ui/Card';
 import { Badge } from './ui/Badge';
 import { Loader2 } from 'lucide-react';
 
-export default function Logs() {
+interface LogsProps {
+  onFetchSuccess?: () => void;
+  refreshTrigger?: number;
+}
+
+export default function Logs({ onFetchSuccess, refreshTrigger }: LogsProps) {
   const [logs, setLogs] = useState<LogItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const loadData = async (silent = false) => {
+    try {
+      if (!silent && logs.length === 0) setLoading(true);
+      const data = await fetchLogs();
+      setLogs(data);
+      onFetchSuccess?.();
+    } catch (err) {
+      console.error('Failed to load logs', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchLogs()
-      .then(setLogs)
-      .catch((err) => console.error('Failed to load logs', err))
-      .finally(() => setLoading(false));
-  }, []);
+    loadData(false);
+    const interval = setInterval(() => {
+      loadData(true);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [refreshTrigger]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('en-US', {

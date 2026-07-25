@@ -3,31 +3,42 @@ import { Users, Cpu, AlertTriangle, ShieldCheck, Zap, Award, UserCheck, HelpCirc
 import type { UserAnalyticsData, ModelAnalyticsData } from '../types';
 import { fetchUserAnalytics, fetchModelAnalytics } from '../api';
 
-export default function UsersModelsView() {
+interface UsersModelsViewProps {
+  onFetchSuccess?: () => void;
+  refreshTrigger?: number;
+}
+
+export default function UsersModelsView({ onFetchSuccess, refreshTrigger }: UsersModelsViewProps) {
   const [activeSubTab, setActiveSubTab] = useState<'users' | 'models'>('users');
   const [userData, setUserData] = useState<UserAnalyticsData | null>(null);
   const [modelData, setModelData] = useState<ModelAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const [uRes, mRes] = await Promise.all([
-          fetchUserAnalytics(),
-          fetchModelAnalytics(),
-        ]);
-        setUserData(uRes);
-        setModelData(mRes);
-      } catch (err: any) {
-        setError(err.message || 'Ошибка загрузки данных');
-      } finally {
-        setLoading(false);
-      }
+  const loadData = async (silent = false) => {
+    try {
+      if (!silent && !userData && !modelData) setLoading(true);
+      const [uRes, mRes] = await Promise.all([
+        fetchUserAnalytics(),
+        fetchModelAnalytics(),
+      ]);
+      setUserData(uRes);
+      setModelData(mRes);
+      onFetchSuccess?.();
+    } catch (err: any) {
+      if (!silent) setError(err.message || 'Ошибка загрузки данных');
+    } finally {
+      setLoading(false);
     }
-    loadData();
-  }, []);
+  };
+
+  useEffect(() => {
+    loadData(false);
+    const interval = setInterval(() => {
+      loadData(true);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [refreshTrigger]);
 
   if (loading) {
     return (

@@ -5,19 +5,38 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Badge } from './ui/Badge';
 import { TrendingUp, TrendingDown, Minus, Target, Bot, ArrowLeft, Clock, Loader2 } from 'lucide-react';
 
-export default function Scenarios() {
+interface ScenariosProps {
+  onFetchSuccess?: () => void;
+  refreshTrigger?: number;
+}
+
+export default function Scenarios({ onFetchSuccess, refreshTrigger }: ScenariosProps) {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
   const [scenarioDetails, setScenarioDetails] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
 
+  const loadData = async (silent = false) => {
+    try {
+      if (!silent && scenarios.length === 0) setLoading(true);
+      const data = await fetchScenarios();
+      setScenarios(data);
+      onFetchSuccess?.();
+    } catch (err) {
+      console.error('Failed to load scenarios', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchScenarios()
-      .then(setScenarios)
-      .catch((err) => console.error('Failed to load scenarios', err))
-      .finally(() => setLoading(false));
-  }, []);
+    loadData(false);
+    const interval = setInterval(() => {
+      loadData(true);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [refreshTrigger]);
 
   const handleScenarioClick = async (id: string) => {
     setSelectedScenarioId(id);

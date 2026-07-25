@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Target, Activity, DollarSign, Radar, Menu, X, Moon, Sun, Database, Users } from 'lucide-react';
+import { LayoutDashboard, Target, Activity, DollarSign, Radar, Menu, X, Moon, Sun, Database, Users, RefreshCw } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Scenarios from './components/Scenarios';
 import Logs from './components/Logs';
@@ -14,6 +14,8 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [ready, setReady] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (isDark) {
@@ -26,6 +28,20 @@ export default function App() {
   useEffect(() => {
     ensureAuth().then(() => setReady(true));
   }, []);
+
+  const handleManualRefresh = () => {
+    setLastUpdated(new Date());
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
+  const handleFetchSuccess = () => {
+    setLastUpdated(new Date());
+  };
+
+  const formatLastUpdated = (date: Date | null) => {
+    if (!date) return 'Updating...';
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
 
   const navItems = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -124,22 +140,32 @@ export default function App() {
             {navItems.find(i => i.id === activeTab)?.label}
           </h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-secondary">Last updated: Today, 10:45 AM</span>
+            <div className="flex items-center gap-2 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Live Polling
+            </div>
+            <span className="text-sm text-secondary">Last updated: {formatLastUpdated(lastUpdated)}</span>
+            <button
+              onClick={handleManualRefresh}
+              title="Refresh data now"
+              className="p-1.5 text-secondary hover:text-primary hover:bg-surface-hover rounded-md transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
           </div>
         </header>
         
         <div className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto pb-12">
-            {activeTab === 'dashboard' && <Dashboard />}
-            {activeTab === 'ingestion' && <Ingestion />}
-            {activeTab === 'scenarios' && <Scenarios />}
-            {activeTab === 'logs' && <Logs />}
-            {activeTab === 'users_models' && <UsersModelsView />}
-            {activeTab === 'roi' && <RoiView />}
+            {activeTab === 'dashboard' && <Dashboard onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} />}
+            {activeTab === 'ingestion' && <Ingestion onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} />}
+            {activeTab === 'scenarios' && <Scenarios onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} />}
+            {activeTab === 'logs' && <Logs onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} />}
+            {activeTab === 'users_models' && <UsersModelsView onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} />}
+            {activeTab === 'roi' && <RoiView onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} />}
           </div>
         </div>
       </main>
-
 
       {/* Mobile overlay */}
       {isMobileMenuOpen && (

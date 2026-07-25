@@ -7,16 +7,35 @@ import { Activity, AlertTriangle, FileText, Target, Loader2 } from 'lucide-react
 
 const COLORS = ['#2563EB', '#635BFF', '#3B82F6', '#8B5CF6', '#0EA5E9', '#64748B'];
 
-export default function Dashboard() {
+interface DashboardProps {
+  onFetchSuccess?: () => void;
+  refreshTrigger?: number;
+}
+
+export default function Dashboard({ onFetchSuccess, refreshTrigger }: DashboardProps) {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const loadData = async (silent = false) => {
+    try {
+      if (!silent && !data) setLoading(true);
+      const res = await fetchDashboard();
+      setData(res);
+      onFetchSuccess?.();
+    } catch (err) {
+      console.error('Failed to load dashboard', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchDashboard()
-      .then(setData)
-      .catch((err) => console.error('Failed to load dashboard', err))
-      .finally(() => setLoading(false));
-  }, []);
+    loadData(false);
+    const interval = setInterval(() => {
+      loadData(true);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [refreshTrigger]);
 
   if (loading || !data) {
     return (

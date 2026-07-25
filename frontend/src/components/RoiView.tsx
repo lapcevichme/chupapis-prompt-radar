@@ -6,16 +6,35 @@ import { Badge } from './ui/Badge';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Wallet, Clock, Coins, Percent, Loader2 } from 'lucide-react';
 
-export default function RoiView() {
+interface RoiViewProps {
+  onFetchSuccess?: () => void;
+  refreshTrigger?: number;
+}
+
+export default function RoiView({ onFetchSuccess, refreshTrigger }: RoiViewProps) {
   const [data, setData] = useState<RoiData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const loadData = async (silent = false) => {
+    try {
+      if (!silent && !data) setLoading(true);
+      const res = await fetchRoi();
+      setData(res);
+      onFetchSuccess?.();
+    } catch (err) {
+      console.error('Failed to load ROI', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchRoi()
-      .then(setData)
-      .catch((err) => console.error('Failed to load ROI', err))
-      .finally(() => setLoading(false));
-  }, []);
+    loadData(false);
+    const interval = setInterval(() => {
+      loadData(true);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [refreshTrigger]);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(val);

@@ -5,7 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Badge } from './ui/Badge';
 import { UploadCloud, FileText, CheckCircle, Clock, Loader2, RefreshCw, Database } from 'lucide-react';
 
-export default function Ingestion() {
+interface IngestionProps {
+  onFetchSuccess?: () => void;
+  refreshTrigger?: number;
+}
+
+export default function Ingestion({ onFetchSuccess, refreshTrigger }: IngestionProps) {
   const [sources, setSources] = useState<Source[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [recomputeStatus, setRecomputeStatus] = useState<{ status: string; job_id?: string; scenarios_named?: number }>({ status: 'idle' });
@@ -16,6 +21,7 @@ export default function Ingestion() {
     try {
       const data = await fetchSources();
       setSources(data);
+      onFetchSuccess?.();
     } catch (err) {
       console.error('Failed to fetch sources', err);
     }
@@ -38,7 +44,7 @@ export default function Ingestion() {
       loadRecomputeStatus();
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshTrigger]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
