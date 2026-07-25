@@ -1,7 +1,7 @@
-"""Task-type classifier: CatBoost .cbm on raw text + confidence/unknown + fallbacks (ТЗ §8.3).
+"""Task-type classifier: CatBoost .cbm on query embeddings + confidence/unknown + fallbacks (ТЗ §8.3).
 
-Primary path: CatBoost text_features (query_text) — no embeddings required.
-Embeddings are only used by the optional embedding_centroid fallback.
+Primary path: text → embedding vector → CatBoost dense features.
+Legacy text_features (.cbm trained on query_text) still load for back-compat.
 
 fallback_mode:
   - fail_fast            — no model → error / CLASSIFIER_NOT_AVAILABLE
@@ -147,9 +147,12 @@ class CatBoostClassifier:
         self.catboost_model = None
         self.model_classes_: List[str] = []
         self.model_available = False
-        # "text" = CatBoost text_features on query_text; "embedding" = legacy float matrix
-        self.model_input_kind: str = "text"
+        # "embedding" = dense float matrix (primary); "text" = legacy CatBoost text_features
+        self.model_input_kind: str = "embedding"
         self.text_feature_name: str = TEXT_FEATURE_NAME
+        # Optional PCA (mean + components) fitted at train time for high-dim embeddings
+        self._pca_mean: Optional[np.ndarray] = None
+        self._pca_components: Optional[np.ndarray] = None
         self._llm_fn = llm_fn
         self._class_centroids: Dict[str, np.ndarray] = {}
         if class_centroids:
@@ -202,28 +205,67 @@ class CatBoostClassifier:
             if classes is not None:
                 self.model_classes_ = [str(c) for c in classes]
             self.model_input_kind, self.text_feature_name = self._detect_model_input(model, path)
+            self._load_pca(path)
             logger.info(
-                "Loaded CatBoost model from %s classes=%s input=%s",
+                "Loaded CatBoost model from %s classes=%s input=%s pca=%s",
                 path,
                 self.model_classes_,
                 self.model_input_kind,
+                self._pca_components is not None,
             )
         except Exception as e:  # noqa: BLE001
             logger.error("Failed to load CatBoost model from %s: %s", path, e)
             self.catboost_model = None
             self.model_available = False
 
+    def _load_pca(self, model_path: Path) -> None:
+        """Load optional .pca.npz sidecar (mean + components) for embedding models."""
+        pca_path = model_path.with_suffix(".pca.npz")
+        if not pca_path.is_file():
+            return
+        try:
+            data = np.load(pca_path)
+            self._pca_mean = np.asarray(data["mean"], dtype=np.float32).ravel()
+            self._pca_components = np.asarray(data["components"], dtype=np.float32)
+            logger.info(
+                "Loaded PCA transform %s mean_dim=%s out_dim=%s",
+                pca_path,
+                self._pca_mean.shape[0],
+                self._pca_components.shape[0],
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Failed to load PCA from %s: %s", pca_path, e)
+            self._pca_mean = None
+            self._pca_components = None
+
+    def _apply_pca(self, X: np.ndarray) -> np.ndarray:
+        if self._pca_components is None or self._pca_mean is None:
+            return X
+        X = np.asarray(X, dtype=np.float32)
+        if X.ndim == 1:
+            X = X.reshape(1, -1)
+        # (n, raw_dim) → (n, pca_dim): (X - mean) @ components.T
+        if X.shape[1] != self._pca_mean.shape[0]:
+            logger.warning(
+                "PCA dim mismatch: emb=%s mean=%s — skipping PCA",
+                X.shape[1],
+                self._pca_mean.shape[0],
+            )
+            return X
+        centered = X - self._pca_mean.reshape(1, -1)
+        return centered @ self._pca_components.T
+
     def _detect_model_input(self, model: Any, path: Path) -> tuple[str, str]:
-        """Prefer text CatBoost; fall back to embedding matrix for legacy .cbm."""
+        """Detect embedding vs legacy text CatBoost from sidecar meta / feature layout."""
         text_name = TEXT_FEATURE_NAME
         meta_path = path.with_suffix(".meta.json")
         if meta_path.is_file():
             try:
                 meta = json.loads(meta_path.read_text(encoding="utf-8"))
-                if meta.get("embeddings") is False or meta.get("input") == "text":
-                    return "text", str(meta.get("text_feature") or TEXT_FEATURE_NAME)
                 if meta.get("input") == "embedding" or meta.get("embeddings") is True:
                     return "embedding", text_name
+                if meta.get("embeddings") is False or meta.get("input") == "text":
+                    return "text", str(meta.get("text_feature") or TEXT_FEATURE_NAME)
             except Exception:  # noqa: BLE001
                 pass
 
@@ -247,8 +289,8 @@ class CatBoostClassifier:
                 return "text", text_name
         except Exception:  # noqa: BLE001
             pass
-        # Default for new pipeline
-        return "text", text_name
+        # Default: embedding pipeline
+        return "embedding", text_name
 
     @property
     def is_ready(self) -> bool:
@@ -308,7 +350,7 @@ class CatBoostClassifier:
         texts: List[str],
         embeddings: Optional[np.ndarray] = None,
     ) -> List[Dict[str, Any]]:
-        """Classify texts. Embeddings optional (only for legacy emb models / centroid fallback)."""
+        """Classify texts. Primary path needs embeddings for embedding CatBoost models."""
         if not texts:
             return []
 
@@ -319,7 +361,7 @@ class CatBoostClassifier:
                 if embeddings is not None:
                     return self._predict_catboost_embeddings(embeddings)
                 logger.warning(
-                    "Legacy embedding CatBoost loaded but no embeddings provided — fallback"
+                    "Embedding CatBoost loaded but no embeddings provided — fallback"
                 )
             except Exception as e:  # noqa: BLE001
                 logger.error(
@@ -369,11 +411,12 @@ class CatBoostClassifier:
         return self._pack_predictions(preds, probs, len(texts))
 
     def _predict_catboost_embeddings(self, embeddings: np.ndarray) -> List[Dict[str, Any]]:
-        """Legacy path: dense float features from an embedding model."""
+        """Primary path: dense float features from an embedding model (+ optional PCA)."""
         assert self.catboost_model is not None
         X = np.asarray(embeddings, dtype=np.float32)
         if X.ndim == 1:
             X = X.reshape(1, -1)
+        X = self._apply_pca(X)
         preds = self.catboost_model.predict(X)
         probs = self.catboost_model.predict_proba(X)
         return self._pack_predictions(preds, probs, X.shape[0])
@@ -572,8 +615,8 @@ class CatBoostClassifier:
     ) -> Dict[str, Any]:
         """Classify one text; confidence < threshold → task_type=unknown.
 
-        ``embedding`` is unused for text CatBoost models; kept for centroid fallback
-        and legacy embedding-based .cbm files.
+        For embedding CatBoost models ``embedding`` is required for the primary path.
+        Text models ignore it (except centroid fallback).
         """
         emb = None
         if embedding is not None:

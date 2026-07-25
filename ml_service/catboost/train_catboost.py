@@ -1,19 +1,31 @@
 #!/usr/bin/env python3
-"""Train CatBoost task-type classifier on raw query text (no embeddings).
+"""Train CatBoost task-type classifier on query embeddings.
 
-Uses CatBoost text_features (BoW / token dictionaries) — better for small
-datasets (~hundreds of rows) than high-dim embedding + CatBoost.
+Pipeline:
+  query_text → embedding provider (OpenRouter / Ollama / mock) → dense features
+  → CatBoost MultiClass → .cbm (+ .meta.json)
+
+Runtime must embed with the **same family/dim** used at train time
+(default: qwen3-embedding 4b, dim 2560).
 
 Example:
   cd ml_service
-  python catboost/train_catboost.py
-  python catboost/train_catboost.py --data catboost/prompt_radar_dataset.json \\
-      --out app/models/catboost_task_classifier.cbm
+  # online (OpenRouter) — uses OPENROUTER_API_KEY from env / .env
+  python catboost/train_catboost.py --provider openrouter
+
+  # offline Ollama
+  python catboost/train_catboost.py --provider ollama
+
+  # reuse cached vectors (skip API)
+  python catboost/train_catboost.py --cache catboost/embeddings_cache.npz
 """
 from __future__ import annotations
 
 import argparse
+import asyncio
+import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any, Optional
@@ -21,14 +33,27 @@ from typing import Any, Optional
 import numpy as np
 import pandas as pd
 from catboost import CatBoostClassifier, Pool
+from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+# load ml_service/.env if present (OPENROUTER_API_KEY etc.)
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(ROOT / ".env")
+except ImportError:
+    pass
+
 TEXT_COL = "query_text"
 TARGET_COL = "category"
 DEFAULT_DATA = ROOT / "catboost" / "prompt_radar_dataset.json"
 DEFAULT_OUT = ROOT / "app" / "models" / "catboost_task_classifier.cbm"
+DEFAULT_CACHE = ROOT / "catboost" / "embeddings_cache.npz"
 RANDOM_SEED = 42
 
 
@@ -55,22 +80,102 @@ def load_dataset(path: Path) -> pd.DataFrame:
     return df
 
 
-def make_pools(
-    df: pd.DataFrame, test_size: float, seed: int
-) -> tuple[Pool, Pool, pd.Series, pd.Series]:
-    X = df[[TEXT_COL]]
-    y = df[TARGET_COL]
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=seed, stratify=y
+def _text_fingerprint(texts: list[str]) -> str:
+    h = hashlib.sha256()
+    for t in texts:
+        h.update(t.encode("utf-8"))
+        h.update(b"\0")
+    return h.hexdigest()[:16]
+
+
+def _mock_embed(texts: list[str], dim: int = 2560) -> np.ndarray:
+    """Deterministic mock vectors (same idea as runtime MockEmbeddingAdapter)."""
+    out = np.zeros((len(texts), dim), dtype=np.float32)
+    for i, t in enumerate(texts):
+        digest = hashlib.sha256((t or "").encode("utf-8")).digest()
+        rng = np.random.default_rng(int.from_bytes(digest[:8], "little"))
+        v = rng.standard_normal(dim).astype(np.float32)
+        n = float(np.linalg.norm(v)) or 1.0
+        out[i] = v / n
+    return out
+
+
+async def _embed_async(
+    texts: list[str],
+    *,
+    provider: str,
+    batch_size: int,
+) -> np.ndarray:
+    from app.core.config import EmbeddingsSettings
+    from app.pipeline.embeddings.adapter import create_embedding_adapter
+
+    provider = provider.lower().strip()
+    if provider == "mock":
+        return _mock_embed(texts)
+
+    cfg = EmbeddingsSettings(
+        mode="online" if provider == "openrouter" else "offline",
+        provider=provider,
+        batch_size=batch_size,
+        openrouter_api_key=os.getenv("OPENROUTER_API_KEY", ""),
+        openrouter_model=os.getenv("OPENROUTER_MODEL", "qwen/qwen3-embedding-4b"),
+        openrouter_url=os.getenv(
+            "OPENROUTER_EMBEDDINGS_URL",
+            "https://openrouter.ai/api/v1/embeddings",
+        ),
+        ollama_url=os.getenv("OLLAMA_URL", "http://127.0.0.1:11434"),
+        ollama_model=os.getenv("OLLAMA_MODEL", "qwen3-embedding:4b"),
+        dim=int(os.getenv("EMBEDDINGS_DIM", "2560")),
+        max_concurrency=int(os.getenv("EMBEDDINGS_MAX_CONCURRENCY", "4")),
+        timeout_sec=float(os.getenv("EMBEDDINGS_TIMEOUT_SEC", "60")),
     )
-    train_pool = Pool(X_train, y_train, text_features=[TEXT_COL])
-    test_pool = Pool(X_test, y_test, text_features=[TEXT_COL])
-    return train_pool, test_pool, y_train, y_test
+    # force resolved provider
+    cfg.provider = provider
+    adapter = create_embedding_adapter(cfg)
+    try:
+        vectors = await adapter.embed(texts)
+    finally:
+        await adapter.close()
+    return np.asarray(vectors, dtype=np.float32)
+
+
+def load_or_compute_embeddings(
+    texts: list[str],
+    *,
+    provider: str,
+    cache_path: Optional[Path],
+    batch_size: int,
+    force_refresh: bool,
+) -> np.ndarray:
+    fp = _text_fingerprint(texts)
+    if cache_path and cache_path.is_file() and not force_refresh:
+        try:
+            data = np.load(cache_path, allow_pickle=False)
+            if str(data.get("fingerprint", "")) == fp and data["X"].shape[0] == len(texts):
+                print(f"Loaded embeddings cache {cache_path} shape={data['X'].shape}")
+                return np.asarray(data["X"], dtype=np.float32)
+            print(f"Cache fingerprint mismatch or size change — recomputing ({cache_path})")
+        except Exception as exc:  # noqa: BLE001
+            print(f"Cache unreadable ({exc}) — recomputing")
+
+    print(f"Embedding {len(texts)} texts via provider={provider} batch_size={batch_size}...")
+    X = asyncio.run(
+        _embed_async(texts, provider=provider, batch_size=batch_size)
+    )
+    print(f"Embeddings shape: {X.shape}")
+
+    if cache_path:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(cache_path, X=X, fingerprint=np.asarray(fp))
+        print(f"Cache saved → {cache_path}")
+    return X
 
 
 def train_model(
-    train_pool: Pool,
-    test_pool: Pool,
+    X_train: np.ndarray,
+    y_train: pd.Series,
+    X_test: np.ndarray,
+    y_test: pd.Series,
     *,
     iterations: int,
     learning_rate: float,
@@ -78,8 +183,8 @@ def train_model(
     seed: int,
     task_type: str,
 ) -> CatBoostClassifier:
-    # Text features: CPU is the reliable path; GPU text support is limited.
-    # Provide either text_processing OR tokenizers+dictionaries+feature_calcers (not both).
+    train_pool = Pool(X_train, y_train)
+    test_pool = Pool(X_test, y_test)
     model = CatBoostClassifier(
         iterations=iterations,
         learning_rate=learning_rate,
@@ -91,30 +196,18 @@ def train_model(
         early_stopping_rounds=80,
         auto_class_weights="Balanced",
         task_type=task_type,
-        tokenizers=[
-            {
-                "tokenizer_id": "Space",
-                "delimiter": " ",
-                "separator_type": "ByDelimiter",
-            }
-        ],
-        dictionaries=[
-            {
-                "dictionary_id": "Word",
-                "max_dictionary_size": "50000",
-                "occurrence_lower_bound": "2",
-                "gram_order": "1",
-            }
-        ],
-        feature_calcers=["BoW:top_tokens_count=5000", "NaiveBayes", "BM25"],
     )
     model.fit(train_pool, eval_set=test_pool, use_best_model=True)
     return model
 
 
-def evaluate(model: CatBoostClassifier, test_pool: Pool, y_test: pd.Series, out_dir: Path) -> float:
-    y_pred = model.predict(test_pool)
-    # CatBoost MultiClass returns column vector of labels
+def evaluate(
+    model: CatBoostClassifier,
+    X_test: np.ndarray,
+    y_test: pd.Series,
+    out_dir: Path,
+) -> float:
+    y_pred = model.predict(X_test)
     if isinstance(y_pred, np.ndarray) and y_pred.ndim > 1:
         y_pred = y_pred.ravel()
     y_pred = pd.Series([str(p) for p in y_pred], index=y_test.index)
@@ -143,7 +236,7 @@ def evaluate(model: CatBoostClassifier, test_pool: Pool, y_test: pd.Series, out_
             xticklabels=labels,
             yticklabels=labels,
         )
-        plt.title("Confusion Matrix (text CatBoost)")
+        plt.title("Confusion Matrix (embedding CatBoost)")
         plt.ylabel("True")
         plt.xlabel("Predicted")
         plt.tight_layout()
@@ -157,7 +250,12 @@ def evaluate(model: CatBoostClassifier, test_pool: Pool, y_test: pd.Series, out_
     return acc
 
 
-def demo_predict(model: CatBoostClassifier) -> None:
+def demo_predict(
+    model: CatBoostClassifier,
+    provider: str,
+    *,
+    pca: Optional[PCA] = None,
+) -> None:
     examples = [
         "Сформируй еженедельный отчет по проекту из Jira и отправь команде",
         "Напиши unit-тесты для функции parse_csv на Python",
@@ -166,33 +264,57 @@ def demo_predict(model: CatBoostClassifier) -> None:
         "Построй сводную таблицу продаж по регионам за Q2",
     ]
     print("\n" + "=" * 60)
-    print("Demo predictions:")
-    for text in examples:
-        pool = Pool(pd.DataFrame({TEXT_COL: [text]}), text_features=[TEXT_COL])
-        pred = model.predict(pool)
-        label = str(pred[0][0] if isinstance(pred[0], (list, np.ndarray)) else pred[0])
-        proba = model.predict_proba(pool)[0]
-        top = sorted(zip(model.classes_, proba), key=lambda x: -x[1])[:3]
+    print("Demo predictions (embed → CatBoost):")
+    try:
+        X = asyncio.run(_embed_async(examples, provider=provider, batch_size=8))
+        if pca is not None:
+            X = pca.transform(X).astype(np.float32)
+    except Exception as exc:  # noqa: BLE001
+        print(f"(demo skipped: {exc})")
+        return
+    preds = model.predict(X)
+    probs = model.predict_proba(X)
+    for i, text in enumerate(examples):
+        label = preds[i]
+        if isinstance(label, (list, np.ndarray)):
+            label = label[0]
+        top = sorted(zip(model.classes_, probs[i]), key=lambda x: -x[1])[:3]
         tops = ", ".join(f"{c}={p:.3f}" for c, p in top)
-        print(f"  [{label:20s}] {text[:70]}")
+        print(f"  [{str(label):20s}] {text[:70]}")
         print(f"    top: {tops}")
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Train text CatBoost classifier (no embeddings)")
+    p = argparse.ArgumentParser(
+        description="Train CatBoost on query embeddings (text → vector → classify)"
+    )
     p.add_argument("--data", type=Path, default=DEFAULT_DATA)
     p.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    p.add_argument(
+        "--provider",
+        choices=("openrouter", "ollama", "mock"),
+        default=os.getenv("EMBEDDINGS_PROVIDER")
+        or ("openrouter" if os.getenv("OPENROUTER_API_KEY") else "ollama"),
+        help="Embedding provider used to build features",
+    )
+    p.add_argument("--cache", type=Path, default=DEFAULT_CACHE)
+    p.add_argument("--no-cache", action="store_true")
+    p.add_argument("--refresh-cache", action="store_true")
+    p.add_argument("--batch-size", type=int, default=16)
     p.add_argument("--test-size", type=float, default=0.2)
     p.add_argument("--seed", type=int, default=RANDOM_SEED)
-    p.add_argument("--iterations", type=int, default=800)
+    p.add_argument("--iterations", type=int, default=500)
     p.add_argument("--learning-rate", type=float, default=0.05)
     p.add_argument("--depth", type=int, default=6)
     p.add_argument(
-        "--task-type",
-        choices=("CPU", "GPU"),
-        default="CPU",
-        help="Text features: prefer CPU",
+        "--pca-dim",
+        type=int,
+        default=256,
+        help="Project embeddings to this dim before CatBoost (0 = raw). "
+        "Default 256 avoids OOM on high-dim models (e.g. 2560).",
     )
+    p.add_argument("--task-type", choices=("CPU", "GPU"), default="CPU")
+    p.add_argument("--skip-demo", action="store_true")
     return p.parse_args(argv)
 
 
@@ -200,7 +322,6 @@ def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
     data_path = args.data if args.data.is_absolute() else (ROOT / args.data)
     if not data_path.is_file():
-        # also try relative to CWD / script dir
         alt = Path(args.data)
         if alt.is_file():
             data_path = alt
@@ -211,16 +332,51 @@ def main(argv: Optional[list[str]] = None) -> int:
     out_path = args.out if args.out.is_absolute() else (ROOT / args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
+    cache_path: Optional[Path] = None
+    if not args.no_cache:
+        cache_path = args.cache if args.cache.is_absolute() else (ROOT / args.cache)
+
     df = load_dataset(data_path)
-    train_pool, test_pool, _y_train, y_test = make_pools(df, args.test_size, args.seed)
+    texts = df[TEXT_COL].tolist()
+    y = df[TARGET_COL]
+
+    X = load_or_compute_embeddings(
+        texts,
+        provider=args.provider,
+        cache_path=cache_path,
+        batch_size=args.batch_size,
+        force_refresh=args.refresh_cache,
+    )
+    if X.shape[0] != len(df):
+        print("Embedding count mismatch", file=sys.stderr)
+        return 1
+
+    raw_dim = int(X.shape[1])
+    pca = None
+    feature_dim = raw_dim
+    if args.pca_dim and args.pca_dim > 0 and args.pca_dim < raw_dim:
+        n_comp = min(args.pca_dim, X.shape[0] - 1, raw_dim)
+        print(f"PCA {raw_dim} → {n_comp} (fit on full set for stable runtime transform)")
+        pca = PCA(n_components=n_comp, random_state=args.seed)
+        X = pca.fit_transform(X).astype(np.float32)
+        feature_dim = n_comp
+        explained = float(np.sum(pca.explained_variance_ratio_))
+        print(f"PCA explained variance: {explained:.3f}")
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=args.test_size, random_state=args.seed, stratify=y
+    )
 
     print(
-        f"Training text CatBoost: iterations={args.iterations} lr={args.learning_rate} "
-        f"depth={args.depth} task_type={args.task_type}"
+        f"Training embedding CatBoost: iterations={args.iterations} "
+        f"lr={args.learning_rate} depth={args.depth} feature_dim={feature_dim} "
+        f"raw_dim={raw_dim} task_type={args.task_type} provider={args.provider}"
     )
     model = train_model(
-        train_pool,
-        test_pool,
+        X_train,
+        y_train,
+        X_test,
+        y_test,
         iterations=args.iterations,
         learning_rate=args.learning_rate,
         depth=args.depth,
@@ -228,22 +384,35 @@ def main(argv: Optional[list[str]] = None) -> int:
         task_type=args.task_type,
     )
 
-    acc = evaluate(model, test_pool, y_test, out_path.parent)
+    acc = evaluate(model, X_test, y_test, out_path.parent)
     model.save_model(str(out_path))
     print(f"\nModel saved → {out_path.resolve()}")
     print(f"Classes: {list(model.classes_)}")
     print(f"Holdout accuracy: {acc:.4f}")
 
-    demo_predict(model)
+    if pca is not None:
+        pca_path = out_path.with_suffix(".pca.npz")
+        np.savez_compressed(
+            pca_path,
+            mean=pca.mean_.astype(np.float32),
+            components=pca.components_.astype(np.float32),
+        )
+        print(f"PCA transform saved → {pca_path}")
 
-    # small sidecar meta for runtime
+    if not args.skip_demo:
+        demo_predict(model, args.provider, pca=pca)
+
     meta = {
-        "input": "text",
-        "text_feature": TEXT_COL,
+        "input": "embedding",
+        "embeddings": True,
+        "embedding_provider": args.provider,
+        "embedding_dim": raw_dim,
+        "feature_dim": feature_dim,
+        "pca_dim": int(feature_dim) if pca is not None else None,
         "classes": [str(c) for c in model.classes_],
         "holdout_accuracy": acc,
         "n_samples": int(len(df)),
-        "embeddings": False,
+        "text_feature": None,
     }
     meta_path = out_path.with_suffix(".meta.json")
     meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")

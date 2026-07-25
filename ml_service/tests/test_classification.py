@@ -212,7 +212,7 @@ def test_embedding_centroid_empty_centroids():
 
 # --------------------------------------------------------------------------- real .cbm if present
 def test_load_real_cbm_if_present():
-    """Load shipped text CatBoost artifact when available; predict from text only."""
+    """Load shipped CatBoost artifact; embedding models need a vector of matching dim."""
     repo_model = (
         Path(__file__).resolve().parents[1] / "app" / "models" / "catboost_task_classifier.cbm"
     )
@@ -226,11 +226,27 @@ def test_load_real_cbm_if_present():
     assert clf.model_available is True
     assert clf.is_ready is True
     assert set(clf.model_classes_) == set(CORE_TASK_TYPES) or len(clf.model_classes_) == 7
-    out = clf.predict(["SELECT * FROM t JOIN excel_sales WHERE region = 'RU'"])
+
+    if clf.model_input_kind == "text":
+        out = clf.predict(["SELECT * FROM t JOIN excel_sales WHERE region = 'RU'"])
+        assert out[0]["task_type"] in list(CORE_TASK_TYPES) + ["unknown"]
+        assert out[0]["source"] == "catboost"
+        one = clf.predict_with_confidence("Напиши unit-тесты на Python для parse_csv")
+        assert one["task_type"] in list(CORE_TASK_TYPES) + ["unknown"]
+        assert one["source"] == "catboost"
+        return
+
+    # embedding model: unit vector in raw embedding space (PCA applied inside clf)
+    if clf._pca_mean is not None:
+        n_raw = int(clf._pca_mean.shape[0])
+    else:
+        n_raw = int(clf.catboost_model.feature_count())
+    emb = np.zeros((1, n_raw), dtype=np.float32)
+    emb[0, 0] = 1.0
+    out = clf.predict(["SELECT * FROM t"], embeddings=emb)
     assert out[0]["task_type"] in list(CORE_TASK_TYPES) + ["unknown"]
     assert out[0]["source"] == "catboost"
-    # Text model: no embedding required
-    one = clf.predict_with_confidence("Напиши unit-тесты на Python для parse_csv")
+    one = clf.predict_with_confidence("unit tests for parse_csv", embedding=emb[0])
     assert one["task_type"] in list(CORE_TASK_TYPES) + ["unknown"]
     assert one["source"] == "catboost"
 

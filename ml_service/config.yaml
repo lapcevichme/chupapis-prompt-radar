@@ -24,6 +24,7 @@ llm:
   openrouter: { model_name: "google/gemma-4-26b-a4b-it", url: "https://openrouter.ai/api/v1/chat/completions" }
 
 classifier:
+  # CatBoost on query embeddings (text → vector → predict). Train: catboost/train_catboost.py
   provider: "catboost"
   model_path: "app/models/catboost_task_classifier.cbm"
   # 0.30: practical demo/prod balance; 0.45 pushed ~half of real traffic to unknown

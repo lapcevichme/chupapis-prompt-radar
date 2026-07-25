@@ -87,7 +87,7 @@ async def test_live_catboost_text(require_cbm, live_settings):
     )
     assert clf.model_available is True
     assert clf.is_ready is True
-    assert clf.model_input_kind == "text"
+    assert clf.model_input_kind in {"text", "embedding"}
 
     preds = clf.predict(queries)
     assert len(preds) == 3

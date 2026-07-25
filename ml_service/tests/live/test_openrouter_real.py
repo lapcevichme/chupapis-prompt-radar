@@ -81,7 +81,7 @@ async def test_openrouter_catboost_text(require_cbm, live_settings):
         config={"fallback_mode": "fail_fast", "confidence_threshold": 0.01},
     )
     assert clf.model_available
-    assert clf.model_input_kind == "text"
+    assert clf.model_input_kind in {"text", "embedding"}
     preds = clf.predict(queries)
     for q, p in zip(queries, preds):
         assert p.get("source") == "catboost", p

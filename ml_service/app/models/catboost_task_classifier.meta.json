@@ -1,6 +1,10 @@
 {
-  "input": "text",
-  "text_feature": "query_text",
+  "input": "embedding",
+  "embeddings": true,
+  "embedding_provider": "openrouter",
+  "embedding_dim": 2560,
+  "feature_dim": 256,
+  "pca_dim": 256,
   "classes": [
     "code_help",
     "data_analysis",
@@ -10,7 +14,7 @@
     "task_management",
     "text_generation"
   ],
-  "holdout_accuracy": 0.65,
+  "holdout_accuracy": 0.7214285714285714,
   "n_samples": 700,
-  "embeddings": false
+  "text_feature": null
 }
