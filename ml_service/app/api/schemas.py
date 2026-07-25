@@ -29,12 +29,14 @@ class Statistics(BaseModel):
 
 class Assignment(BaseModel):
     request_id: str
+    source_id: Optional[str] = None
     task_type: str
     classification_confidence: float
     scenario_id: str
     scenario_name: Optional[str] = None
     is_outlier: bool
     has_failure_signals: bool
+    timestamp: Optional[Union[datetime, str]] = None
 
 class AssignmentsResponse(BaseModel):
     items: List[Assignment]

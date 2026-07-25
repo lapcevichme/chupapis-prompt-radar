@@ -98,6 +98,7 @@ def test_put_logs_partial_reject_and_duplicate():
         assert data["total"] >= 2
         ids = {x["request_id"] for x in data["items"]}
         assert "ing-1" in ids
+        assert {x["source_id"] for x in data["items"]} == {"demo"}
 
 
 def test_duplicate_within_same_batch():

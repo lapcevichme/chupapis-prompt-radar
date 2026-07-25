@@ -24,7 +24,12 @@ RUN pip install --no-cache-dir --upgrade pip \
         "catboost>=1.2.0" \
         "umap-learn>=0.5.6" \
         "hdbscan>=0.8.40" \
-        "qdrant-client>=1.9.0"
+        "qdrant-client>=1.9.0" \
+        "pyyaml>=6.0.0" \
+        "jsonschema>=4.22.0" \
+        "langchain-openrouter>=0.2.0" \
+        "langchain-ollama>=0.3.0" \
+        "langchain-core>=0.3.0"
 
 COPY config.yaml ./
 COPY app ./app
@@ -36,12 +41,11 @@ ENV PYTHONUNBUFFERED=1 \
     CLASSIFIER_MODEL_PATH=/app/app/models/catboost_task_classifier.cbm \
     CLASSIFIER_CONFIDENCE_THRESHOLD=0.30 \
     ML_CONFIG_PATH=/app/config.yaml \
-    EMBEDDINGS_PROVIDER=mock \
+    ML_MODE=mock \
     EMBEDDINGS_DIM=2560 \
     ALLOW_INMEMORY_STORE=false \
     QDRANT_REQUIRED=true \
     QDRANT_URL=http://qdrant:6333 \
-    QDRANT_COLLECTION=prompt_radar_vectors \
     ML_META_DB_URL=sqlite:////data/ml/meta.db \
     LOG_LEVEL=INFO
 

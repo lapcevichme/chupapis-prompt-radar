@@ -627,6 +627,8 @@ async def get_assignments(
                 or job_mod.STORE.clusters.get(a.get("scenario_id") or "", {}).get("name"),
                 "is_outlier": bool(a.get("is_outlier")),
                 "has_failure_signals": bool(a.get("has_failure_signals")),
+                "source_id": a.get("source_id"),
+                "timestamp": a.get("timestamp"),
             }
         )
     return {
