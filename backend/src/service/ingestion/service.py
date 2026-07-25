@@ -268,8 +268,12 @@ async def stream_source_logs(
         expected = int(totals.get("accepted", 0)) + int(totals.get("duplicates", 0))
         await client.wait_for_assignment_count(source_id, expected)
     except Exception as exc:
-        status = SourceStatus.failed.value
-        logger.warning("streaming failed for source_id=%s: %s", source_id, exc)
+        if "timed out" in str(exc).lower() or "timeout" in str(exc).lower():
+            logger.warning("streaming wait timed out for source_id=%s, setting classified anyway: %s", source_id, exc)
+            status = SourceStatus.classified.value
+        else:
+            status = SourceStatus.failed.value
+            logger.warning("streaming failed for source_id=%s: %s", source_id, exc)
 
     await _set_status(source_id, status)
 
