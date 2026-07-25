@@ -17,6 +17,7 @@ test('validates dates and applies a normalized filter set', async () => {
   const onChange = vi.fn();
   render(<WorkspaceFilters filters={{}} onChange={onChange} refreshKey={0} />);
 
+  await user.click(screen.getByRole('button', {name: 'Filters'}));
   await user.selectOptions(await screen.findByLabelText('Source'), 'source-1');
   await user.type(screen.getByLabelText('From'), '2026-07-20');
   await user.type(screen.getByLabelText('To'), '2026-07-10');
@@ -29,4 +30,3 @@ test('validates dates and applies a normalized filter set', async () => {
   await user.click(screen.getByRole('button', {name: 'Apply'}));
   expect(onChange).toHaveBeenCalledWith({source_id: 'source-1', from: '2026-07-20', to: '2026-07-25'});
 });
-

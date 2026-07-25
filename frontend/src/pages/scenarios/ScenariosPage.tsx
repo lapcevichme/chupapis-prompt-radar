@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useState, type ReactNode} from 'react';
 import {Bot, ChevronDown, Loader2, Minus, Target, TrendingDown, TrendingUp} from 'lucide-react';
 import type {Scenario} from '@/entities/scenario/types';
 import {promptRadarApi} from '@/shared/api/promptRadarApi';
@@ -13,9 +13,10 @@ import type {WorkspaceFilters} from '@/entities/workspace/types';
 interface ScenariosPageProps {
   filters: WorkspaceFilters;
   refreshKey: number;
+  workspaceFiltersControl?: ReactNode;
 }
 
-export default function ScenariosPage({filters, refreshKey}: ScenariosPageProps) {
+export default function ScenariosPage({filters, refreshKey, workspaceFiltersControl}: ScenariosPageProps) {
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
   const [taskType, setTaskType] = useState('');
   const {data, error, isLoading} = useApiResource(() => promptRadarApi.getScenarios(filters), [filters, refreshKey]);
@@ -63,14 +64,17 @@ export default function ScenariosPage({filters, refreshKey}: ScenariosPageProps)
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-sm font-medium text-secondary">{scenarios.length} auto-discovered user interaction clusters</h2>
-        <select
-          className="h-9 rounded-md border border-divider bg-surface px-3 text-sm text-primary outline-none focus:border-accent"
-          value={taskType}
-          onChange={(event) => setTaskType(event.target.value)}
-        >
-          <option value="">All task types</option>
-          {taskTypes.map((value) => <option key={value} value={value}>{titleFromCode(value)}</option>)}
-        </select>
+        <div className="flex flex-wrap items-center gap-3">
+          {workspaceFiltersControl}
+          <select
+            className="h-10 rounded-md border border-divider bg-surface px-3 text-sm text-primary outline-none focus:border-accent"
+            value={taskType}
+            onChange={(event) => setTaskType(event.target.value)}
+          >
+            <option value="">All task types</option>
+            {taskTypes.map((value) => <option key={value} value={value}>{titleFromCode(value)}</option>)}
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">

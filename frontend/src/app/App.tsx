@@ -167,7 +167,7 @@ export default function App() {
       isDark={isDark}
       navItems={navItems}
       secondaryToolbar={
-        activeTab === 'sources' ? undefined : (
+        activeTab === 'sources' || activeTab === 'scenarios' ? undefined : (
           <WorkspaceFilters filters={filters} onChange={setFilters} refreshKey={refreshKey} />
         )
       }
@@ -183,7 +183,13 @@ export default function App() {
           <DashboardPage filters={filters} onOpenSources={() => setActiveTab('sources')} refreshKey={refreshKey} />
         )}
         {activeTab === 'sources' && <SourcesPage refreshKey={refreshKey} onWorkspaceChanged={refreshData} />}
-        {activeTab === 'scenarios' && <ScenariosPage filters={filters} refreshKey={refreshKey} />}
+        {activeTab === 'scenarios' && (
+          <ScenariosPage
+            filters={filters}
+            refreshKey={refreshKey}
+            workspaceFiltersControl={<WorkspaceFilters filters={filters} onChange={setFilters} refreshKey={refreshKey} />}
+          />
+        )}
         {activeTab === 'logs' && <LogsPage filters={filters} refreshKey={refreshKey} />}
         {activeTab === 'roi' && <RoiPage filters={filters} refreshKey={refreshKey} />}
       </Suspense>
