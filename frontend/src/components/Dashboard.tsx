@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { fetchDashboard } from '../api';
-import type { DashboardSummary } from '../types';
+import { fetchDashboard, fetchRoi } from '../api';
+import type { DashboardSummary, RoiData } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-import { Activity, AlertTriangle, FileText, Target, Loader2 } from 'lucide-react';
+import { Activity, AlertTriangle, FileText, Target, Loader2, Users, Clock, Wallet, CheckCircle2 } from 'lucide-react';
 
 const COLORS = ['#2563EB', '#635BFF', '#3B82F6', '#8B5CF6', '#0EA5E9', '#64748B'];
 
@@ -14,13 +14,20 @@ interface DashboardProps {
 
 export default function Dashboard({ onFetchSuccess, refreshTrigger }: DashboardProps) {
   const [data, setData] = useState<DashboardSummary | null>(null);
+  const [roi, setRoi] = useState<RoiData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadData = async (silent = false) => {
     try {
       if (!silent && !data) setLoading(true);
-      const res = await fetchDashboard();
+      // QNA §2.1 asks for MAU / freed FTE / payoff on the main screen, not only
+      // on the ROI tab: those are the numbers a CTO opens the dashboard for.
+      const [res, roiRes] = await Promise.all([
+        fetchDashboard(),
+        fetchRoi().catch(() => null),
+      ]);
       setData(res);
+      setRoi(roiRes);
       onFetchSuccess?.();
     } catch (err) {
       console.error('Failed to load dashboard', err);
@@ -45,8 +52,62 @@ export default function Dashboard({ onFetchSuccess, refreshTrigger }: DashboardP
     );
   }
 
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(val);
+
   return (
     <div className="space-y-6">
+      {roi && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-secondary">Окупаемость</CardTitle>
+              <CheckCircle2 className={`h-4 w-4 ${roi.verdict.pays_off ? 'text-emerald-400' : 'text-amber-400'}`} />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-3xl font-semibold ${roi.verdict.pays_off ? 'text-emerald-400' : 'text-amber-400'}`}>
+                ×{roi.verdict.ratio}
+              </div>
+              <p className="text-sm text-secondary mt-1">
+                {roi.verdict.pays_off ? 'выгода превышает затраты' : 'затраты превышают выгоду'}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-secondary">MAU</CardTitle>
+              <Users className="h-4 w-4 text-accent" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-semibold text-primary">{roi.summary.mau_count}</div>
+              <p className="text-sm text-secondary mt-1">активных пользователей</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-secondary">Высвобождено FTE</CardTitle>
+              <Clock className="h-4 w-4 text-accent" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-semibold text-primary">{roi.summary.total_fte_hours_saved} ч</div>
+              <p className="text-sm text-secondary mt-1">
+                ≈ {(roi.summary.total_fte_hours_saved / 168).toFixed(1)} чел.-мес.
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-secondary">Чистая выгода</CardTitle>
+              <Wallet className="h-4 w-4 text-accent" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-semibold text-accent">{formatCurrency(roi.verdict.net_rub)}</div>
+              <p className="text-sm text-secondary mt-1">B − A за период</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">

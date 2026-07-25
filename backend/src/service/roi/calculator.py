@@ -3,11 +3,14 @@ from typing import Any
 
 from domain.roi import (
     Assumptions,
+    FteRateModel,
+    PayoffVerdict,
     Roi,
     RoiByCategory,
     RoiByScenario,
     RoiSummary,
     SessionCoefficients,
+    TokenCostModel,
     UserStats,
 )
 from domain.taxonomy import label
@@ -24,6 +27,10 @@ class RoiConfig:
     coeff_long: float
     short_max_tokens: int
     long_min_tokens: int
+    # Derivations behind the two rates above; carried through to `assumptions` so
+    # the numbers can be audited rather than taken on trust.
+    fte_rate_model: FteRateModel | None = None
+    token_cost_model: TokenCostModel | None = None
 
     def session_coeff(self, tokens: int) -> float:
         if tokens <= self.short_max_tokens:
@@ -95,11 +102,14 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
         session_short_max_tokens=config.short_max_tokens,
         session_long_min_tokens=config.long_min_tokens,
         manual_minutes_by_category=dict(DEFAULT_CATEGORY_MANUAL_MINUTES),
+        fte_rate_model=config.fte_rate_model,
+        token_cost_model=config.token_cost_model,
     )
 
     if not records:
         return Roi(
             assumptions=assumptions,
+            verdict=_build_verdict(0.0, 0.0),
             summary=_empty_summary(),
             by_category=[],
             by_scenario=[],
@@ -269,10 +279,49 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
 
     return Roi(
         assumptions=assumptions,
+        verdict=_build_verdict(manual_cost, agent_cost),
         summary=summary,
         by_category=category_rows,
         by_scenario=scenario_rows,
     )
+
+
+def _build_verdict(benefit_rub: float, cost_rub: float) -> PayoffVerdict:
+    """State the B > A comparison outright instead of leaving it to be inferred."""
+    net = benefit_rub - cost_rub
+    ratio = round(benefit_rub / cost_rub, 2) if cost_rub > 0 else 0.0
+    pays_off = benefit_rub > cost_rub
+
+    if cost_rub <= 0 and benefit_rub <= 0:
+        headline = "Недостаточно данных для вердикта"
+    elif pays_off:
+        headline = (
+            f"ИИ окупается: выгода {_money(benefit_rub)} > затрат {_money(cost_rub)} "
+            f"(×{ratio}, чистыми {_money(net)})"
+        )
+    else:
+        headline = (
+            f"ИИ пока не окупается: выгода {_money(benefit_rub)} "
+            f"< затрат {_money(cost_rub)} (минус {_money(abs(net))})"
+        )
+
+    return PayoffVerdict(
+        benefit_rub=round(benefit_rub, 2),
+        cost_rub=round(cost_rub, 2),
+        net_rub=round(net, 2),
+        ratio=ratio,
+        pays_off=pays_off,
+        headline=headline,
+    )
+
+
+def _money(value: float) -> str:
+    """Compact rouble figure for the headline (2.1 млн ₽ reads better than 2112800)."""
+    if abs(value) >= 1_000_000:
+        return f"{value / 1_000_000:.1f} млн ₽"
+    if abs(value) >= 1_000:
+        return f"{value / 1_000:.0f} тыс ₽"
+    return f"{value:.0f} ₽"
 
 
 def _bucket_net(bucket: _Bucket, config: RoiConfig) -> float:

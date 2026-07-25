@@ -1,5 +1,6 @@
 """Unit tests for the ROI calculator (killer feature, D6 session coefficients)."""
 
+import pytest
 from service.roi.calculator import RoiConfig, compute_roi
 
 
@@ -146,3 +147,89 @@ def test_case_insensitive_and_completed_status(roi_config: RoiConfig, make_recor
     roi = compute_roi([rec1, rec2], roi_config)
     assert roi.summary.success_rate_percent == 100.0
     assert roi.summary.total_fte_hours_saved == 1.0
+
+
+# --- QNA §1: explicit B > A verdict and derived rates -----------------------
+
+
+def test_verdict_states_payoff_explicitly(roi_config, make_record):
+    """The B > A comparison must be an output, not something the reader infers."""
+    roi = compute_roi(
+        [make_record(status="success", manual_time_minutes=600.0, tokens=1000)],
+        roi_config,
+    )
+
+    assert roi.verdict.pays_off is True
+    assert roi.verdict.benefit_rub == roi.summary.total_manual_cost_rub
+    assert roi.verdict.cost_rub == roi.summary.total_agent_cost_rub
+    assert roi.verdict.net_rub == pytest.approx(
+        roi.verdict.benefit_rub - roi.verdict.cost_rub
+    )
+    assert "окупается" in roi.verdict.headline
+
+
+def test_verdict_reports_loss_when_cost_exceeds_benefit(roi_config, make_record):
+    """A token-heavy failure saves nothing but still burns budget -> B < A."""
+    roi = compute_roi(
+        [make_record(status="error_tool", manual_time_minutes=5.0, tokens=50_000_000)],
+        roi_config,
+    )
+
+    assert roi.verdict.benefit_rub == 0.0
+    assert roi.verdict.cost_rub > 0
+    assert roi.verdict.pays_off is False
+    assert "не окупается" in roi.verdict.headline
+
+
+def test_verdict_on_empty_input_is_not_a_false_positive(roi_config):
+    roi = compute_roi([], roi_config)
+
+    assert roi.verdict.pays_off is False
+    assert roi.verdict.benefit_rub == 0.0
+    assert roi.verdict.cost_rub == 0.0
+
+
+def test_fte_hourly_rate_derived_from_monthly_salary():
+    """QNA §1.1 reference: ~400 000 RUB/month, not a standalone hourly constant."""
+    from core.config import Settings
+
+    # _env_file=None: assert the shipped defaults, not the developer's local .env
+    s = Settings(
+        _env_file=None,
+        DATABASE_URL="postgresql+asyncpg://t:t@localhost/t",
+        JWT_SECRET="super-secret-test-key-32-chars-long!",
+    )
+
+    assert s.ROI_FTE_HOURLY_RATE_RUB is None
+    assert s.roi_fte_hourly_rate == pytest.approx(400_000.0 / 168.0)
+
+
+def test_token_cost_derived_from_infra_economics():
+    """QNA §1.2: (capex/years + electricity) / tokens_per_year * 1000."""
+    from core.config import Settings
+
+    # _env_file=None: assert the shipped defaults, not the developer's local .env
+    s = Settings(
+        _env_file=None,
+        DATABASE_URL="postgresql+asyncpg://t:t@localhost/t",
+        JWT_SECRET="super-secret-test-key-32-chars-long!",
+    )
+    expected = (100_000_000.0 / 5.0 + 600_000.0) / 20_000_000_000.0 * 1000.0
+
+    assert s.ROI_TOKEN_COST_PER_1K_RUB is None
+    assert s.roi_token_cost_per_1k == pytest.approx(expected)
+
+
+def test_explicit_rate_overrides_win_over_derivation():
+    from core.config import Settings
+
+    s = Settings(
+        _env_file=None,
+        DATABASE_URL="postgresql+asyncpg://t:t@localhost/t",
+        JWT_SECRET="super-secret-test-key-32-chars-long!",
+        ROI_FTE_HOURLY_RATE_RUB=1200.0,
+        ROI_TOKEN_COST_PER_1K_RUB=0.1,
+    )
+
+    assert s.roi_fte_hourly_rate == 1200.0
+    assert s.roi_token_cost_per_1k == 0.1

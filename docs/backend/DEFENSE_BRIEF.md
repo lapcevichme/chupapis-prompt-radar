@@ -263,8 +263,8 @@ database/relational_db/**   SQLAlchemy 2 async + Alembic
 
 ```
 total_fte_hours_saved   = Σ saved / 60
-total_manual_cost_rub   = fte_hours × 1200 ₽/ч        (ROI_FTE_HOURLY_RATE_RUB)
-total_agent_cost_rub    = total_tokens/1000 × 0.1 ₽   (ROI_TOKEN_COST_PER_1K_RUB)
+total_manual_cost_rub   = fte_hours × 2380.95 ₽/ч     ← 400 000 ₽/мес ÷ 168 ч (QNA §1.1)
+total_agent_cost_rub    = total_tokens/1000 × 1.03 ₽  ← вывод из инфраструктуры (ниже)
 net_savings_rub         = manual_cost − agent_cost
 roi_multiplier          = manual_cost / agent_cost
 wasted_tokens_on_errors = Σ tokens по НЕ-success  →  wasted_cost_rub
@@ -273,6 +273,37 @@ token_value_index       = fte_hours / (tokens/1000)     «сколько час�
 process_automation_rate = доля успешных записей с tools_used
 mau_count               = число уникальных user_id
 ```
+
+### Вердикт B > A — главный ответ эксперту (QNA §1)
+
+`/roi` возвращает отдельный блок `verdict`, а не оставляет сравнение читателю:
+
+```
+B (benefit_rub) = высвобожденные FTE-часы × ставка   → 2 112 817 ₽
+A (cost_rub)    = токены × себестоимость             →   245 190 ₽
+net_rub = B − A                                      → 1 867 628 ₽
+ratio   = B / A                                      → ×8.62      pays_off = true
+headline: «ИИ окупается: выгода 2.1 млн ₽ > затрат 245 тыс ₽ (×8.62, чистыми 1.9 млн ₽)»
+```
+
+### Откуда взялись ставки — ни одна не «магическое число»
+
+```
+ставка FTE      = 400 000 ₽/мес ÷ 168 ч = 2380.95 ₽/ч
+                  (400к — ориентир эксперта заказчика, QNA §1.1)
+
+себестоимость   = (100 000 000 ₽ капзатрат ÷ 5 лет + 600 000 ₽/год электричество)
+токена            ÷ 20 млрд токенов/год × 1000 = 1.03 ₽ / 1k токенов
+                  (амортизация GPU-сервера — прямая отсылка к вопросу эксперта)
+```
+
+Обе модели вывода отдаются в `assumptions.fte_rate_model` / `assumptions.token_cost_model`
+вместе с флагом `is_overridden`. Если оценщик спорит с цифрой — он спорит с **месячной
+зарплатой** и **стоимостью сервера**, а не с непрозрачным коэффициентом. Все параметры
+меняются через env (`ROI_FTE_MONTHLY_RATE_RUB`, `ROI_INFRA_CAPEX_RUB`, …) или query-параметром.
+
+> Раньше здесь стояли 1200 ₽/ч и 0.1 ₽/1k, и ROI получался ×44.73 — цифра, которая
+> разваливается от первого вопроса. С выведенными ставками ROI ×8.62: меньше, но защитимо.
 
 Плюс разрезы: `by_category` (по `task_type`), `by_scenario` (по `scenario_id` от ML),
 `department_costs`, `top_spenders` (топ-3 по токенам), `style_breakdown` /

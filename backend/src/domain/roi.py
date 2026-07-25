@@ -7,9 +7,48 @@ class SessionCoefficients(BaseModel):
     long: float
 
 
+class FteRateModel(BaseModel):
+    """How the hourly FTE cost was obtained (QNA §1.1: ~400 000 ₽/month)."""
+
+    monthly_rate_rub: float
+    work_hours_per_month: float
+    derived_hourly_rate_rub: float
+    is_overridden: bool = False
+
+
+class TokenCostModel(BaseModel):
+    """How the token price was obtained (QNA §1.2), instead of a magic constant.
+
+    (capex / amortization_years + electricity_per_year) / tokens_per_year × 1000
+    """
+
+    infra_capex_rub: float
+    amortization_years: float
+    electricity_rub_per_year: float
+    tokens_per_year: float
+    derived_cost_per_1k_rub: float
+    is_overridden: bool = False
+
+
+class PayoffVerdict(BaseModel):
+    """Explicit B > A verdict the customer's expert asked for.
+
+    B — money freed by saving FTE time. A — cost of running the agent.
+    """
+
+    benefit_rub: float
+    cost_rub: float
+    net_rub: float
+    ratio: float
+    pays_off: bool
+    headline: str
+
+
 class Assumptions(BaseModel):
     fte_hourly_rate_rub: float
     token_cost_per_1k_rub: float
+    fte_rate_model: FteRateModel | None = None
+    token_cost_model: TokenCostModel | None = None
     session_coefficients: SessionCoefficients
     session_short_max_tokens: int
     session_long_min_tokens: int
@@ -81,6 +120,7 @@ class RoiByScenario(BaseModel):
 
 class Roi(BaseModel):
     assumptions: Assumptions
+    verdict: PayoffVerdict
     summary: RoiSummary
     by_category: list[RoiByCategory]
     by_scenario: list[RoiByScenario]

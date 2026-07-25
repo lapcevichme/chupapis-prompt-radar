@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import Settings
 from core.errors import SourceNotFoundError
 from database.relational_db import DatasetRecord, LogAssignment
-from domain.roi import Roi
+from domain.roi import FteRateModel, Roi, TokenCostModel
 
 from .calculator import RoiConfig, RoiRecord, compute_roi
 
@@ -76,18 +76,34 @@ class RoiService:
 
     def _build_config(self, overrides: dict[str, float]) -> RoiConfig:
         s = self._settings
+        # Rates come from a stated derivation (monthly salary / infra economics).
+        # A what-if query parameter beats the derivation, and says so via
+        # `is_overridden` so the UI never presents a manual figure as derived.
+        fte_rate = overrides.get("fte_hourly_rate_rub", s.roi_fte_hourly_rate)
+        token_cost = overrides.get("token_cost_per_1k_rub", s.roi_token_cost_per_1k)
+
         return RoiConfig(
-            fte_hourly_rate_rub=overrides.get(
-                "fte_hourly_rate_rub", s.ROI_FTE_HOURLY_RATE_RUB
-            ),
-            token_cost_per_1k_rub=overrides.get(
-                "token_cost_per_1k_rub", s.ROI_TOKEN_COST_PER_1K_RUB
-            ),
+            fte_hourly_rate_rub=fte_rate,
+            token_cost_per_1k_rub=token_cost,
             coeff_short=s.ROI_SESSION_COEFF_SHORT,
             coeff_medium=s.ROI_SESSION_COEFF_MEDIUM,
             coeff_long=s.ROI_SESSION_COEFF_LONG,
             short_max_tokens=s.ROI_SESSION_SHORT_MAX_TOKENS,
             long_min_tokens=s.ROI_SESSION_LONG_MIN_TOKENS,
+            fte_rate_model=FteRateModel(
+                monthly_rate_rub=s.ROI_FTE_MONTHLY_RATE_RUB,
+                work_hours_per_month=s.ROI_WORK_HOURS_PER_MONTH,
+                derived_hourly_rate_rub=round(s.roi_fte_hourly_rate, 2),
+                is_overridden="fte_hourly_rate_rub" in overrides,
+            ),
+            token_cost_model=TokenCostModel(
+                infra_capex_rub=s.ROI_INFRA_CAPEX_RUB,
+                amortization_years=s.ROI_INFRA_AMORTIZATION_YEARS,
+                electricity_rub_per_year=s.ROI_INFRA_ELECTRICITY_RUB_PER_YEAR,
+                tokens_per_year=s.ROI_INFRA_TOKENS_PER_YEAR,
+                derived_cost_per_1k_rub=round(s.roi_token_cost_per_1k, 4),
+                is_overridden="token_cost_per_1k_rub" in overrides,
+            ),
         )
 
 

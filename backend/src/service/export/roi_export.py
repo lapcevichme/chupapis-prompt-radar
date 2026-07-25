@@ -23,8 +23,15 @@ Sheet = tuple[str, list[Row]]
 def _summary_rows(roi: Roi) -> list[Row]:
     s = roi.summary
     a = roi.assumptions
-    return [
+    v = roi.verdict
+    rows: list[Row] = [
         ["metric", "value"],
+        ["verdict", v.headline],
+        ["pays_off", v.pays_off],
+        ["benefit_rub_B", v.benefit_rub],
+        ["cost_rub_A", v.cost_rub],
+        ["net_rub", v.net_rub],
+        ["benefit_to_cost_ratio", v.ratio],
         ["total_logs", s.total_logs],
         ["success_rate_percent", s.success_rate_percent],
         ["mau_count", s.mau_count],
@@ -46,7 +53,30 @@ def _summary_rows(roi: Roi) -> list[Row]:
         ["session_coeff_short", a.session_coefficients.short],
         ["session_coeff_medium", a.session_coefficients.medium],
         ["session_coeff_long", a.session_coefficients.long],
+        ["manual_minutes_estimated_percent", a.manual_minutes_estimated_percent],
     ]
+
+    # Spell out where the two rates came from, so a reader of the spreadsheet can
+    # audit them without opening the code.
+    if a.fte_rate_model is not None:
+        rows += [
+            ["fte_monthly_rate_rub", a.fte_rate_model.monthly_rate_rub],
+            ["fte_work_hours_per_month", a.fte_rate_model.work_hours_per_month],
+            ["fte_rate_overridden", a.fte_rate_model.is_overridden],
+        ]
+    if a.token_cost_model is not None:
+        t = a.token_cost_model
+        rows += [
+            ["token_infra_capex_rub", t.infra_capex_rub],
+            ["token_amortization_years", t.amortization_years],
+            ["token_electricity_rub_per_year", t.electricity_rub_per_year],
+            ["token_tokens_per_year", t.tokens_per_year],
+            ["token_cost_overridden", t.is_overridden],
+        ]
+    for cat, minutes in a.manual_minutes_by_category.items():
+        rows.append([f"manual_minutes:{cat}", minutes])
+
+    return rows
 
 
 def _by_category_rows(roi: Roi) -> list[Row]:

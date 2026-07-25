@@ -43,6 +43,29 @@ export interface RoiData {
     token_cost_per_1k_rub: number;
     manual_minutes_by_category: Record<string, number>;
     manual_minutes_estimated_percent: number;
+    fte_rate_model?: {
+      monthly_rate_rub: number;
+      work_hours_per_month: number;
+      derived_hourly_rate_rub: number;
+      is_overridden: boolean;
+    } | null;
+    token_cost_model?: {
+      infra_capex_rub: number;
+      amortization_years: number;
+      electricity_rub_per_year: number;
+      tokens_per_year: number;
+      derived_cost_per_1k_rub: number;
+      is_overridden: boolean;
+    } | null;
+  };
+  /** Explicit B > A verdict (QNA §1): B = money freed, A = cost of running the agent. */
+  verdict: {
+    benefit_rub: number;
+    cost_rub: number;
+    net_rub: number;
+    ratio: number;
+    pays_off: boolean;
+    headline: string;
   };
   summary: {
     total_logs: number;
@@ -57,6 +80,7 @@ export interface RoiData {
     token_value_index: number;
     process_automation_rate: number;
     top_tools_used: Record<string, number>;
+    mau_count: number;
   };
   by_category: {
     task_type: string;

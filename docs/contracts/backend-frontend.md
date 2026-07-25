@@ -217,11 +217,38 @@ Backend проксирует в ML. `{ "job_id": "rc_01", "status": "running" }`
 Фильтры те же (`source_id`, `from`, `to`) + переопределение ставок:
 `?fte_hourly_rate_rub=&token_cost_per_1k_rub=` («что если»).
 
+**Ставки выводятся, а не задаются константой (QNA §1).** `fte_hourly_rate_rub` = месячная
+ставка FTE (400 000 ₽ — ориентир эксперта заказчика) ÷ рабочие часы в месяце.
+`token_cost_per_1k_rub` = (капзатраты на GPU ÷ срок амортизации + электричество за год) ÷
+токенов в год × 1000. Обе модели вывода возвращаются в `assumptions`, а `is_overridden`
+показывает, что значение задано вручную через query-параметр — чтобы UI никогда не выдавал
+ручную цифру за выведенную.
+
+**`verdict` — явный ответ на вопрос «окупается ли ИИ»** (B > A), а не число, которое читатель
+должен сравнить в уме. `B` = высвобожденные FTE-часы × ставка, `A` = токены × себестоимость.
+
 ```json
 {
   "assumptions": {
-    "fte_hourly_rate_rub": 1200.0, "token_cost_per_1k_rub": 0.015,
-    "session_coefficients": { "short": 0.3, "medium": 1.0, "long": 2.0 }
+    "fte_hourly_rate_rub": 2380.95, "token_cost_per_1k_rub": 1.03,
+    "session_coefficients": { "short": 0.3, "medium": 1.0, "long": 2.0 },
+    "session_short_max_tokens": 4000, "session_long_min_tokens": 30000,
+    "manual_minutes_by_category": { "code_help": 30.0, "data_analysis": 45.0, "other": 15.0 },
+    "manual_minutes_estimated_percent": 100.0,
+    "fte_rate_model": {
+      "monthly_rate_rub": 400000.0, "work_hours_per_month": 168.0,
+      "derived_hourly_rate_rub": 2380.95, "is_overridden": false
+    },
+    "token_cost_model": {
+      "infra_capex_rub": 100000000.0, "amortization_years": 5.0,
+      "electricity_rub_per_year": 600000.0, "tokens_per_year": 20000000000.0,
+      "derived_cost_per_1k_rub": 1.03, "is_overridden": false
+    }
+  },
+  "verdict": {
+    "benefit_rub": 2112817.46, "cost_rub": 245189.68, "net_rub": 1867627.78,
+    "ratio": 8.62, "pays_off": true,
+    "headline": "ИИ окупается: выгода 2.1 млн ₽ > затрат 245 тыс ₽ (×8.62, чистыми 1.9 млн ₽)"
   },
   "summary": {
     "total_logs": 348, "success_rate_percent": 82.5,
@@ -354,4 +381,3 @@ Backend проксирует в ML. `{ "job_id": "rc_01", "status": "running" }`
 - `GET /api/health` → `{ "status": "ok|degraded", "dependencies": { "database": "ok", "ml": "ok" } }`
 - `GET /api/ready` → `200|503`
 - `GET /api/ping` → `{ "status": "ok" }`
-
