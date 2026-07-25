@@ -8,6 +8,7 @@ from domain.roi import (
     RoiByScenario,
     RoiSummary,
     SessionCoefficients,
+    UserStats,
 )
 from domain.taxonomy import label
 
@@ -43,6 +44,10 @@ class RoiRecord:
     task_type: str | None
     scenario_id: str | None
     scenario_name: str | None
+    user_id: str | None = "unknown_user"
+    user_name: str | None = "Unknown"
+    department: str | None = "Unknown"
+    style: str | None = "formal"
 
 
 @dataclass
@@ -57,7 +62,7 @@ class _Bucket:
 
 
 def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
-    """Port of roi_engine.py with session-length coefficients (D6)."""
+    """Merged ROI calculator: session coefficients, MAU/Depts, and style analytics (D6)."""
     assumptions = Assumptions(
         fte_hourly_rate_rub=config.fte_hourly_rate_rub,
         token_cost_per_1k_rub=config.token_cost_per_1k_rub,
@@ -85,6 +90,10 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
     total_saved_minutes = 0.0
     automation_count = 0
     tools_frequency: dict[str, int] = {}
+    style_stats: dict[str, int] = {}
+
+    users_analytics: dict[str, UserStats] = {}
+    department_costs: dict[str, float] = {}
 
     by_category: dict[str, _Bucket] = {}
     by_scenario: dict[str, _Bucket] = {}
@@ -93,6 +102,23 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
         tokens = rec.tokens or 0
         manual = rec.manual_time_minutes or 0.0
         total_tokens += tokens
+        cost_for_log = (tokens / 1000.0) * config.token_cost_per_1k_rub
+
+        uid = rec.user_id or "unknown_user"
+        uname = rec.user_name or "Unknown"
+        dept = rec.department or "Unknown"
+
+        if uid not in users_analytics:
+            users_analytics[uid] = UserStats(user_id=uid, name=uname, department=dept)
+        u_stat = users_analytics[uid]
+        u_stat.requests_count += 1
+        u_stat.tokens_consumed += tokens
+        u_stat.cost_rub += cost_for_log
+
+        department_costs[dept] = department_costs.get(dept, 0.0) + cost_for_log
+
+        log_style = rec.style or "formal"
+        style_stats[log_style] = style_stats.get(log_style, 0) + 1
 
         cat_key = rec.task_type or "unknown"
         cat = by_category.setdefault(cat_key, _Bucket(task_type=cat_key))
@@ -122,13 +148,34 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
                     tools_frequency[tool] = tools_frequency.get(tool, 0) + 1
         else:
             wasted_tokens += tokens
+            u_stat.wasted_tokens += tokens
 
     total_fte_hours = total_saved_minutes / 60.0
     manual_cost = total_fte_hours * config.fte_hourly_rate_rub
     agent_cost = (total_tokens / 1000.0) * config.token_cost_per_1k_rub
+    wasted_cost = (wasted_tokens / 1000.0) * config.token_cost_per_1k_rub
     net_savings = manual_cost - agent_cost
     roi_mult = round(manual_cost / agent_cost, 2) if agent_cost > 0 else 0.0
+    cost_per_action = round(agent_cost / success_count, 2) if success_count > 0 else 0.0
     tvi = round(total_fte_hours / (total_tokens / 1000.0), 4) if total_tokens else 0.0
+
+    sorted_users = sorted(users_analytics.values(), key=lambda x: x.tokens_consumed, reverse=True)
+    top_spenders = sorted_users[:3]
+
+    sorted_departments = {
+        k: round(v, 2)
+        for k, v in sorted(department_costs.items(), key=lambda kv: kv[1], reverse=True)
+    }
+
+    style_percentages = {
+        st: round((cnt / total_logs) * 100, 1) for st, cnt in style_stats.items()
+    }
+    mobile_voice_count = style_stats.get("voice", 0) + style_stats.get("typo", 0)
+    mobile_voice_rate = round((mobile_voice_count / total_logs) * 100, 1)
+    insight = (
+        f"📱 {mobile_voice_rate}% запросов поступают в неформальном/мобильном стиле (голос или опечатки с телефона). "
+        f"Рекомендуется поддерживать и развивать Voice-to-Text интерфейс."
+    )
 
     summary = RoiSummary(
         total_logs=total_logs,
@@ -140,6 +187,15 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
         roi_multiplier=roi_mult,
         total_tokens_consumed=total_tokens,
         wasted_tokens_on_errors=wasted_tokens,
+        wasted_cost_rub=round(wasted_cost, 2),
+        cost_per_successful_action_rub=cost_per_action,
+        mau_count=len(users_analytics),
+        top_spenders=top_spenders,
+        department_costs=sorted_departments,
+        style_breakdown=style_stats,
+        style_percentages=style_percentages,
+        mobile_voice_adoption_rate=mobile_voice_rate,
+        style_insight=insight,
         token_value_index=tvi,
         process_automation_rate=round((automation_count / total_logs) * 100, 1),
         top_tools_used=dict(
@@ -201,6 +257,15 @@ def _empty_summary() -> RoiSummary:
         roi_multiplier=0.0,
         total_tokens_consumed=0,
         wasted_tokens_on_errors=0,
+        wasted_cost_rub=0.0,
+        cost_per_successful_action_rub=0.0,
+        mau_count=0,
+        top_spenders=[],
+        department_costs={},
+        style_breakdown={},
+        style_percentages={},
+        mobile_voice_adoption_rate=0.0,
+        style_insight="",
         token_value_index=0.0,
         process_automation_rate=0.0,
         top_tools_used={},

@@ -1,3 +1,13 @@
+export interface UserStats {
+  user_id: string;
+  name: string;
+  department: string;
+  requests_count: number;
+  tokens_consumed: number;
+  wasted_tokens: number;
+  cost_rub: number;
+}
+
 export interface RoiData {
   assumptions: {
     fte_hourly_rate_rub: number;
@@ -20,6 +30,15 @@ export interface RoiData {
     roi_multiplier: number;
     total_tokens_consumed: number;
     wasted_tokens_on_errors: number;
+    wasted_cost_rub?: number;
+    cost_per_successful_action_rub?: number;
+    mau_count?: number;
+    top_spenders?: UserStats[];
+    department_costs?: Record<string, number>;
+    style_breakdown?: Record<string, number>;
+    style_percentages?: Record<string, number>;
+    mobile_voice_adoption_rate?: number;
+    style_insight?: string;
     token_value_index: number;
     process_automation_rate: number;
     top_tools_used: Record<string, number>;
