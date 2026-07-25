@@ -4,9 +4,12 @@
 сотрудников с ИИ-агентами в понятную аналитику для CTO: классификация запросов → сценарии
 (use-cases) → саммари → живой дашборд + ROI/FTE.
 
-> Контекст кейса — в `docs/`. ТЗ бэкенда — `docs/backend/BACKEND_TASK.md`. ТЗ ML — `ml_service/ТЗ.md`.
-> Контракты — `docs/contracts/`. Решения — `docs/decisions/DECISIONS.md`. Задачи/статус — `TASKS.md`.
-> Запуск стека: `make up` (compose: backend + db + qdrant + ml). Demo-логин: `test@gmail.com` / `test123`.
+> Переносимый контекст агентов — `AGENTS.md`; актуальная карта реализации —
+> `docs/CODEBASE_MAP.md`. Контекст кейса — в `docs/`. ТЗ бэкенда —
+> `docs/backend/BACKEND_TASK.md`, ТЗ ML — `ml_service/ТЗ.md`, контракты — `docs/contracts/`.
+> Локальные исторические решения/статусы могут быть в `docs/decisions/DECISIONS.md` и `TASKS.md`,
+> но они исключены из Git и могут отставать от кода. Запуск стека: `make up`; demo-логин:
+> `test@gmail.com` / `test123`.
 
 ## Цель продукта
 
