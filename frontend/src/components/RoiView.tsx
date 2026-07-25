@@ -1,24 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { fetchRoi } from '../api';
-import type { RoiData } from '../types';
+import type { RoiData, DashboardFilters } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Badge } from './ui/Badge';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Wallet, Clock, Coins, Percent, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface RoiViewProps {
+  filters?: DashboardFilters;
   onFetchSuccess?: () => void;
   refreshTrigger?: number;
 }
 
-export default function RoiView({ onFetchSuccess, refreshTrigger }: RoiViewProps) {
+export default function RoiView({ onFetchSuccess, refreshTrigger, filters }: RoiViewProps) {
   const [data, setData] = useState<RoiData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadData = async (silent = false) => {
     try {
       if (!silent && !data) setLoading(true);
-      const res = await fetchRoi();
+      const res = await fetchRoi(filters);
       setData(res);
       onFetchSuccess?.();
     } catch (err) {
@@ -34,7 +35,7 @@ export default function RoiView({ onFetchSuccess, refreshTrigger }: RoiViewProps
       loadData(true);
     }, 10000);
     return () => clearInterval(interval);
-  }, [refreshTrigger]);
+  }, [refreshTrigger, filters]);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(val);

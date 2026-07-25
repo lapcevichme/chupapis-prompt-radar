@@ -1,6 +1,8 @@
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, AsyncGenerator
 
 from fastapi import Depends, Header, Query, Request
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import Settings, get_settings
@@ -52,13 +54,59 @@ def get_recompute_service(settings: SettingsDep) -> RecomputeService:
     return RecomputeService(settings)
 
 
+def _parse_filter_date(value: str | None, field: str) -> datetime | None:
+    """Parse an ISO date/datetime filter into an aware UTC datetime.
+
+    These values end up in SQL comparisons against `timestamptz` columns, and
+    asyncpg cannot bind a bare string there — passing one through raised a 500
+    with a driver traceback. Parse at the edge so every consumer gets a real
+    datetime and bad input is a 422 instead.
+    """
+    if value is None or not value.strip():
+        return None
+
+    raw = value.strip()
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        raise RequestValidationError(
+            [
+                {
+                    "loc": ("query", field),
+                    "msg": "expected an ISO 8601 date or datetime, e.g. 2026-07-25",
+                    "type": "value_error",
+                }
+            ]
+        ) from None
+
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed
+
+
 def dashboard_filters(
     source_id: str | None = Query(None),
     from_: str | None = Query(None, alias="from"),
     to: str | None = Query(None),
 ) -> dict[str, Any]:
-    """Common dashboard filters: source_id / from / to."""
-    return {"source_id": source_id, "from": from_, "to": to}
+    """Common dashboard filters: source_id / from / to.
+
+    A bare `to=2026-07-25` means "to the end of that day", not "to midnight",
+    otherwise picking the same day for both bounds returns nothing.
+    """
+    parsed_to = _parse_filter_date(to, "to")
+    if parsed_to is not None and _is_date_only(to):
+        parsed_to = parsed_to + timedelta(days=1) - timedelta(microseconds=1)
+
+    return {
+        "source_id": source_id or None,
+        "from": _parse_filter_date(from_, "from"),
+        "to": parsed_to,
+    }
+
+
+def _is_date_only(raw: str | None) -> bool:
+    return bool(raw) and len(raw.strip()) == 10
 
 
 FiltersDep = Annotated[dict[str, Any], Depends(dashboard_filters)]

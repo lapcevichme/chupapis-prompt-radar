@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchDashboard, fetchRoi } from '../api';
-import type { DashboardSummary, RoiData } from '../types';
+import type { DashboardSummary, RoiData, DashboardFilters } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Activity, AlertTriangle, FileText, Target, Loader2, Users, Clock, Wallet, CheckCircle2 } from 'lucide-react';
@@ -8,11 +8,12 @@ import { Activity, AlertTriangle, FileText, Target, Loader2, Users, Clock, Walle
 const COLORS = ['#2563EB', '#635BFF', '#3B82F6', '#8B5CF6', '#0EA5E9', '#64748B'];
 
 interface DashboardProps {
+  filters?: DashboardFilters;
   onFetchSuccess?: (timestamp?: string) => void;
   refreshTrigger?: number;
 }
 
-export default function Dashboard({ onFetchSuccess, refreshTrigger }: DashboardProps) {
+export default function Dashboard({ onFetchSuccess, refreshTrigger, filters }: DashboardProps) {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [roi, setRoi] = useState<RoiData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -23,8 +24,8 @@ export default function Dashboard({ onFetchSuccess, refreshTrigger }: DashboardP
       // QNA §2.1 asks for MAU / freed FTE / payoff on the main screen, not only
       // on the ROI tab: those are the numbers a CTO opens the dashboard for.
       const [res, roiRes] = await Promise.all([
-        fetchDashboard(),
-        fetchRoi().catch(() => null),
+        fetchDashboard(filters),
+        fetchRoi(filters).catch(() => null),
       ]);
       setData(res);
       setRoi(roiRes);
@@ -42,7 +43,7 @@ export default function Dashboard({ onFetchSuccess, refreshTrigger }: DashboardP
       loadData(true);
     }, 10000);
     return () => clearInterval(interval);
-  }, [refreshTrigger]);
+  }, [refreshTrigger, filters]);
 
   if (loading || !data) {
     return (

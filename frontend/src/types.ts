@@ -1,3 +1,12 @@
+/** Global dashboard filters (D3): applied to every read screen and to exports. */
+export interface DashboardFilters {
+  /** Ingestion source to scope to; empty means the whole store. */
+  source_id?: string;
+  /** ISO date (YYYY-MM-DD). `to` is inclusive of the whole day, handled by backend. */
+  from?: string;
+  to?: string;
+}
+
 export interface DashboardSummary {
   period: { from: string; to: string };
   generated_at?: string;

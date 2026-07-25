@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Cpu, AlertTriangle, ShieldCheck, Zap, Award, UserCheck, HelpCircle } from 'lucide-react';
-import type { UserAnalyticsData, ModelAnalyticsData } from '../types';
+import type { UserAnalyticsData, ModelAnalyticsData, DashboardFilters } from '../types';
 import { fetchUserAnalytics, fetchModelAnalytics } from '../api';
 
 interface UsersModelsViewProps {
+  filters?: DashboardFilters;
   onFetchSuccess?: () => void;
   refreshTrigger?: number;
 }
 
-export default function UsersModelsView({ onFetchSuccess, refreshTrigger }: UsersModelsViewProps) {
+export default function UsersModelsView({ onFetchSuccess, refreshTrigger, filters }: UsersModelsViewProps) {
   const [activeSubTab, setActiveSubTab] = useState<'users' | 'models'>('users');
   const [userData, setUserData] = useState<UserAnalyticsData | null>(null);
   const [modelData, setModelData] = useState<ModelAnalyticsData | null>(null);
@@ -19,8 +20,8 @@ export default function UsersModelsView({ onFetchSuccess, refreshTrigger }: User
     try {
       if (!silent && !userData && !modelData) setLoading(true);
       const [uRes, mRes] = await Promise.all([
-        fetchUserAnalytics(),
-        fetchModelAnalytics(),
+        fetchUserAnalytics(filters),
+        fetchModelAnalytics(filters),
       ]);
       setUserData(uRes);
       setModelData(mRes);
@@ -38,7 +39,7 @@ export default function UsersModelsView({ onFetchSuccess, refreshTrigger }: User
       loadData(true);
     }, 10000);
     return () => clearInterval(interval);
-  }, [refreshTrigger]);
+  }, [refreshTrigger, filters]);
 
   if (loading) {
     return (

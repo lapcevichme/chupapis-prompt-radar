@@ -7,8 +7,10 @@ import RoiView from './components/RoiView';
 import Ingestion from './components/Ingestion';
 import UsersModelsView from './components/UsersModelsView';
 import ProcessingBanner from './components/ProcessingBanner';
+import FilterBar from './components/FilterBar';
 import { cn } from './lib/utils';
 import { ensureAuth } from './api';
+import type { DashboardFilters } from './types';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'ingestion' | 'scenarios' | 'logs' | 'roi' | 'users_models'>('dashboard');
@@ -17,6 +19,8 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  // Global filters (D3): one scope shared by every screen and by the export.
+  const [filters, setFilters] = useState<DashboardFilters>({});
 
   useEffect(() => {
     if (isDark) {
@@ -176,13 +180,16 @@ export default function App() {
         <ProcessingBanner refreshTrigger={refreshTrigger} />
 
         <div className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto pb-12">
-            {activeTab === 'dashboard' && <Dashboard onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} />}
+          <div className="max-w-7xl mx-auto pb-12 space-y-6">
+            {activeTab !== 'ingestion' && (
+              <FilterBar filters={filters} onChange={setFilters} />
+            )}
+            {activeTab === 'dashboard' && <Dashboard onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} filters={filters} />}
             {activeTab === 'ingestion' && <Ingestion onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} />}
-            {activeTab === 'scenarios' && <Scenarios onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} />}
-            {activeTab === 'logs' && <Logs onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} />}
-            {activeTab === 'users_models' && <UsersModelsView onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} />}
-            {activeTab === 'roi' && <RoiView onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} />}
+            {activeTab === 'scenarios' && <Scenarios onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} filters={filters} />}
+            {activeTab === 'logs' && <Logs onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} filters={filters} />}
+            {activeTab === 'users_models' && <UsersModelsView onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} filters={filters} />}
+            {activeTab === 'roi' && <RoiView onFetchSuccess={handleFetchSuccess} refreshTrigger={refreshTrigger} filters={filters} />}
           </div>
         </div>
       </main>

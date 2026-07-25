@@ -1,24 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { fetchLogs } from '../api';
-import type { LogItem } from '../types';
+import type { LogItem, DashboardFilters } from '../types';
 import { Card, CardContent } from './ui/Card';
 import { Badge } from './ui/Badge';
 import { Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface LogsProps {
+  filters?: DashboardFilters;
   onFetchSuccess?: () => void;
   refreshTrigger?: number;
 }
 
-export default function Logs({ onFetchSuccess, refreshTrigger }: LogsProps) {
+export default function Logs({ onFetchSuccess, refreshTrigger, filters }: LogsProps) {
   const [logs, setLogs] = useState<LogItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = async (silent = false) => {
     try {
       if (!silent && logs.length === 0) setLoading(true);
-      const data = await fetchLogs();
+      const data = await fetchLogs(filters);
       setLogs(data);
       onFetchSuccess?.();
     } catch (err) {
@@ -34,7 +35,7 @@ export default function Logs({ onFetchSuccess, refreshTrigger }: LogsProps) {
       loadData(true);
     }, 5000);
     return () => clearInterval(interval);
-  }, [refreshTrigger]);
+  }, [refreshTrigger, filters]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('en-US', {

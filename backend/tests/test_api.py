@@ -1,5 +1,7 @@
 """API-level contract / smoke tests (ASGI, no real DB or ML)."""
 
+from datetime import UTC, datetime
+
 import io
 import zipfile
 
@@ -153,3 +155,45 @@ async def test_cors_preflight(client) -> None:
     assert resp.status_code in (200, 204)
     assert resp.headers.get("access-control-allow-origin") == "http://localhost:5173"
     assert "POST" in resp.headers.get("access-control-allow-methods", "")
+
+
+# --- date filters (asyncpg cannot bind bare strings to timestamptz) ----------
+
+
+def test_dashboard_filters_parse_iso_dates_into_datetimes():
+    from api.v1.deps import dashboard_filters
+
+    filters = dashboard_filters(source_id=None, from_="2026-07-25", to=None)
+
+    assert isinstance(filters["from"], datetime)
+    assert filters["from"] == datetime(2026, 7, 25, tzinfo=UTC)
+
+
+def test_dashboard_filters_treat_bare_to_date_as_end_of_day():
+    """from=X&to=X must return that whole day, not an empty range."""
+    from api.v1.deps import dashboard_filters
+
+    filters = dashboard_filters(source_id=None, from_="2026-07-25", to="2026-07-25")
+
+    assert filters["from"] == datetime(2026, 7, 25, tzinfo=UTC)
+    assert filters["to"] > filters["from"]
+    assert filters["to"].day == 25
+
+
+def test_dashboard_filters_reject_garbage_dates():
+    from fastapi.exceptions import RequestValidationError
+
+    from api.v1.deps import dashboard_filters
+
+    with pytest.raises(RequestValidationError):
+        dashboard_filters(source_id=None, from_="not-a-date", to=None)
+
+
+def test_ml_client_serializes_datetime_filters_for_the_wire():
+    from service.ml.client import _clean
+
+    cleaned = _clean(
+        {"source_id": "s1", "from": datetime(2026, 7, 25, tzinfo=UTC), "to": None}
+    )
+
+    assert cleaned == {"source_id": "s1", "from": "2026-07-25T00:00:00+00:00"}

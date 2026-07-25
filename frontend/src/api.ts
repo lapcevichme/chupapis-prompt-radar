@@ -1,6 +1,17 @@
-import type { DashboardSummary, Scenario, LogItem, RoiData, Source, UserAnalyticsData, ModelAnalyticsData, ProcessingStatus } from './types';
+import type { DashboardSummary, Scenario, LogItem, RoiData, Source, UserAnalyticsData, ModelAnalyticsData, ProcessingStatus, DashboardFilters } from './types';
 
 const BASE = '/api/v1';
+
+/** Serialize the global filters into the query string every read endpoint accepts. */
+function qs(filters?: DashboardFilters, extra?: Record<string, string | number | boolean>): string {
+  const params = new URLSearchParams();
+  if (filters?.source_id) params.set('source_id', filters.source_id);
+  if (filters?.from) params.set('from', filters.from);
+  if (filters?.to) params.set('to', filters.to);
+  for (const [k, v] of Object.entries(extra ?? {})) params.set(k, String(v));
+  const s = params.toString();
+  return s ? `?${s}` : '';
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const url = path.startsWith('/api') ? path : `${BASE}${path}`;
@@ -47,8 +58,8 @@ export async function ensureAuth(): Promise<boolean> {
 
 /* ── Dashboard ── */
 
-export async function fetchDashboard(): Promise<DashboardSummary> {
-  const raw = await request<any>('/dashboard');
+export async function fetchDashboard(filters?: DashboardFilters): Promise<DashboardSummary> {
+  const raw = await request<any>(`/dashboard${qs(filters)}`);
   const failureRate = raw.failure_analysis?.failure_signal_percentage ?? 0;
   return {
     period: { from: '', to: '' },
@@ -108,8 +119,8 @@ export async function fetchProcessingStatus(): Promise<ProcessingStatus> {
 
 /* ── Scenarios ── */
 
-export async function fetchScenarios(): Promise<Scenario[]> {
-  const raw = await request<{ items: Scenario[]; total: number }>('/scenarios');
+export async function fetchScenarios(filters?: DashboardFilters): Promise<Scenario[]> {
+  const raw = await request<{ items: Scenario[]; total: number }>(`/scenarios${qs(filters)}`);
   return raw.items ?? [];
 }
 
@@ -119,24 +130,29 @@ export async function fetchScenarioDetail(id: string): Promise<Scenario> {
 
 /* ── Logs ── */
 
-export async function fetchLogs(): Promise<LogItem[]> {
-  const raw = await request<{ items: LogItem[]; total: number }>('/logs?limit=100');
+export async function fetchLogs(filters?: DashboardFilters, limit = 100): Promise<LogItem[]> {
+  const raw = await request<{ items: LogItem[]; total: number }>(`/logs${qs(filters, { limit })}`);
   return raw.items ?? [];
 }
 
 /* ── ROI ── */
 
-export async function fetchRoi(): Promise<RoiData> {
-  return request<RoiData>('/roi');
+export async function fetchRoi(filters?: DashboardFilters): Promise<RoiData> {
+  return request<RoiData>(`/roi${qs(filters)}`);
+}
+
+/** Export honours the same filters as the screen it was triggered from. */
+export function exportUrl(format: 'xlsx' | 'csv', filters?: DashboardFilters): string {
+  return `${BASE}/export${qs(filters, { format })}`;
 }
 
 /* ── Analytics ── */
 
-export async function fetchUserAnalytics(): Promise<UserAnalyticsData> {
-  return request<UserAnalyticsData>('/analytics/users');
+export async function fetchUserAnalytics(filters?: DashboardFilters): Promise<UserAnalyticsData> {
+  return request<UserAnalyticsData>(`/analytics/users${qs(filters)}`);
 }
 
-export async function fetchModelAnalytics(): Promise<ModelAnalyticsData> {
-  return request<ModelAnalyticsData>('/analytics/models');
+export async function fetchModelAnalytics(filters?: DashboardFilters): Promise<ModelAnalyticsData> {
+  return request<ModelAnalyticsData>(`/analytics/models${qs(filters)}`);
 }
 

@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { fetchScenarios, fetchScenarioDetail } from '../api';
-import type { Scenario } from '../types';
+import type { Scenario, DashboardFilters } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Badge } from './ui/Badge';
 import { TrendingUp, TrendingDown, Minus, Target, Bot, ArrowLeft, Clock, Loader2 } from 'lucide-react';
 
 interface ScenariosProps {
+  filters?: DashboardFilters;
   onFetchSuccess?: () => void;
   refreshTrigger?: number;
 }
 
-export default function Scenarios({ onFetchSuccess, refreshTrigger }: ScenariosProps) {
+export default function Scenarios({ onFetchSuccess, refreshTrigger, filters }: ScenariosProps) {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
   const [scenarioDetails, setScenarioDetails] = useState<any | null>(null);
@@ -20,7 +21,7 @@ export default function Scenarios({ onFetchSuccess, refreshTrigger }: ScenariosP
   const loadData = async (silent = false) => {
     try {
       if (!silent && scenarios.length === 0) setLoading(true);
-      const data = await fetchScenarios();
+      const data = await fetchScenarios(filters);
       setScenarios(data);
       onFetchSuccess?.();
     } catch (err) {
@@ -36,7 +37,7 @@ export default function Scenarios({ onFetchSuccess, refreshTrigger }: ScenariosP
       loadData(true);
     }, 10000);
     return () => clearInterval(interval);
-  }, [refreshTrigger]);
+  }, [refreshTrigger, filters]);
 
   const handleScenarioClick = async (id: string) => {
     setSelectedScenarioId(id);

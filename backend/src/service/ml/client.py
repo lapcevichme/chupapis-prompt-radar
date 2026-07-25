@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 import asyncio
 from typing import Any
@@ -140,7 +141,16 @@ class MlClient:
 
 
 def _clean(filters: dict[str, Any] | None) -> dict[str, Any]:
-    """Drop None-valued query params."""
+    """Drop None-valued query params and make the rest wire-safe.
+
+    Date filters arrive as aware `datetime` objects (parsed at the API edge);
+    httpx cannot serialize those into a query string, so render them as ISO 8601
+    before they reach the ML service.
+    """
     if not filters:
         return {}
-    return {k: v for k, v in filters.items() if v is not None}
+    return {
+        k: (v.isoformat() if isinstance(v, datetime) else v)
+        for k, v in filters.items()
+        if v is not None
+    }
