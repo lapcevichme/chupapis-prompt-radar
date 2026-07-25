@@ -1,10 +1,10 @@
-.PHONY: up down down-clean logs ps build restart feed demo test lint
+.PHONY: up down down-clean logs ps build restart feed demo test lint frontend-test frontend-check
 
 COMPOSE := docker compose
 INGEST_TOKEN ?= dev-ingest-token
 BACKEND_URL ?= http://localhost:8080
 
-up:            ## build + start the whole stack (backend + ml + qdrant + db)
+up:            ## build + start the whole stack (frontend + backend + ml + qdrant + db)
 	$(COMPOSE) up -d --build
 
 down:          ## stop everything (keeps volumes)
@@ -36,3 +36,9 @@ test:          ## run backend unit + API tests
 
 lint:          ## ruff check backend
 	cd backend && poetry run ruff check src tests
+
+frontend-test: ## run frontend unit/integration tests
+	cd frontend && npm test
+
+frontend-check: ## run all frontend checks
+	cd frontend && npm run lint && npm test && npm run build
