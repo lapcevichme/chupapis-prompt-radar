@@ -12,7 +12,7 @@ class Filter:
             description="Путь локального сбора логов в файл JSONL",
         )
         BACKEND_URL: str = Field(
-            default="http://backend:8000/api/v1/logs",
+            default="http://host.docker.internal:8080/api/v1/logs",
             description="HTTP endpoint бэкенда для логирования",
         )
         BACKEND_SERVICE_TOKEN: str = Field(
@@ -57,6 +57,7 @@ class Filter:
                 headers["X-Service-Token"] = self.valves.BACKEND_SERVICE_TOKEN
 
             payload = {
+                "source_name": "open_webui",
                 "source_id": "open_webui",
                 "logs": [log_entry]
             }
@@ -135,9 +136,12 @@ class Filter:
                     for tc in tool_calls
                     if isinstance(tc, dict) and tc.get("function")
                 ],
+                "user_id": __user__.get("email") if __user__ and isinstance(__user__, dict) else "anonymous",
+                "user_name": __user__.get("name") if __user__ and isinstance(__user__, dict) else None,
+                "model": body.get("model", ""),
                 "metadata": {
                     "usage": usage_info,
-                    "user_email": __user__.get("email") if __user__ else "anonymous",
+                    "user_email": __user__.get("email") if __user__ and isinstance(__user__, dict) else "anonymous",
                 },
             }
 

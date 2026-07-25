@@ -152,6 +152,8 @@ def normalize(
             timestamp = _synthesize_timestamp(index, total, settings, now)
 
         raw_status = raw.get("status")
+        if raw_status is None:
+            raw_status = raw.get("response_status")
         raw_status_str = str(raw_status).lower() if raw_status is not None else "success"
         response_status, error_code = _STATUS_MAP.get(
             raw_status_str, ("success", None)
@@ -159,6 +161,11 @@ def normalize(
         tokens = _as_int(raw.get("total_tokens"))
         if tokens is None:
             tokens = _as_int(raw.get("simulated_context_tokens"))
+        if tokens is None and isinstance(raw.get("metadata"), dict):
+            meta_usage = raw.get("metadata", {}).get("usage")
+            if isinstance(meta_usage, dict):
+                tokens = _as_int(meta_usage.get("total_tokens"))
+
         manual_time = _as_float(
             raw.get("estimated_manual_time_minutes")
             or raw.get("manual_time_minutes")
@@ -166,13 +173,17 @@ def normalize(
             or raw.get("estimated_manual_time")
         )
         tools_used = list(raw.get("tools_used") or [])
+        if not tools_used and isinstance(raw.get("metadata"), dict):
+            tools_used = list(raw.get("metadata", {}).get("tools_used") or [])
+
         raw_model = str(raw.get("model") or raw.get("model_name") or raw.get("agent_id") or "").strip()
         if raw_model and not any(isinstance(t, str) and t.startswith("model:") for t in tools_used):
             tools_used.append(f"model:{raw_model}")
 
         gold_category = raw.get("category")
         style = raw.get("style")
-        user_id = raw.get("user_id")
+        meta_dict = raw.get("metadata") if isinstance(raw.get("metadata"), dict) else {}
+        user_id = raw.get("user_id") or meta_dict.get("user_email")
         user_name = raw.get("user_name")
         department = raw.get("department")
 
