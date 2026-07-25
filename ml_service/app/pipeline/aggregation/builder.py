@@ -447,7 +447,7 @@ def build_statistics(
             outliers += 1
         else:
             sid = a.get("scenario_id")
-            if sid:
+            if sid and sid in clusters:
                 scenario_counts[sid] += 1
 
     scenarios_count = len(scenario_counts)
@@ -569,6 +569,8 @@ def build_scenarios_list(
         if scenario_id is not None and sid != scenario_id:
             continue
         meta = clusters.get(sid, {})
+        if not meta and scenario_id is None:
+            continue
         trend_info = trends.get(sid, {})
         rep = list(meta.get("representative_examples") or []) or examples.get(sid, [])
         items_out.append(
