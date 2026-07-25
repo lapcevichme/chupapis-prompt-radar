@@ -152,7 +152,8 @@ STATISTICS_CACHE_TTL_SEC=15        # dashboard statistics TTL cache (0 disables)
 Backend хранит только бизнес-состояние. Векторы/кластеры/сценарии — в сторе ML.
 
 - **`users`** — `id`, `email` (unique), `password_hash`, `created_at`. (порт из template, урезанный)
-- **`ingestion_sources`** — `id` (=`source_id`), `name`, `origin` (`upload|demo`), `records_total`,
+- **`ingestion_sources`** — `id` (=`source_id`), `name`, `origin`
+  (`preloaded|upload|demo|live`), `records_total`,
   `records_valid`, `records_rejected`, `normalization_report` JSONB, `status`
   (`ingesting|classified|recomputed|failed`), `created_by`, `created_at`.
 - **`dataset_records`** — сырые поля для ROI-джойна и таблицы логов:

@@ -36,8 +36,13 @@ dataset / OWUI / live feeder
    `docs/contracts/log.schema.json`, синтезируя недостающие ID/timestamp и сохраняя отчёт.
 3. `IngestionService` пишет источник и ROI-поля в Postgres.
 4. FastAPI `BackgroundTasks` отправляет батчи в ML через `MlClient.stream_logs()` и обновляет статус
-   источника.
+   источника после появления фактических assignments в асинхронном ML worker.
 5. Backend подтягивает `/assignments` ML в таблицу `log_assignments` для `/logs` и ROI.
+
+Одинаковый внешний `request_id` получает разные канонические UUID в разных `source_id`, поэтому
+несколько датасетов не дедуплицируют записи друг друга. При старте Compose backend идемпотентно
+создаёт три непересекающихся preloaded workspace из demo fixture, дожидается классификации и
+запускает один общий recompute. Файловая загрузка JSON/JSONL/CSV остаётся доступной.
 
 ### Live ingestion
 
@@ -70,7 +75,8 @@ dataset / OWUI / live feeder
 
 - `src/main.py` — app factory, lifespan, CORS, `/api/ping|health|ready`.
 - `src/api/v1/` — auth, ingest/live, sources, recompute, dashboard, scenarios, logs, ROI/export.
-- `src/service/ingestion/` — JSON/CSV parsing, нормализация, Postgres и streaming в ML.
+- `src/service/ingestion/` — JSON/CSV parsing, нормализация, Postgres, preloaded workspaces и
+  streaming в ML.
 - `src/service/ml/client.py` — единственная HTTP-граница backend → ML.
 - `src/service/dashboard/` — статистика, assignments mirror и TTL-кэш.
 - `src/service/roi/` — FTE/стоимость/экономия и разрезы по категориям/сценариям.
@@ -114,6 +120,8 @@ CatBoost лежит в `app/models/`; при несовместимом или �
 
 - `src/app/App.tsx` — bootstrap cookie-auth, глобальные фильтры, polling и переключение пяти
   лениво загружаемых экранов без роутера.
+- `src/features/dataset-switcher/` — выбор общего представления или конкретного `source_id`;
+  один фильтр применяется к Dashboard, Scenarios, Logs, ROI и экспортам.
 - `src/shared/api/promptRadarApi.ts` — единый типизированный клиент backend.
 - `src/shared/api/http.ts` — query/body handling, `credentials: include`, refresh после 401.
 - `src/entities/` — локальные типы API; при контрактных изменениях синхронизировать вручную.
@@ -148,23 +156,27 @@ volumes: `postgres_data`, `qdrant_data`, `ml_meta_data`; Ollama доступна
 
 ```bash
 cp .env.example .env
+cp ml_service/.env.example ml_service/.env
 make up
 make demo
 ```
 
 Приложение: `http://localhost:3000`; Swagger backend: `http://localhost:8080/api/docs`.
 Для hot reload можно отдельно запустить `cd frontend && npm ci && npm run dev`. Demo credentials:
-`test@gmail.com` / `test123`. Реальные секреты задаются только через локальный `.env`.
+`test@gmail.com` / `test123`. Provider/model config и секреты ML хранятся только в локальном
+`ml_service/.env`; Compose загружает его напрямую, но переопределяет контейнерные URL/пути.
 
 ## Состояние и границы проверки
 
 На момент актуализации:
 
-- backend: `51 passed`; `ruff check src tests` проходит;
-- ML: unit-тест инициализации Qdrant проходит в runtime-образе; полный локальный `uv sync`
-  блокируется исторической несовместимостью разрешаемых версий Numba/llvmlite;
-- frontend: lint, четыре Vitest-теста и production build проходят; npm audit не находит уязвимостей;
-- полный Compose и same-origin сценарии login/dashboard/XLSX/CSV проходят на локальном стеке.
+- backend: `56 passed`; `ruff check src tests` проходит;
+- ML: `95 passed, 8 deselected` в runtime-образе с mock providers; отдельный online smoke через
+  OpenRouter создал реальные embeddings/assignments в Qdrant;
+- frontend: lint, пять Vitest-тестов и production build проходят; npm audit не находит уязвимостей;
+- изолированный полный Compose поднял три preloaded источника (170 + 106 + 109 = 385),
+  классифицировал их через online ML, завершил heavy recompute и проверен по dashboard, scenarios,
+  logs, ROI и XLSX/CSV через frontend/nginx.
 
 Исторические `TASKS.md` и локальные планы могут содержать уже неверные статусы. Они полезны для
 причин решений, но не для ответа «что работает сейчас» без повторной проверки кода и тестов.

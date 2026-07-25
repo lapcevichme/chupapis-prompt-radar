@@ -9,7 +9,8 @@
 Frontend + Backend + Postgres + Qdrant + ml-service одной командой:
 
 ```bash
-cp .env.example .env            # опционально — работает и с дефолтами
+cp .env.example .env                         # Compose/backend, опционально
+cp ml_service/.env.example ml_service/.env   # модели; добавь API-ключи локально
 docker compose up -d --build    # или: make up
 ```
 
@@ -18,13 +19,16 @@ docker compose up -d --build    # или: make up
 - ML health: <http://localhost:8000/health/ready>
 - Demo-логин: `test@gmail.com` / `test123`
 
-Демо-потоки: `make feed` (live-поток в `POST /api/v1/logs` — дашборд реагирует) или разовый
-датасет: логин → `POST /api/v1/ingest {"use_demo": true}` → `POST /api/v1/recompute` →
-`GET /api/v1/dashboard` / `GET /api/v1/roi`.
+При первом старте backend создаёт три предзагруженных аналитических workspace: **Knowledge &
+Communications** (170 записей), **Engineering & Data** (106) и **Operations & Planning** (109).
+Они совместно покрывают demo-датасет без пересечений. Переключатель в шапке аналитики передаёт
+`source_id` во все dashboard/scenarios/logs/ROI-запросы. Пользовательская загрузка JSON/JSONL/CSV
+на экране Sources и live-поток `make feed` сохранены.
 
-> Для осмысленной классификации/сценариев задай `OPENROUTER_API_KEY` в `.env` (QNA §4 — API-модели
-> разрешены). Без него ml идёт в offline mock-embeddings → низкое качество. Контракты и структура —
-> в `docs/`, актуальная карта реализации — `docs/CODEBASE_MAP.md`.
+> Compose напрямую загружает `ml_service/.env`. `ML_MODE=online` использует OpenRouter,
+> `ML_MODE=offline` — Ollama; mock следует включать явно только для тестов. Переменные инфраструктуры
+> (сетевой URL Qdrant, service token и пути внутри контейнера) задаёт Compose поверх этого файла.
+> Контракты и структура — в `docs/`, актуальная карта реализации — `docs/CODEBASE_MAP.md`.
 
 **End-to-end прогон:** `python tools/demo.py --url http://localhost:8080` гоняет сценарий
 `login → ingest demo → recompute (best-effort) → dashboard → ROI → export` с печатью саммари.
@@ -40,19 +44,20 @@ docker compose up -d --build    # или: make up
 ROI-саммари, разрезов по категориям и сценариям. XLSX собирается нативно (stdlib, без доп.
 зависимостей); CSV — с BOM для корректной кириллицы в Excel.
 
-**Тесты бэкенда:** `make test` (`cd backend && poetry run pytest`) — 51 unit + API-тест
+**Тесты бэкенда:** `make test` (`cd backend && poetry run pytest`) — 56 unit + API-тестов
 (ROI-калькулятор, нормализация, стриминг в ML, экспорт, валидация `/statistics`, контракт роутов).
 Линт: `make lint`. Полная проверка фронтенда: `make frontend-check`.
 
 #### Ограничения MVP (осознанные компромиссы)
 
-- Фоновая обработка — в одном процессе (без Celery/брокера); recompute триггерится вручную.
+- Фоновая обработка — в одном процессе (без Celery/брокера); первичный recompute запускается
+  автоматически после preload, следующие — вручную.
 - `timestamp` в demo-датасете **синтезируется** (помечено в `normalization_report`).
 - Дашборд-статистика — read-модель из стора ML (кэш с TTL), не пересчитывается на каждый запрос.
 - Ставки ROI (`fte_hourly_rate_rub`, `token_cost_per_1k_rub`) и session-коэффициенты — **предпосылки**
   расчёта, отдаются в `assumptions`; переопределяются query-параметрами («что если»).
-- Таксономия v1 (7 классов). Без `OPENROUTER_API_KEY`/Ollama ml — в degraded (классы `unknown`,
-  сценарии-одиночки); бэкенд это переживает (recompute → `502 ML_UNAVAILABLE`, дашборд/ROI живут).
+- Таксономия v1 (7 классов). Без рабочего OpenRouter/Ollama ML не готов к production-потоку;
+  mock-режим предназначен для локальных тестов и не показывает качество аналитики.
 
 ---
 
