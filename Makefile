@@ -4,8 +4,8 @@ COMPOSE := docker compose
 INGEST_TOKEN ?= dev-ingest-token
 BACKEND_URL ?= http://localhost:8080
 
-up:            ## build + start the whole stack (frontend + backend + ml + qdrant + db)
-	$(COMPOSE) up -d --build
+up:            ## build + start the whole stack and wait for service healthchecks
+	$(COMPOSE) up -d --build --wait --wait-timeout 240
 
 down:          ## stop everything (keeps volumes)
 	$(COMPOSE) down
