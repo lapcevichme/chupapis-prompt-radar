@@ -6,6 +6,9 @@ export const API_HEALTH_URL =
   (import.meta.env.VITE_API_HEALTH_URL as string | undefined)?.replace(/\/$/, '') ??
   '/api/health';
 
+export const AUTO_DEMO_LOGIN =
+  (import.meta.env.VITE_AUTO_DEMO_LOGIN as string | undefined)?.toLowerCase() === 'true';
+
 export const DEMO_EMAIL =
   (import.meta.env.VITE_DEMO_EMAIL as string | undefined) ?? 'demo@prompt-radar.local';
 

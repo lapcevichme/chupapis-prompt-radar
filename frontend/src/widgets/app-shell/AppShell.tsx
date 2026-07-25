@@ -1,5 +1,5 @@
 import {useState, type ComponentType, type ReactNode} from 'react';
-import {Menu, Moon, Radar, Sun, X} from 'lucide-react';
+import {Loader2, LogOut, Menu, Moon, Radar, Sun, X} from 'lucide-react';
 import {WorkspaceActions} from '@/features/workspace-actions/WorkspaceActions';
 import type {User} from '@/entities/user/types';
 import {cn} from '@/shared/lib/cn';
@@ -14,8 +14,10 @@ interface AppShellProps<T extends string> {
   activeTab: T;
   children: ReactNode;
   isDark: boolean;
+  isLoggingOut: boolean;
   navItems: NavItem<T>[];
   user: User;
+  onLogout: () => void;
   onRefresh: () => void;
   onSelectTab: (tab: T) => void;
   onToggleTheme: () => void;
@@ -25,8 +27,10 @@ export function AppShell<T extends string>({
   activeTab,
   children,
   isDark,
+  isLoggingOut,
   navItems,
   user,
+  onLogout,
   onRefresh,
   onSelectTab,
   onToggleTheme,
@@ -90,7 +94,7 @@ export function AppShell<T extends string>({
             })}
           </nav>
 
-          <div className="p-4 border-t border-divider flex items-center justify-between">
+          <div className="p-4 border-t border-divider flex items-center gap-1">
             <div className="flex items-center gap-3 px-2 py-2 min-w-0">
               <div className="w-8 h-8 rounded-full bg-accent-muted flex items-center justify-center text-accent font-bold text-sm shrink-0">
                 {user.email.slice(0, 1).toUpperCase()}
@@ -102,6 +106,14 @@ export function AppShell<T extends string>({
             </div>
             <button onClick={onToggleTheme} className="hidden md:block p-2 text-secondary hover:bg-surface-hover rounded-md transition-colors" aria-label="Toggle theme">
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <button
+              aria-label="Sign out"
+              className="rounded-md p-2 text-secondary transition-colors hover:bg-surface-hover hover:text-primary disabled:opacity-50"
+              disabled={isLoggingOut}
+              onClick={onLogout}
+            >
+              {isLoggingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
             </button>
           </div>
         </div>

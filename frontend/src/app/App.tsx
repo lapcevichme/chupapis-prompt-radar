@@ -1,16 +1,23 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {Activity, Database, DollarSign, LayoutDashboard, Target} from 'lucide-react';
 import {promptRadarApi} from '@/shared/api/promptRadarApi';
 import {ApiError} from '@/shared/api/http';
-import {DEMO_EMAIL, DEMO_PASSWORD, FALLBACK_DEMO_EMAIL, FALLBACK_DEMO_PASSWORD} from '@/shared/config/env';
+import {
+  AUTO_DEMO_LOGIN,
+  DEMO_EMAIL,
+  DEMO_PASSWORD,
+  FALLBACK_DEMO_EMAIL,
+  FALLBACK_DEMO_PASSWORD,
+} from '@/shared/config/env';
 import type {User} from '@/entities/user/types';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import LogsPage from '@/pages/logs/LogsPage';
+import LoginPage from '@/pages/auth/LoginPage';
 import RoiPage from '@/pages/roi/RoiPage';
 import ScenariosPage from '@/pages/scenarios/ScenariosPage';
 import SourcesPage from '@/pages/sources/SourcesPage';
 import {AppShell, type NavItem} from '@/widgets/app-shell/AppShell';
-import {ErrorState, LoadingState} from '@/widgets/data-state/DataState';
+import {LoadingState} from '@/widgets/data-state/DataState';
 
 type TabId = 'dashboard' | 'sources' | 'scenarios' | 'logs' | 'roi';
 
@@ -28,7 +35,10 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const autoLoginAttempted = useRef(false);
 
   const refreshData = useCallback(() => {
     setRefreshKey((key) => key + 1);
@@ -46,6 +56,12 @@ export default function App() {
           throw error;
         }
 
+        if (!AUTO_DEMO_LOGIN || autoLoginAttempted.current) {
+          setUser(null);
+          return;
+        }
+
+        autoLoginAttempted.current = true;
         const credentials = [
           {email: DEMO_EMAIL, password: DEMO_PASSWORD},
           {email: FALLBACK_DEMO_EMAIL, password: FALLBACK_DEMO_PASSWORD},
@@ -72,6 +88,35 @@ export default function App() {
     }
   }, []);
 
+  const handleLogin = useCallback(async (email: string, password: string) => {
+    setIsAuthenticating(true);
+    setAuthError(null);
+    autoLoginAttempted.current = true;
+    try {
+      const response = await promptRadarApi.login({email, password});
+      setUser(response.user);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Authorization failed');
+    } finally {
+      setIsAuthenticating(false);
+    }
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    setIsLoggingOut(true);
+    setAuthError(null);
+    autoLoginAttempted.current = true;
+    try {
+      await promptRadarApi.logout();
+      setUser(null);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Logout failed');
+      setUser(null);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }, []);
+
   useEffect(() => {
     void bootstrapAuth();
   }, [bootstrapAuth]);
@@ -88,16 +133,15 @@ export default function App() {
     );
   }
 
-  if (authError || !user) {
+  if (!user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <ErrorState
-          title="Backend authorization failed"
-          message={authError ?? 'No active user session'}
-          actionLabel="Retry"
-          onAction={() => void bootstrapAuth()}
-        />
-      </div>
+      <LoginPage
+        error={authError}
+        initialEmail={AUTO_DEMO_LOGIN ? FALLBACK_DEMO_EMAIL : ''}
+        initialPassword={AUTO_DEMO_LOGIN ? FALLBACK_DEMO_PASSWORD : ''}
+        isPending={isAuthenticating}
+        onLogin={handleLogin}
+      />
     );
   }
 
@@ -107,6 +151,8 @@ export default function App() {
       isDark={isDark}
       navItems={navItems}
       user={user}
+      isLoggingOut={isLoggingOut}
+      onLogout={() => void handleLogout()}
       onRefresh={refreshData}
       onSelectTab={(tab) => setActiveTab(tab)}
       onToggleTheme={() => setIsDark((value) => !value)}
