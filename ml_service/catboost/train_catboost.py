@@ -193,7 +193,10 @@ def train_model(
         eval_metric="TotalF1:average=Macro",
         random_seed=seed,
         verbose=50,
-        early_stopping_rounds=80,
+        early_stopping_rounds=150,
+        l2_leaf_reg=5,
+        min_data_in_leaf=5,
+        random_strength=1,
         auto_class_weights="Balanced",
         task_type=task_type,
     )
