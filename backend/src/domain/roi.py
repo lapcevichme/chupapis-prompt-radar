@@ -13,6 +13,13 @@ class Assumptions(BaseModel):
     session_coefficients: SessionCoefficients
     session_short_max_tokens: int
     session_long_min_tokens: int
+    # Fallback manual handling time per task class, applied when a record has no
+    # measured `estimated_manual_time_minutes`. Surfaced so the FTE figure can be
+    # audited: it is a stated assumption, not a measurement.
+    manual_minutes_by_category: dict[str, float] = {}
+    # Share of records (0-100) whose manual time came from the table above rather
+    # than from the data.
+    manual_minutes_estimated_percent: float = 0.0
 
 
 class UserStats(BaseModel):

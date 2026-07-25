@@ -123,3 +123,39 @@ def test_parse_raw_csv_coerces_types() -> None:
     rows = parse_raw(csv_bytes, "data.csv")
     assert rows[0]["simulated_context_tokens"] == 5000
     assert rows[0]["tools_used"] == ["CRM", "Mail"]
+
+
+def test_normalize_style_folds_corrupted_variants(normalize_settings):
+    raw = [
+        {"user_query": "a", "style": "typoy"},
+        {"user_query": "b", "style": "typò"},
+        {"user_query": "c", "style": "voice_jargon"},
+        {"user_query": "d", "style": "corporate slang"},
+        {"user_query": "e", "style": "formnal"},
+        {"user_query": "f", "style": "Formal"},
+    ]
+    rows = normalize(raw, normalize_settings).dataset_rows
+    assert [r.style for r in rows] == [
+        "typo",
+        "typo",
+        "voice",
+        "jargon",
+        "formal",
+        "formal",
+    ]
+
+
+def test_normalize_style_drops_leaked_status_values(normalize_settings):
+    """Generated datasets leak status into `style`; that is not a speech style."""
+    raw = [
+        {"user_query": "a", "style": "error_tool"},
+        {"user_query": "b", "style": "hallucination_loop"},
+    ]
+    rows = normalize(raw, normalize_settings).dataset_rows
+    assert [r.style for r in rows] == [None, None]
+
+
+def test_normalizer_promotes_model_field_into_tools(normalize_settings):
+    raw = [{"user_query": "a", "model": "gpt-4o", "tools_used": ["Jira"]}]
+    rows = normalize(raw, normalize_settings).dataset_rows
+    assert "model:gpt-4o" in rows[0].tools_used

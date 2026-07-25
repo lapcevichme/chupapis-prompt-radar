@@ -61,17 +61,23 @@ class _Bucket:
     tools: dict[str, int] = field(default_factory=dict)
 
 
+# Manual handling time per task class, used when a record carries no measured
+# `estimated_manual_time_minutes`. Keys are exactly taxonomy v1 (7 classes) —
+# earlier revisions listed classes the classifier never emits (code_generation,
+# debugging, data_transformation, document_analysis), which were dead entries,
+# while `other` was missing and silently fell through to the 15-minute default.
+#
+# NOTE: the generated datasets no longer ship a measured manual time, so this
+# table drives the whole FTE calculation. It is an explicit assumption, not a
+# measurement, and is returned in `Roi.assumptions.manual_minutes_by_category`.
 DEFAULT_CATEGORY_MANUAL_MINUTES: dict[str, float] = {
     "text_generation": 15.0,
-    "code_generation": 30.0,
     "code_help": 30.0,
-    "debugging": 30.0,
-    "data_transformation": 45.0,
     "data_analysis": 45.0,
-    "document_analysis": 30.0,
-    "task_management": 25.0,
-    "information_search": 15.0,
     "education": 20.0,
+    "information_search": 15.0,
+    "task_management": 25.0,
+    "other": 15.0,
 }
 DEFAULT_FALLBACK_MANUAL_MINUTES: float = 15.0
 
@@ -88,6 +94,7 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
         ),
         session_short_max_tokens=config.short_max_tokens,
         session_long_min_tokens=config.long_min_tokens,
+        manual_minutes_by_category=dict(DEFAULT_CATEGORY_MANUAL_MINUTES),
     )
 
     if not records:
@@ -113,6 +120,8 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
     by_category: dict[str, _Bucket] = {}
     by_scenario: dict[str, _Bucket] = {}
 
+    estimated_manual_count = 0
+
     for rec in records:
         tokens = rec.tokens or 0
         cat_key = rec.task_type or "unknown"
@@ -121,6 +130,7 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
             manual = DEFAULT_CATEGORY_MANUAL_MINUTES.get(
                 cat_key, DEFAULT_FALLBACK_MANUAL_MINUTES
             )
+            estimated_manual_count += 1
 
         total_tokens += tokens
         cost_for_log = (tokens / 1000.0) * config.token_cost_per_1k_rub
@@ -170,6 +180,10 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
         else:
             wasted_tokens += tokens
             u_stat.wasted_tokens += tokens
+
+    assumptions.manual_minutes_estimated_percent = round(
+        (estimated_manual_count / total_logs) * 100, 1
+    )
 
     total_fte_hours = total_saved_minutes / 60.0
     manual_cost = total_fte_hours * config.fte_hourly_rate_rub

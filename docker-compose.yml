@@ -87,7 +87,11 @@ services:
       ML_PROCESSING_TIMEOUT_SEC: ${ML_PROCESSING_TIMEOUT_SEC:-600}
       ML_PROCESSING_POLL_INTERVAL_SEC: ${ML_PROCESSING_POLL_INTERVAL_SEC:-1}
       ML_RECOMPUTE_TIMEOUT_SEC: ${ML_RECOMPUTE_TIMEOUT_SEC:-1800}
-      PRELOAD_DATASETS_ENABLED: ${PRELOAD_DATASETS_ENABLED:-false}
+      # On a clean clone `make up` must show a populated dashboard, not an empty
+      # app: seed the three preloaded workspaces from the bundled dataset.
+      PRELOAD_DATASETS_ENABLED: ${PRELOAD_DATASETS_ENABLED:-true}
+      # Heavy recompute (UMAP+HDBSCAN + LLM naming) costs provider credits, so it
+      # stays opt-in: set to true for a full demo, or trigger it from the UI.
       PRELOAD_DATASETS_RECOMPUTE: ${PRELOAD_DATASETS_RECOMPUTE:-false}
       INGEST_TOKEN: ${INGEST_TOKEN:-dev-ingest-token}
       DEMO_USER_EMAIL: ${DEMO_USER_EMAIL:-test@gmail.com}

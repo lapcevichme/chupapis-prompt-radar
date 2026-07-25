@@ -41,6 +41,8 @@ export interface RoiData {
   assumptions: {
     fte_hourly_rate_rub: number;
     token_cost_per_1k_rub: number;
+    manual_minutes_by_category: Record<string, number>;
+    manual_minutes_estimated_percent: number;
   };
   summary: {
     total_logs: number;
@@ -66,11 +68,12 @@ export interface RoiData {
   }[];
   by_scenario: {
     scenario_id: string;
-    name: string;
+    /** null until heavy recompute names the cluster. */
+    name: string | null;
     count: number;
     fte_hours_saved: number;
     net_savings_rub: number;
-    automation_potential: string;
+    automation_potential: string | null;
   }[];
 }
 

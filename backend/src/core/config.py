@@ -72,7 +72,10 @@ class Settings(BaseSettings):
     NORMALIZE_SYNTHESIZE_TIMESTAMPS: bool = True
     NORMALIZE_TIMESTAMP_SPAN_DAYS: int = 14
     # Demo dataset path: backend-owned fixture (decoupled from ml_service layout).
-    DEMO_DATASET_PATH: str = str(BASE_DIR / "src" / "data" / "demo_dataset.json")
+    # Default is the full 4860-record set (real timestamps over 7 days, model
+    # metadata, users/departments). `demo_dataset.json` is the older 385-record
+    # fixture kept for the lightweight tests.
+    DEMO_DATASET_PATH: str = str(BASE_DIR / "src" / "data" / "prompt_radar_dataset.json")
 
     # --- Read-model cache ---
     # Dashboard statistics is a read-model from the ML store; cache it briefly to

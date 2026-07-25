@@ -19,6 +19,36 @@ _STATUS_MAP: dict[str, tuple[str, str | None]] = {
     "hallucination_loop": ("error", "hallucination_loop"),
 }
 
+# Generated datasets carry corrupted / compound style labels ("typoy", "typò",
+# "voice_jargon"). Fold them onto the canonical modality so the ROI style
+# breakdown is not diluted by single-record spelling variants. Unknown values are
+# kept as-is (lowercased) rather than dropped — we normalize, we don't censor.
+_STYLE_ALIASES: dict[str, str] = {
+    "typoy": "typo",
+    "typò": "typo",
+    "typo_jargon": "typo",
+    "voice_jargon": "voice",
+    "corporate slang": "jargon",
+    "corporate_slang": "jargon",
+    "formnal": "formal",
+}
+
+# Status values that leaked into the `style` field of generated datasets. They are
+# not speech styles, so the style is recorded as unknown rather than polluting the
+# style breakdown with a bogus category.
+_NON_STYLE_VALUES: frozenset[str] = frozenset(
+    {"success", "error", "error_tool", "hallucination_loop"}
+)
+
+
+def _normalize_style(value: Any) -> str | None:
+    if value in (None, ""):
+        return None
+    cleaned = str(value).strip().lower()
+    if not cleaned or cleaned in _NON_STYLE_VALUES:
+        return None
+    return _STYLE_ALIASES.get(cleaned, cleaned)
+
 
 @dataclass
 class DatasetRow:
@@ -181,7 +211,7 @@ def normalize(
             tools_used.append(f"model:{raw_model}")
 
         gold_category = raw.get("category")
-        style = raw.get("style")
+        style = _normalize_style(raw.get("style"))
         meta_dict = raw.get("metadata") if isinstance(raw.get("metadata"), dict) else {}
         user_id = raw.get("user_id") or meta_dict.get("user_email")
         user_name = raw.get("user_name")

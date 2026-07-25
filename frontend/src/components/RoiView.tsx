@@ -48,11 +48,31 @@ export default function RoiView({ onFetchSuccess, refreshTrigger }: RoiViewProps
     );
   }
 
+  // Before heavy recompute the ML store holds one raw online cluster per record:
+  // unnamed and unsummarized. Those are pipeline internals, not scenarios — the
+  // Scenarios screen already hides them, and ROI must not render them either.
+  const namedScenarios = data.by_scenario
+    .filter((s) => s.name && s.name.trim().length > 0)
+    .slice(0, 10);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-secondary">Business value and token economics</h2>
       </div>
+
+      {data.assumptions.manual_minutes_estimated_percent > 0 && (
+        <div className="p-3 border border-divider rounded-lg bg-surface text-xs text-secondary">
+          <span className="font-medium text-primary">Предпосылка расчёта: </span>
+          у {data.assumptions.manual_minutes_estimated_percent}% записей нет замеренного времени
+          ручной работы — использован норматив по категории
+          ({Object.entries(data.assumptions.manual_minutes_by_category)
+            .map(([k, v]) => `${k} ${v}м`)
+            .join(' · ')}).
+          Ставка FTE {data.assumptions.fte_hourly_rate_rub} ₽/ч,
+          токены {data.assumptions.token_cost_per_1k_rub} ₽/1k.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -122,20 +142,32 @@ export default function RoiView({ onFetchSuccess, refreshTrigger }: RoiViewProps
             <CardTitle>Top Scenarios ROI</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4 mt-2">
-              {data.by_scenario.map((scenario) => (
-                <div key={scenario.scenario_id} className="flex items-center justify-between p-4 border border-divider rounded-lg hover:bg-surface-hover transition-colors">
-                  <div>
-                    <h4 className="font-medium text-primary">{scenario.name}</h4>
-                    <p className="text-sm text-secondary mt-1">{scenario.fte_hours_saved} hours saved</p>
+            {namedScenarios.length === 0 ? (
+              <div className="mt-2 p-6 border border-dashed border-divider rounded-lg text-center space-y-1">
+                <p className="text-sm text-primary font-medium">Сценарии ещё не посчитаны</p>
+                <p className="text-sm text-secondary">
+                  Запустите Recompute — он соберёт кластеры в именованные сценарии
+                  с саммари. До этого ROI доступен в разрезе категорий.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 mt-2">
+                {namedScenarios.map((scenario) => (
+                  <div key={scenario.scenario_id} className="flex items-center justify-between p-4 border border-divider rounded-lg hover:bg-surface-hover transition-colors">
+                    <div>
+                      <h4 className="font-medium text-primary">{scenario.name}</h4>
+                      <p className="text-sm text-secondary mt-1">{scenario.fte_hours_saved} hours saved</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-lg text-accent">{formatCurrency(scenario.net_savings_rub)}</div>
+                      {scenario.automation_potential && (
+                        <Badge variant="outline" className="mt-1">{scenario.automation_potential} potential</Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-lg text-accent">{formatCurrency(scenario.net_savings_rub)}</div>
-                    <Badge variant="outline" className="mt-1">{scenario.automation_potential} potential</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
