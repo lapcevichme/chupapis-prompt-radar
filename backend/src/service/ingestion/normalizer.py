@@ -153,12 +153,17 @@ def normalize(
         if tokens is None:
             tokens = _as_int(raw.get("simulated_context_tokens"))
         manual_time = _as_float(raw.get("estimated_manual_time_minutes"))
-        tools_used = raw.get("tools_used") or []
+        tools_used = list(raw.get("tools_used") or [])
+        raw_model = str(raw.get("model") or raw.get("model_name") or raw.get("agent_id") or "").strip()
+        if raw_model and not any(isinstance(t, str) and t.startswith("model:") for t in tools_used):
+            tools_used.append(f"model:{raw_model}")
+
         gold_category = raw.get("category")
         style = raw.get("style")
         user_id = raw.get("user_id")
         user_name = raw.get("user_name")
         department = raw.get("department")
+
 
         result.log_records.append(
             {

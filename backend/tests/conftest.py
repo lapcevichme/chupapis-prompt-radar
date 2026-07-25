@@ -1,13 +1,19 @@
+import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+# Ensure required env vars are present for test settings initialization
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test")
+os.environ.setdefault("JWT_SECRET", "super-secret-test-key-32-chars-long!")
+
 # Ensure `src/` is importable regardless of how pytest resolves pythonpath.
 _SRC = Path(__file__).resolve().parents[1] / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
+
 
 from service.roi.calculator import RoiConfig, RoiRecord  # noqa: E402
 

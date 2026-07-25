@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Target, Activity, DollarSign, Radar, Menu, X, Moon, Sun, Database } from 'lucide-react';
+import { LayoutDashboard, Target, Activity, DollarSign, Radar, Menu, X, Moon, Sun, Database, Users } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Scenarios from './components/Scenarios';
 import Logs from './components/Logs';
 import RoiView from './components/RoiView';
 import Ingestion from './components/Ingestion';
+import UsersModelsView from './components/UsersModelsView';
 import { cn } from './lib/utils';
 import { ensureAuth } from './api';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'ingestion' | 'scenarios' | 'logs' | 'roi'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'ingestion' | 'scenarios' | 'logs' | 'roi' | 'users_models'>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [ready, setReady] = useState(false);
@@ -31,6 +32,7 @@ export default function App() {
     { id: 'ingestion', label: 'Ingestion & Sources', icon: Database },
     { id: 'scenarios', label: 'Scenarios', icon: Target },
     { id: 'logs', label: 'Logs & Outliers', icon: Activity },
+    { id: 'users_models', label: 'Users & Models', icon: Users },
     { id: 'roi', label: 'ROI Analytics', icon: DollarSign },
   ] as const;
 
@@ -132,10 +134,12 @@ export default function App() {
             {activeTab === 'ingestion' && <Ingestion />}
             {activeTab === 'scenarios' && <Scenarios />}
             {activeTab === 'logs' && <Logs />}
+            {activeTab === 'users_models' && <UsersModelsView />}
             {activeTab === 'roi' && <RoiView />}
           </div>
         </div>
       </main>
+
 
       {/* Mobile overlay */}
       {isMobileMenuOpen && (

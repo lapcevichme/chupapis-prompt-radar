@@ -432,6 +432,7 @@ async def main():
                             tools = []
 
                         tokens = calculate_tokens(cat_key, tools)
+                        selected_model = random.choice(["gpt-4o", "claude-3-5-sonnet", "deepseek-r1", "llama-3-8b-ollama"])
 
                         final_record = {
                             "request_id": f"req_{int(time.time() * 1000)}_{uuid.uuid4().hex[:6]}",
@@ -439,6 +440,7 @@ async def main():
                             "user_id": user["user_id"],
                             "user_name": user["name"],
                             "department": user["department"],
+                            "model": selected_model,
                             "query_text": item.get("query_text", ""),
                             "response_text": item.get("response_text", ""),
                             "status": item.get("status", "success"),
@@ -449,6 +451,7 @@ async def main():
                             "total_tokens": tokens,
                         }
                         category_results.append(final_record)
+
                     print(f"  [+] +{len(batch)} логов от {user['name']} ({user['department']})")
 
             append_to_dataset(OUTPUT_FILE, category_results)

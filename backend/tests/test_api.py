@@ -76,6 +76,8 @@ async def test_openapi_exposes_documented_routes(app) -> None:
         "/api/v1/scenarios",
         "/api/v1/roi",
         "/api/v1/export",
+        "/api/v1/analytics/users",
+        "/api/v1/analytics/models",
     ]
     for path in expected:
         assert path in paths, f"missing route in OpenAPI: {path}"

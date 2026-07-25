@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 
 def get_v1_router() -> APIRouter:
     from . import (
+        analytics,
         auth,
         dashboard,
         ingest,
@@ -19,7 +20,8 @@ def get_v1_router() -> APIRouter:
     router.include_router(auth.router)
     router.include_router(live.router, dependencies=[Depends(require_ingest_token)])
 
-    protected = (ingest, sources, recompute, dashboard, scenarios, logs, roi)
+    protected = (ingest, sources, recompute, dashboard, scenarios, logs, roi, analytics)
     for module in protected:
         router.include_router(module.router, dependencies=[Depends(get_current_user)])
     return router
+

@@ -101,3 +101,69 @@ export interface Source {
     rejected_reasons?: Record<string, number>;
   };
 }
+
+export interface UserAnalyticsData {
+  summary: {
+    total_users: number;
+    active_users_l7: number;
+    avg_adoption_score: number;
+    avg_frustration_index: number;
+    personas_distribution: {
+      persona: string;
+      label: string;
+      count: number;
+      percentage: number;
+    }[];
+  };
+  by_department: {
+    department: string;
+    users_count: number;
+    total_queries: number;
+    avg_saved_hours: number;
+    frustration_index: number;
+  }[];
+  users: {
+    user_id: string;
+    user_name: string;
+    department: string;
+    persona: string;
+    persona_label: string;
+    total_queries: number;
+    active_days: number;
+    saved_hours: number;
+    frustration_index: number;
+    top_category: string;
+    needs_guidance: boolean;
+    recommendation: string;
+  }[];
+}
+
+export interface ModelAnalyticsData {
+  summary: {
+    total_models_detected: number;
+    avg_latency_ms: number;
+    total_tokens: number;
+    potential_cost_reduction_percent: number;
+    routing_recommendation: string;
+  };
+  models: {
+    model_id: string;
+    model_name: string;
+    total_queries: number;
+    share_percentage: number;
+    avg_latency_ms: number;
+    total_tokens: number;
+    failure_rate_percent: number;
+    user_feedback_score: number;
+    top_task_type: string;
+    cost_tier: string;
+  }[];
+  task_fit: {
+    task_type: string;
+    label: string;
+    recommended_model: string;
+    queries_count: number;
+    avg_latency_ms: number;
+  }[];
+}
+

@@ -1,4 +1,4 @@
-import type { DashboardSummary, Scenario, LogItem, RoiData, Source } from './types';
+import type { DashboardSummary, Scenario, LogItem, RoiData, Source, UserAnalyticsData, ModelAnalyticsData } from './types';
 
 const BASE = '/api/v1';
 
@@ -117,3 +117,14 @@ export async function fetchLogs(): Promise<LogItem[]> {
 export async function fetchRoi(): Promise<RoiData> {
   return request<RoiData>('/roi');
 }
+
+/* ── Analytics ── */
+
+export async function fetchUserAnalytics(): Promise<UserAnalyticsData> {
+  return request<UserAnalyticsData>('/analytics/users');
+}
+
+export async function fetchModelAnalytics(): Promise<ModelAnalyticsData> {
+  return request<ModelAnalyticsData>('/analytics/models');
+}
+

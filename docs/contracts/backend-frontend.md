@@ -215,8 +215,94 @@ Backend проксирует в ML. `{ "job_id": "rc_01", "status": "running" }`
 - `csv`: один файл с секциями `# Summary` / `# ByCategory` / `# ByScenario`, UTF-8 с BOM (кириллица
   в Excel). Неверный `format` → `422`.
 
+## 5b. Аналитика пользователей и моделей (Users & Models Analytics)
+
+### `GET /api/v1/analytics/users` → `200`
+
+Фильтры: `?source_id=&from=&to=`.
+
+Возвращает агрегированный вектор пользователей, метрики вовлечения (DAU/MAU, Adoption Score), распределение по архетипам (User Personas) и список пользователей с Frustration Index для детекции барьеров.
+
+```json
+{
+  "summary": {
+    "total_users": 15,
+    "active_users_l7": 12,
+    "avg_adoption_score": 78.4,
+    "avg_frustration_index": 12.1,
+    "personas_distribution": [
+      { "persona": "code_craftsman", "label": "Разработчик (Code)", "count": 6, "percentage": 40.0 },
+      { "persona": "analyst", "label": "Аналитик данных", "count": 4, "percentage": 26.7 },
+      { "persona": "super_user", "label": "AI Super-User", "count": 3, "percentage": 20.0 },
+      { "persona": "casual", "label": "Эпизодический", "count": 2, "percentage": 13.3 }
+    ]
+  },
+  "by_department": [
+    { "department": "IT / Dev", "users_count": 8, "total_queries": 220, "avg_saved_hours": 18.5, "frustration_index": 8.2 }
+  ],
+  "users": [
+    {
+      "user_id": "user_01",
+      "user_name": "Алексей Смирнов",
+      "department": "IT / Dev",
+      "persona": "code_craftsman",
+      "persona_label": "Разработчик (Code)",
+      "total_queries": 45,
+      "active_days": 12,
+      "saved_hours": 14.2,
+      "frustration_index": 6.5,
+      "top_category": "code_generation",
+      "needs_guidance": false,
+      "recommendation": "Пользователь эффективно использует сценарии отладки и генерации кода."
+    }
+  ]
+}
+```
+
+### `GET /api/v1/analytics/models` → `200`
+
+Фильтры: `?source_id=&from=&to=`.
+
+Сравнение производительности и стоимости моделей/агентов (Model-to-Task Fit, задержка, токены, уровень ошибок, потенциал оптимизации маршрутизации).
+
+```json
+{
+  "summary": {
+    "total_models_detected": 4,
+    "avg_latency_ms": 1420,
+    "total_tokens": 1120000,
+    "potential_cost_reduction_percent": 24.5,
+    "routing_recommendation": "Перенаправление 25% тривиальных запросов General QA с GPT-4o на GPT-4o-mini позволит сэкономить 24.5% токенового бюджета."
+  },
+  "models": [
+    {
+      "model_id": "gpt-4o",
+      "model_name": "GPT-4o (OpenAI)",
+      "total_queries": 180,
+      "share_percentage": 51.7,
+      "avg_latency_ms": 1650,
+      "total_tokens": 750000,
+      "failure_rate_percent": 3.2,
+      "user_feedback_score": 0.85,
+      "top_task_type": "code_generation",
+      "cost_tier": "premium"
+    }
+  ],
+  "task_fit": [
+    {
+      "task_type": "code_generation",
+      "label": "Генерация кода",
+      "recommended_model": "GPT-4o",
+      "queries_count": 120,
+      "avg_latency_ms": 1500
+    }
+  ]
+}
+```
+
 ## 6. Health
 
 - `GET /api/health` → `{ "status": "ok|degraded", "dependencies": { "database": "ok", "ml": "ok" } }`
 - `GET /api/ready` → `200|503`
 - `GET /api/ping` → `{ "status": "ok" }`
+

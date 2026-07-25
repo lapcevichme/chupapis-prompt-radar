@@ -6,11 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import Settings, get_settings
 from core.errors import UnauthorizedError
 from database.relational_db import User, get_session_factory
+from service.analytics import AnalyticsService
 from service.auth import AuthService
 from service.dashboard import DashboardService
 from service.ingestion import IngestionService
 from service.recompute import RecomputeService
 from service.roi import RoiService
+
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 
@@ -40,6 +42,10 @@ def get_roi_service(session: SessionDep, settings: SettingsDep) -> RoiService:
     return RoiService(session, settings)
 
 
+def get_analytics_service(session: SessionDep) -> AnalyticsService:
+    return AnalyticsService(session)
+
+
 def get_recompute_service(settings: SettingsDep) -> RecomputeService:
     return RecomputeService(settings)
 
@@ -57,7 +63,9 @@ FiltersDep = Annotated[dict[str, Any], Depends(dashboard_filters)]
 IngestionServiceDep = Annotated[IngestionService, Depends(get_ingestion_service)]
 DashboardServiceDep = Annotated[DashboardService, Depends(get_dashboard_service)]
 RoiServiceDep = Annotated[RoiService, Depends(get_roi_service)]
+AnalyticsServiceDep = Annotated[AnalyticsService, Depends(get_analytics_service)]
 RecomputeServiceDep = Annotated[RecomputeService, Depends(get_recompute_service)]
+
 
 
 def get_auth_service(session: SessionDep, settings: SettingsDep) -> AuthService:
