@@ -3,22 +3,14 @@ import userEvent from '@testing-library/user-event';
 import {expect, test, vi} from 'vitest';
 import {WorkspaceFilters} from './WorkspaceFilters';
 
-vi.mock('@/shared/api/promptRadarApi', () => ({
-  promptRadarApi: {
-    getSources: vi.fn().mockResolvedValue({
-      items: [{source_id: 'source-1', name: 'Demo', origin: 'demo'}],
-      total: 1,
-    }),
-  },
-}));
-
 test('validates dates and applies a normalized filter set', async () => {
   const user = userEvent.setup();
   const onChange = vi.fn();
-  render(<WorkspaceFilters filters={{}} onChange={onChange} refreshKey={0} />);
+  render(
+    <WorkspaceFilters filters={{source_id: 'source-1'}} onChange={onChange} />,
+  );
 
   await user.click(screen.getByRole('button', {name: 'Filters'}));
-  await user.selectOptions(await screen.findByLabelText('Source'), 'source-1');
   await user.type(screen.getByLabelText('From'), '2026-07-20');
   await user.type(screen.getByLabelText('To'), '2026-07-10');
   await user.click(screen.getByRole('button', {name: 'Apply'}));

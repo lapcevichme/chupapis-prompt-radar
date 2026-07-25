@@ -1,7 +1,7 @@
 export interface Source {
   source_id: string;
   name: string;
-  origin: 'upload' | 'demo' | string;
+  origin: 'preloaded' | 'upload' | 'demo' | 'live' | string;
   records_total: number;
   records_valid: number;
   records_rejected: number;

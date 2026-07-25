@@ -1,21 +1,17 @@
 import {useEffect, useState} from 'react';
 import {Filter, RotateCcw, X} from 'lucide-react';
 import type {WorkspaceFilters as WorkspaceFilterValues} from '@/entities/workspace/types';
-import {promptRadarApi} from '@/shared/api/promptRadarApi';
-import {useApiResource} from '@/shared/api/useApiResource';
 
 interface WorkspaceFiltersProps {
   filters: WorkspaceFilterValues;
   onChange: (filters: WorkspaceFilterValues) => void;
-  refreshKey: number;
 }
 
-export function WorkspaceFilters({filters, onChange, refreshKey}: WorkspaceFiltersProps) {
+export function WorkspaceFilters({filters, onChange}: WorkspaceFiltersProps) {
   const [draft, setDraft] = useState(filters);
   const [isOpen, setIsOpen] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const sourcesState = useApiResource(() => promptRadarApi.getSources(), [refreshKey]);
-  const activeCount = Object.values(filters).filter(Boolean).length;
+  const activeCount = [filters.from, filters.to].filter(Boolean).length;
 
   useEffect(() => setDraft(filters), [filters]);
 
@@ -30,9 +26,10 @@ export function WorkspaceFilters({filters, onChange, refreshKey}: WorkspaceFilte
   };
 
   const clear = () => {
-    setDraft({});
+    const cleared = filters.source_id ? {source_id: filters.source_id} : {};
+    setDraft(cleared);
     setValidationError(null);
-    onChange({});
+    onChange(cleared);
   };
 
   return (
@@ -75,22 +72,6 @@ export function WorkspaceFilters({filters, onChange, refreshKey}: WorkspaceFilte
         </div>
 
         <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
-          <label className="flex min-w-0 flex-col gap-2 text-xs font-medium text-secondary">
-            Source
-            <select
-              className="h-10 rounded-md border border-divider bg-background px-3 text-sm text-primary outline-none focus:border-accent"
-              value={draft.source_id ?? ''}
-              onChange={(event) => setDraft((current) => ({...current, source_id: event.target.value || undefined}))}
-            >
-              <option value="">All sources</option>
-              {(sourcesState.data?.items ?? []).map((source) => (
-                <option key={source.source_id} value={source.source_id}>
-                  {source.name} · {source.origin}
-                </option>
-              ))}
-            </select>
-          </label>
-
           <label className="flex flex-col gap-2 text-xs font-medium text-secondary">
             From
             <input

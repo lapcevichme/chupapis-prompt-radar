@@ -11,6 +11,7 @@ import {
 } from '@/shared/config/env';
 import type {User} from '@/entities/user/types';
 import type {WorkspaceFilters as WorkspaceFilterValues} from '@/entities/workspace/types';
+import {DatasetSwitcher} from '@/features/dataset-switcher/DatasetSwitcher';
 import {WorkspaceFilters} from '@/features/workspace-filters/WorkspaceFilters';
 import LoginPage from '@/pages/auth/LoginPage';
 import {AppShell, type NavItem} from '@/widgets/app-shell/AppShell';
@@ -168,7 +169,10 @@ export default function App() {
       navItems={navItems}
       secondaryToolbar={
         activeTab === 'sources' || activeTab === 'scenarios' ? undefined : (
-          <WorkspaceFilters filters={filters} onChange={setFilters} refreshKey={refreshKey} />
+          <>
+            <DatasetSwitcher filters={filters} onChange={setFilters} refreshKey={refreshKey} />
+            <WorkspaceFilters filters={filters} onChange={setFilters} />
+          </>
         )
       }
       user={user}
@@ -187,7 +191,12 @@ export default function App() {
           <ScenariosPage
             filters={filters}
             refreshKey={refreshKey}
-            workspaceFiltersControl={<WorkspaceFilters filters={filters} onChange={setFilters} refreshKey={refreshKey} />}
+            workspaceFiltersControl={(
+              <div className="flex flex-wrap items-center gap-3">
+                <DatasetSwitcher filters={filters} onChange={setFilters} refreshKey={refreshKey} />
+                <WorkspaceFilters filters={filters} onChange={setFilters} />
+              </div>
+            )}
           />
         )}
         {activeTab === 'logs' && <LogsPage filters={filters} refreshKey={refreshKey} />}
