@@ -1,0 +1,1283 @@
+[
+  {
+    "request_id": "req_20260725_001",
+    "timestamp": "2026-07-25T08:04:15.358458+00:00",
+    "user_id": "u_004",
+    "user_name": "Елена",
+    "department": "HR",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Поищи положение об оплате больничных и ДМС для новых сотрудников",
+    "response_text": "Запрос по теме 'Поищи положение об оплате больничных и ДМС для новых сотрудников' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 119178
+  },
+  {
+    "request_id": "req_20260725_002",
+    "timestamp": "2026-07-25T08:05:14.484799+00:00",
+    "user_id": "u_004",
+    "user_name": "Елена",
+    "department": "HR",
+    "model": "deepseek-r1",
+    "query_text": "Где лежит форма заявки на прохождение курсов повышения квалификации?",
+    "response_text": "Запрос по теме 'Где лежит форма заявки на прохождение курсов повышения квалификации?' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 109549
+  },
+  {
+    "request_id": "req_20260725_003",
+    "timestamp": "2026-07-25T08:43:31.382607+00:00",
+    "user_id": "u_002",
+    "user_name": "Аня",
+    "department": "Analytics",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди выгрузку по ключевым клиентам с конверсией выше 15%",
+    "response_text": "Запрос по теме 'Найди выгрузку по ключевым клиентам с конверсией выше 15%' успешно обработан в системе PostgreSQL. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "PostgreSQL"
+    ],
+    "total_tokens": 97447
+  },
+  {
+    "request_id": "req_20260725_004",
+    "timestamp": "2026-07-25T08:50:09.268205+00:00",
+    "user_id": "u_005",
+    "user_name": "Максим",
+    "department": "IT",
+    "model": "gpt-4o",
+    "query_text": "Где лежит регламент проведения нагрузочного тестирования?",
+    "response_text": "Запрос по теме 'Где лежит регламент проведения нагрузочного тестирования?' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence",
+      "Google Search"
+    ],
+    "total_tokens": 53655
+  },
+  {
+    "request_id": "req_20260725_005",
+    "timestamp": "2026-07-25T08:53:00.132313+00:00",
+    "user_id": "u_010",
+    "user_name": "Виктор",
+    "department": "Security",
+    "model": "deepseek-r1",
+    "query_text": "Поищи положение о конфиденциальности NDA для контрагентов",
+    "response_text": "Запрос по теме 'Поищи положение о конфиденциальности NDA для контрагентов' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 127480
+  },
+  {
+    "request_id": "req_20260725_006",
+    "timestamp": "2026-07-25T09:19:08.162491+00:00",
+    "user_id": "u_004",
+    "user_name": "Елена",
+    "department": "HR",
+    "model": "gpt-4o",
+    "query_text": "Найди шаблон служебной записки на приобретение софта",
+    "response_text": "Запрос по теме 'Найди шаблон служебной записки на приобретение софта' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 106464
+  },
+  {
+    "request_id": "req_20260725_007",
+    "timestamp": "2026-07-25T09:37:18.748611+00:00",
+    "user_id": "u_001",
+    "user_name": "Андрей",
+    "department": "IT",
+    "model": "gpt-4o",
+    "query_text": "Где посмотреть статус заявки на замену монитора №8812?",
+    "response_text": "Запрос по теме 'Где посмотреть статус заявки на замену монитора №8812?' успешно обработан в системе Jira. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "typo",
+    "tools_used": [
+      "Jira"
+    ],
+    "total_tokens": 133814
+  },
+  {
+    "request_id": "req_20260725_008",
+    "timestamp": "2026-07-25T09:46:33.417266+00:00",
+    "user_id": "u_004",
+    "user_name": "Елена",
+    "department": "HR",
+    "model": "deepseek-r1",
+    "query_text": "Поищи результаты опроса удовлетворенности сотрудников eNPS",
+    "response_text": "Запрос по теме 'Поищи результаты опроса удовлетворенности сотрудников eNPS' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 90963
+  },
+  {
+    "request_id": "req_20260725_009",
+    "timestamp": "2026-07-25T09:48:05.425611+00:00",
+    "user_id": "u_004",
+    "user_name": "Елена",
+    "department": "HR",
+    "model": "gpt-4o",
+    "query_text": "Где посмотреть список корпоративных скидок для сотрудников?",
+    "response_text": "Запрос по теме 'Где посмотреть список корпоративных скидок для сотрудников?' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 52944
+  },
+  {
+    "request_id": "req_20260725_010",
+    "timestamp": "2026-07-25T09:55:20.914434+00:00",
+    "user_id": "u_005",
+    "user_name": "Максим",
+    "department": "IT",
+    "model": "gpt-4o",
+    "query_text": "Найди требования к оформлению проектной документации по ГОСТ",
+    "response_text": "Запрос по теме 'Найди требования к оформлению проектной документации по ГОСТ' успешно обработан в системе PDF Parser. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "PDF Parser",
+      "Confluence"
+    ],
+    "total_tokens": 46171
+  },
+  {
+    "request_id": "req_20260725_011",
+    "timestamp": "2026-07-25T10:16:13.913557+00:00",
+    "user_id": "u_001",
+    "user_name": "Андрей",
+    "department": "IT",
+    "model": "llama-3-8b-ollama",
+    "query_text": "Где найти инструкции по настройке корпоративного VPN на iOS?",
+    "response_text": "Запрос по теме 'Где найти инструкции по настройке корпоративного VPN на iOS?' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "voice",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 93932
+  },
+  {
+    "request_id": "req_20260725_012",
+    "timestamp": "2026-07-25T10:22:19.813607+00:00",
+    "user_id": "u_009",
+    "user_name": "Мария",
+    "department": "Marketing",
+    "model": "llama-3-8b-ollama",
+    "query_text": "Собери аналитику по упоминаниям бренда в СМИ за июль",
+    "response_text": "Запрос по теме 'Собери аналитику по упоминаниям бренда в СМИ за июль' успешно обработан в системе Google Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Google Search",
+      "Corporate Search"
+    ],
+    "total_tokens": 112938
+  },
+  {
+    "request_id": "req_20260725_013",
+    "timestamp": "2026-07-25T10:28:15.554600+00:00",
+    "user_id": "u_003",
+    "user_name": "Сергей",
+    "department": "Sales",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Где скачать презентацию продукта для B2B клиентов на английском?",
+    "response_text": "Запрос по теме 'Где скачать презентацию продукта для B2B клиентов на английском?' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 47377
+  },
+  {
+    "request_id": "req_20260725_014",
+    "timestamp": "2026-07-25T10:30:51.752642+00:00",
+    "user_id": "u_002",
+    "user_name": "Аня",
+    "department": "Analytics",
+    "model": "gpt-4o",
+    "query_text": "Найди контакты владельца витрины данных по клиентским транзакциям",
+    "response_text": "Запрос по теме 'Найди контакты владельца витрины данных по клиентским транзакциям' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 78927
+  },
+  {
+    "request_id": "req_20260725_015",
+    "timestamp": "2026-07-25T10:42:59.710578+00:00",
+    "user_id": "u_010",
+    "user_name": "Виктор",
+    "department": "Security",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Поищи список заблокированных IP адресов за последнюю неделю",
+    "response_text": "Запрос по теме 'Поищи список заблокированных IP адресов за последнюю неделю' успешно обработан в системе Elasticsearch. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "Elasticsearch"
+    ],
+    "total_tokens": 135030
+  },
+  {
+    "request_id": "req_20260725_016",
+    "timestamp": "2026-07-25T10:51:00.908696+00:00",
+    "user_id": "u_007",
+    "user_name": "Дмитрий",
+    "department": "Management",
+    "model": "deepseek-r1",
+    "query_text": "Поищи протокол последнего совещания совета директоров по ИИ",
+    "response_text": "Запрос по теме 'Поищи протокол последнего совещания совета директоров по ИИ' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 119344
+  },
+  {
+    "request_id": "req_20260725_017",
+    "timestamp": "2026-07-25T10:54:25.847974+00:00",
+    "user_id": "u_002",
+    "user_name": "Аня",
+    "department": "Analytics",
+    "model": "gpt-4o",
+    "query_text": "Поищи дашборд с ежедневной активностью пользователей (DAU/MAU)",
+    "response_text": "Не удалось выполнить поиск в Corporate Search: произошла ошибка сервера. Попробуйте повторить запрос позже.",
+    "status": "error_tool",
+    "error_reason": "Corporate Search 500 Internal Server Error: Timeout during query execution",
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 62490
+  },
+  {
+    "request_id": "req_20260725_018",
+    "timestamp": "2026-07-25T10:54:50.330078+00:00",
+    "user_id": "u_003",
+    "user_name": "Сергей",
+    "department": "Sales",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Собери справку по компании ООО 'Вектор Технологии': ЛПР, оборот, текущие сделки",
+    "response_text": "Запрос по теме 'Собери справку по компании ООО 'Вектор Технологии': ЛПР, оборот, текущие сделки' успешно обработан в системе CRM. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "typo",
+    "tools_used": [
+      "CRM"
+    ],
+    "total_tokens": 128653
+  },
+  {
+    "request_id": "req_20260725_019",
+    "timestamp": "2026-07-25T10:59:30.228159+00:00",
+    "user_id": "u_006",
+    "user_name": "Ольга",
+    "department": "Finance",
+    "model": "gpt-4o",
+    "query_text": "Собери список счетов на оплату со статусом 'Ожидает подписания'",
+    "response_text": "Запрос по теме 'Собери список счетов на оплату со статусом 'Ожидает подписания'' успешно обработан в системе 1C:Enterprise. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "1C:Enterprise",
+      "Google Search"
+    ],
+    "total_tokens": 51285
+  },
+  {
+    "request_id": "req_20260725_020",
+    "timestamp": "2026-07-25T11:20:21.121473+00:00",
+    "user_id": "u_002",
+    "user_name": "Аня",
+    "department": "Analytics",
+    "model": "deepseek-r1",
+    "query_text": "Где найти методологию расчёта оттока пользователей (Churn Rate)?",
+    "response_text": "Запрос по теме 'Где найти методологию расчёта оттока пользователей (Churn Rate)?' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 37505
+  },
+  {
+    "request_id": "req_20260725_021",
+    "timestamp": "2026-07-25T12:12:27.165584+00:00",
+    "user_id": "u_003",
+    "user_name": "Сергей",
+    "department": "Sales",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди актуальный прайс-лист на лицензии на 2026 год",
+    "response_text": "Запрос по теме 'Найди актуальный прайс-лист на лицензии на 2026 год' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 67487
+  },
+  {
+    "request_id": "req_20260725_022",
+    "timestamp": "2026-07-25T12:34:24.210052+00:00",
+    "user_id": "u_005",
+    "user_name": "Максим",
+    "department": "IT",
+    "model": "deepseek-r1",
+    "query_text": "Поищи в баг-трекере Jira похожие таски по ошибке ConnectionResetError в Postgres",
+    "response_text": "Запрос по теме 'Поищи в баг-трекере Jira похожие таски по ошибке ConnectionResetError в Postgres' успешно обработан в системе Jira. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "Jira"
+    ],
+    "total_tokens": 69286
+  },
+  {
+    "request_id": "req_20260725_023",
+    "timestamp": "2026-07-25T13:00:15.626687+00:00",
+    "user_id": "u_002",
+    "user_name": "Аня",
+    "department": "Analytics",
+    "model": "llama-3-8b-ollama",
+    "query_text": "Собери информацию по метрикам LTV и CAC за прошлый квартал из PowerBI",
+    "response_text": "Запрос по теме 'Собери информацию по метрикам LTV и CAC за прошлый квартал из PowerBI' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search",
+      "Google Search"
+    ],
+    "total_tokens": 110586
+  },
+  {
+    "request_id": "req_20260725_024",
+    "timestamp": "2026-07-25T13:02:04.801142+00:00",
+    "user_id": "u_004",
+    "user_name": "Елена",
+    "department": "HR",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди список открытых вакансий в департаменте ИТ",
+    "response_text": "Запрос по теме 'Найди список открытых вакансий в департаменте ИТ' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search",
+      "Google Search"
+    ],
+    "total_tokens": 64777
+  },
+  {
+    "request_id": "req_20260725_025",
+    "timestamp": "2026-07-25T13:21:02.744086+00:00",
+    "user_id": "u_006",
+    "user_name": "Ольга",
+    "department": "Finance",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди акты сверки с ООО 'Логистика 24' за 1 полугодие 2026",
+    "response_text": "Запрос по теме 'Найди акты сверки с ООО 'Логистика 24' за 1 полугодие 2026' успешно обработан в системе 1C:Enterprise. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "1C:Enterprise"
+    ],
+    "total_tokens": 39723
+  },
+  {
+    "request_id": "req_20260725_026",
+    "timestamp": "2026-07-25T13:25:44.224995+00:00",
+    "user_id": "u_002",
+    "user_name": "Аня",
+    "department": "Analytics",
+    "model": "deepseek-r1",
+    "query_text": "Найди скрипты агрегации логов для отчёта CTO",
+    "response_text": "Запрос по теме 'Найди скрипты агрегации логов для отчёта CTO' успешно обработан в системе PostgreSQL. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "PostgreSQL",
+      "Corporate Search"
+    ],
+    "total_tokens": 62470
+  },
+  {
+    "request_id": "req_20260725_027",
+    "timestamp": "2026-07-25T14:14:58.988315+00:00",
+    "user_id": "u_001",
+    "user_name": "Андрей",
+    "department": "IT",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди доступы к стейджинг стенду системы Prompt Radar",
+    "response_text": "Запрос по теме 'Найди доступы к стейджинг стенду системы Prompt Radar' успешно обработан в системе Internal Wiki. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "typo",
+    "tools_used": [
+      "Internal Wiki"
+    ],
+    "total_tokens": 46476
+  },
+  {
+    "request_id": "req_20260725_028",
+    "timestamp": "2026-07-25T14:16:40.673133+00:00",
+    "user_id": "u_005",
+    "user_name": "Максим",
+    "department": "IT",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди гайд по работе с Git и веткой main в нашей команде",
+    "response_text": "Запрос по теме 'Найди гайд по работе с Git и веткой main в нашей команде' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "Confluence",
+      "Google Search"
+    ],
+    "total_tokens": 94352
+  },
+  {
+    "request_id": "req_20260725_029",
+    "timestamp": "2026-07-25T14:22:58.308592+00:00",
+    "user_id": "u_004",
+    "user_name": "Елена",
+    "department": "HR",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Поищи регламент бронирования переговорных комнат",
+    "response_text": "Запрос по теме 'Поищи регламент бронирования переговорных комнат' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence",
+      "Google Search"
+    ],
+    "total_tokens": 137494
+  },
+  {
+    "request_id": "req_20260725_030",
+    "timestamp": "2026-07-25T14:25:21.281283+00:00",
+    "user_id": "u_010",
+    "user_name": "Виктор",
+    "department": "Security",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди инструкцию по действиям при инциденте утечки данных",
+    "response_text": "Запрос по теме 'Найди инструкцию по действиям при инциденте утечки данных' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence",
+      "Google Search"
+    ],
+    "total_tokens": 101675
+  },
+  {
+    "request_id": "req_20260725_031",
+    "timestamp": "2026-07-25T15:06:54.783351+00:00",
+    "user_id": "u_001",
+    "user_name": "Андрей",
+    "department": "IT",
+    "model": "gpt-4o",
+    "query_text": "Поищи инструкцию по подключению к оргтехнике и принтерам на 4 этаже",
+    "response_text": "Запрос по теме 'Поищи инструкцию по подключению к оргтехнике и принтерам на 4 этаже' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "voice",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 87203
+  },
+  {
+    "request_id": "req_20260725_032",
+    "timestamp": "2026-07-25T15:10:02.880972+00:00",
+    "user_id": "u_004",
+    "user_name": "Елена",
+    "department": "HR",
+    "model": "gpt-4o",
+    "query_text": "Поищи расписание внутренних обучающих вебинаров на эту неделю",
+    "response_text": "Запрос по теме 'Поищи расписание внутренних обучающих вебинаров на эту неделю' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence",
+      "Google Search"
+    ],
+    "total_tokens": 131472
+  },
+  {
+    "request_id": "req_20260725_033",
+    "timestamp": "2026-07-25T15:43:18.388459+00:00",
+    "user_id": "u_003",
+    "user_name": "Сергей",
+    "department": "Sales",
+    "model": "deepseek-r1",
+    "query_text": "Собери историю переписки с заказчиком по проекту интеграции",
+    "response_text": "Запрос по теме 'Собери историю переписки с заказчиком по проекту интеграции' успешно обработан в системе CRM. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "CRM"
+    ],
+    "total_tokens": 99906
+  },
+  {
+    "request_id": "req_20260725_034",
+    "timestamp": "2026-07-25T15:57:09.942402+00:00",
+    "user_id": "u_009",
+    "user_name": "Мария",
+    "department": "Marketing",
+    "model": "llama-3-8b-ollama",
+    "query_text": "Найди брендбук и логотипы компании в векторе",
+    "response_text": "Запрос по теме 'Найди брендбук и логотипы компании в векторе' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 106644
+  },
+  {
+    "request_id": "req_20260725_035",
+    "timestamp": "2026-07-25T16:07:03.607876+00:00",
+    "user_id": "u_006",
+    "user_name": "Ольга",
+    "department": "Finance",
+    "model": "llama-3-8b-ollama",
+    "query_text": "Найди контакты юриста по вопросам интеллектуальной собственности",
+    "response_text": "Запрос по теме 'Найди контакты юриста по вопросам интеллектуальной собственности' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 90242
+  },
+  {
+    "request_id": "req_20260725_036",
+    "timestamp": "2026-07-25T16:11:34.483030+00:00",
+    "user_id": "u_001",
+    "user_name": "Андрей",
+    "department": "IT",
+    "model": "gpt-4o",
+    "query_text": "Найди контакты системного администратора дежурной смены",
+    "response_text": "Запрос по теме 'Найди контакты системного администратора дежурной смены' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 85475
+  },
+  {
+    "request_id": "req_20260725_037",
+    "timestamp": "2026-07-25T16:15:50.465927+00:00",
+    "user_id": "u_003",
+    "user_name": "Сергей",
+    "department": "Sales",
+    "model": "deepseek-r1",
+    "query_text": "Найди контакты коммерческого директора ООО 'Ромашка'",
+    "response_text": "Запрос по теме 'Найди контакты коммерческого директора ООО 'Ромашка'' успешно обработан в системе CRM. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "typo",
+    "tools_used": [
+      "CRM"
+    ],
+    "total_tokens": 92299
+  },
+  {
+    "request_id": "req_20260725_038",
+    "timestamp": "2026-07-25T16:31:06.982699+00:00",
+    "user_id": "u_006",
+    "user_name": "Ольга",
+    "department": "Finance",
+    "model": "llama-3-8b-ollama",
+    "query_text": "Поищи стандартный шаблон договора оказания консультационных услуг",
+    "response_text": "Запрос по теме 'Поищи стандартный шаблон договора оказания консультационных услуг' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 100244
+  },
+  {
+    "request_id": "req_20260725_039",
+    "timestamp": "2026-07-25T16:44:38.370904+00:00",
+    "user_id": "u_010",
+    "user_name": "Виктор",
+    "department": "Security",
+    "model": "deepseek-r1",
+    "query_text": "Найди политику парольной безопасности и требований к 2FA",
+    "response_text": "Запрос по теме 'Найди политику парольной безопасности и требований к 2FA' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 45023
+  },
+  {
+    "request_id": "req_20260725_040",
+    "timestamp": "2026-07-25T16:59:09.677355+00:00",
+    "user_id": "u_006",
+    "user_name": "Ольга",
+    "department": "Finance",
+    "model": "gpt-4o",
+    "query_text": "Найди номер договора аренды центрального офиса",
+    "response_text": "Запрос по теме 'Найди номер договора аренды центрального офиса' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search",
+      "Corporate Search"
+    ],
+    "total_tokens": 125549
+  },
+  {
+    "request_id": "req_20260725_041",
+    "timestamp": "2026-07-25T17:15:52.297101+00:00",
+    "user_id": "u_006",
+    "user_name": "Ольга",
+    "department": "Finance",
+    "model": "gpt-4o",
+    "query_text": "Найди реквизиты генерального директора для доверенности",
+    "response_text": "Запрос по теме 'Найди реквизиты генерального директора для доверенности' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search",
+      "Corporate Search"
+    ],
+    "total_tokens": 47905
+  },
+  {
+    "request_id": "req_20260725_042",
+    "timestamp": "2026-07-25T17:22:53.639335+00:00",
+    "user_id": "u_003",
+    "user_name": "Сергей",
+    "department": "Sales",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди шаблоны коммерческих предложений для госсектора",
+    "response_text": "Запрос по теме 'Найди шаблоны коммерческих предложений для госсектора' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 36601
+  },
+  {
+    "request_id": "req_20260725_043",
+    "timestamp": "2026-07-25T17:44:03.875012+00:00",
+    "user_id": "u_009",
+    "user_name": "Мария",
+    "department": "Marketing",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди презентацию о новых фичах платформы Prompt Radar",
+    "response_text": "Запрос по теме 'Найди презентацию о новых фичах платформы Prompt Radar' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 50191
+  },
+  {
+    "request_id": "req_20260725_044",
+    "timestamp": "2026-07-25T17:49:33.258151+00:00",
+    "user_id": "u_006",
+    "user_name": "Ольга",
+    "department": "Finance",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди выписку ЕГРЮЛ и реквизиты АО 'Технопром'",
+    "response_text": "Запрос по теме 'Найди выписку ЕГРЮЛ и реквизиты АО 'Технопром'' успешно обработан в системе 1C:Enterprise. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "1C:Enterprise",
+      "Google Search"
+    ],
+    "total_tokens": 44866
+  },
+  {
+    "request_id": "req_20260725_045",
+    "timestamp": "2026-07-25T18:11:12.291821+00:00",
+    "user_id": "u_001",
+    "user_name": "Андрей",
+    "department": "IT",
+    "model": "llama-3-8b-ollama",
+    "query_text": "Собери контакты ответственного за закупку ноутбуков",
+    "response_text": "Запрос по теме 'Собери контакты ответственного за закупку ноутбуков' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 72213
+  },
+  {
+    "request_id": "req_20260725_046",
+    "timestamp": "2026-07-25T18:12:07.456561+00:00",
+    "user_id": "u_001",
+    "user_name": "Андрей",
+    "department": "IT",
+    "model": "gpt-4o",
+    "query_text": "Собери список всех сервисов, использующих библиотеки OpenAI/OpenRouter",
+    "response_text": "Запрос по теме 'Собери список всех сервисов, использующих библиотеки OpenAI/OpenRouter' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 52506
+  },
+  {
+    "request_id": "req_20260725_047",
+    "timestamp": "2026-07-25T18:26:02.468562+00:00",
+    "user_id": "u_002",
+    "user_name": "Аня",
+    "department": "Analytics",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди описание схемы таблиц в dwh_analytics_marketing",
+    "response_text": "Запрос по теме 'Найди описание схемы таблиц в dwh_analytics_marketing' успешно обработан в системе PostgreSQL. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "PostgreSQL"
+    ],
+    "total_tokens": 57001
+  },
+  {
+    "request_id": "req_20260725_048",
+    "timestamp": "2026-07-25T18:37:15.279390+00:00",
+    "user_id": "u_007",
+    "user_name": "Дмитрий",
+    "department": "Management",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Поищи сводный реестр рисков по проекту интеграции",
+    "response_text": "Не удалось выполнить поиск в Confluence: произошла ошибка сервера. Попробуйте повторить запрос позже.",
+    "status": "error_tool",
+    "error_reason": "Confluence 500 Internal Server Error: Timeout during query execution",
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 128082
+  },
+  {
+    "request_id": "req_20260725_049",
+    "timestamp": "2026-07-25T18:38:00.324869+00:00",
+    "user_id": "u_001",
+    "user_name": "Андрей",
+    "department": "IT",
+    "model": "llama-3-8b-ollama",
+    "query_text": "Поищи гайд по миграции микросервисов с Python 3.10 на 3.12",
+    "response_text": "Запрос по теме 'Поищи гайд по миграции микросервисов с Python 3.10 на 3.12' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 51032
+  },
+  {
+    "request_id": "req_20260725_050",
+    "timestamp": "2026-07-25T18:40:19.187592+00:00",
+    "user_id": "u_005",
+    "user_name": "Максим",
+    "department": "IT",
+    "model": "gpt-4o",
+    "query_text": "Где у нас лежат актуальные Swagger схемы для Payment Gateway API?",
+    "response_text": "Запрос по теме 'Где у нас лежат актуальные Swagger схемы для Payment Gateway API?' успешно обработан в системе Internal Wiki. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "Internal Wiki"
+    ],
+    "total_tokens": 115381
+  },
+  {
+    "request_id": "req_20260725_051",
+    "timestamp": "2026-07-25T18:41:57.962586+00:00",
+    "user_id": "u_005",
+    "user_name": "Максим",
+    "department": "IT",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Где посмотреть конфигурацию Nginx для проксирования gRPC?",
+    "response_text": "Запрос по теме 'Где посмотреть конфигурацию Nginx для проксирования gRPC?' успешно обработан в системе Internal Wiki. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "copypaste",
+    "tools_used": [
+      "Internal Wiki"
+    ],
+    "total_tokens": 75124
+  },
+  {
+    "request_id": "req_20260725_052",
+    "timestamp": "2026-07-25T18:44:49.503326+00:00",
+    "user_id": "u_003",
+    "user_name": "Сергей",
+    "department": "Sales",
+    "model": "deepseek-r1",
+    "query_text": "Поищи сводный отчёт по выполнению квартального плана продаж",
+    "response_text": "Запрос по теме 'Поищи сводный отчёт по выполнению квартального плана продаж' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 56197
+  },
+  {
+    "request_id": "req_20260725_053",
+    "timestamp": "2026-07-25T18:50:56.690782+00:00",
+    "user_id": "u_001",
+    "user_name": "Андрей",
+    "department": "IT",
+    "model": "gpt-4o",
+    "query_text": "Найди инструкции по развёртыванию k8s кластера в тестовом контуре",
+    "response_text": "Запрос по теме 'Найди инструкции по развёртыванию k8s кластера в тестовом контуре' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 61154
+  },
+  {
+    "request_id": "req_20260725_054",
+    "timestamp": "2026-07-25T18:51:46.498392+00:00",
+    "user_id": "u_006",
+    "user_name": "Ольга",
+    "department": "Finance",
+    "model": "gpt-4o",
+    "query_text": "Где находится положение о расчёте командировочных расходов?",
+    "response_text": "Запрос по теме 'Где находится положение о расчёте командировочных расходов?' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence",
+      "Corporate Search"
+    ],
+    "total_tokens": 130384
+  },
+  {
+    "request_id": "req_20260725_055",
+    "timestamp": "2026-07-25T19:12:18.879543+00:00",
+    "user_id": "u_006",
+    "user_name": "Ольга",
+    "department": "Finance",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди налоговый календарь и сроки сдачи отчётности",
+    "response_text": "Запрос по теме 'Найди налоговый календарь и сроки сдачи отчётности' успешно обработан в системе Google Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Google Search",
+      "Corporate Search"
+    ],
+    "total_tokens": 134383
+  },
+  {
+    "request_id": "req_20260725_056",
+    "timestamp": "2026-07-25T19:15:03.734303+00:00",
+    "user_id": "u_003",
+    "user_name": "Сергей",
+    "department": "Sales",
+    "model": "deepseek-r1",
+    "query_text": "Где найти список конкурентов с сравнением функционала?",
+    "response_text": "Запрос по теме 'Где найти список конкурентов с сравнением функционала?' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 107475
+  },
+  {
+    "request_id": "req_20260725_057",
+    "timestamp": "2026-07-25T19:37:27.888511+00:00",
+    "user_id": "u_005",
+    "user_name": "Максим",
+    "department": "IT",
+    "model": "deepseek-r1",
+    "query_text": "Где лежит инструкция по настройке почтового клиента Outlook?",
+    "response_text": "Не удалось выполнить поиск в Confluence: произошла ошибка сервера. Попробуйте повторить запрос позже.",
+    "status": "error_tool",
+    "error_reason": "Confluence 500 Internal Server Error: Timeout during query execution",
+    "category": "information_search",
+    "style": "voice",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 66484
+  },
+  {
+    "request_id": "req_20260725_058",
+    "timestamp": "2026-07-25T19:42:43.364403+00:00",
+    "user_id": "u_004",
+    "user_name": "Елена",
+    "department": "HR",
+    "model": "llama-3-8b-ollama",
+    "query_text": "Найди график праздничных и выходных дней на 2026 год",
+    "response_text": "Запрос по теме 'Найди график праздничных и выходных дней на 2026 год' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 38776
+  },
+  {
+    "request_id": "req_20260725_059",
+    "timestamp": "2026-07-25T19:56:42.483408+00:00",
+    "user_id": "u_007",
+    "user_name": "Дмитрий",
+    "department": "Management",
+    "model": "llama-3-8b-ollama",
+    "query_text": "Найди адрес и схему проезда к новому офису компании в СПб",
+    "response_text": "Запрос по теме 'Найди адрес и схему проезда к новому офису компании в СПб' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search",
+      "Confluence"
+    ],
+    "total_tokens": 104682
+  },
+  {
+    "request_id": "req_20260725_060",
+    "timestamp": "2026-07-25T20:13:02.566022+00:00",
+    "user_id": "u_002",
+    "user_name": "Аня",
+    "department": "Analytics",
+    "model": "deepseek-r1",
+    "query_text": "Где лежит документация по тегам событий в веб-аналитике?",
+    "response_text": "Запрос по теме 'Где лежит документация по тегам событий в веб-аналитике?' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence",
+      "Google Search"
+    ],
+    "total_tokens": 61753
+  },
+  {
+    "request_id": "req_20260725_061",
+    "timestamp": "2026-07-25T20:13:04.804594+00:00",
+    "user_id": "u_001",
+    "user_name": "Андрей",
+    "department": "IT",
+    "model": "llama-3-8b-ollama",
+    "query_text": "Найди список аккредитованных учебных центров для сертификации Python",
+    "response_text": "Запрос по теме 'Найди список аккредитованных учебных центров для сертификации Python' успешно обработан в системе Google Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Google Search"
+    ],
+    "total_tokens": 115846
+  },
+  {
+    "request_id": "req_20260725_062",
+    "timestamp": "2026-07-25T20:16:36.492808+00:00",
+    "user_id": "u_001",
+    "user_name": "Андрей",
+    "department": "IT",
+    "model": "deepseek-r1",
+    "query_text": "Найди в базе знаний правила ротации API ключей OpenRouter",
+    "response_text": "Запрос по теме 'Найди в базе знаний правила ротации API ключей OpenRouter' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence",
+      "Confluence"
+    ],
+    "total_tokens": 35615
+  },
+  {
+    "request_id": "req_20260725_063",
+    "timestamp": "2026-07-25T20:23:54.544918+00:00",
+    "user_id": "u_005",
+    "user_name": "Максим",
+    "department": "IT",
+    "model": "gpt-4o",
+    "query_text": "Где посмотреть статистику обращения пользователей в техподдержку?",
+    "response_text": "Запрос по теме 'Где посмотреть статистику обращения пользователей в техподдержку?' успешно обработан в системе Jira. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Jira"
+    ],
+    "total_tokens": 82195
+  },
+  {
+    "request_id": "req_20260725_064",
+    "timestamp": "2026-07-25T20:46:31.934148+00:00",
+    "user_id": "u_010",
+    "user_name": "Виктор",
+    "department": "Security",
+    "model": "llama-3-8b-ollama",
+    "query_text": "Собери список сотрудников с правами root на продакшн серверах",
+    "response_text": "Запрос по теме 'Собери список сотрудников с правами root на продакшн серверах' успешно обработан в системе Jira. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "Jira",
+      "Corporate Search"
+    ],
+    "total_tokens": 77214
+  },
+  {
+    "request_id": "req_20260725_065",
+    "timestamp": "2026-07-25T20:48:34.715284+00:00",
+    "user_id": "u_004",
+    "user_name": "Елена",
+    "department": "HR",
+    "model": "gpt-4o",
+    "query_text": "Собери контакты региональных HR-менеджеров",
+    "response_text": "Запрос по теме 'Собери контакты региональных HR-менеджеров' успешно обработан в системе Corporate Search. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Corporate Search"
+    ],
+    "total_tokens": 38580
+  },
+  {
+    "request_id": "req_20260725_066",
+    "timestamp": "2026-07-25T21:05:41.111565+00:00",
+    "user_id": "u_005",
+    "user_name": "Максим",
+    "department": "IT",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди в Confluence документацию по архитектуре сервиса аутентификации",
+    "response_text": "Запрос по теме 'Найди в Confluence документацию по архитектуре сервиса аутентификации' успешно обработан в системе Confluence. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 74798
+  },
+  {
+    "request_id": "req_20260725_067",
+    "timestamp": "2026-07-25T21:09:11.584585+00:00",
+    "user_id": "u_005",
+    "user_name": "Максим",
+    "department": "IT",
+    "model": "deepseek-r1",
+    "query_text": "Собери логи последних сбоев авторизации за утро 25 июля",
+    "response_text": "Запрос по теме 'Собери логи последних сбоев авторизации за утро 25 июля' успешно обработан в системе Elasticsearch. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "Elasticsearch"
+    ],
+    "total_tokens": 59636
+  },
+  {
+    "request_id": "req_20260725_068",
+    "timestamp": "2026-07-25T21:26:41.334210+00:00",
+    "user_id": "u_004",
+    "user_name": "Елена",
+    "department": "HR",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди регламент подачи заявления на ежегодный отпуск",
+    "response_text": "Не удалось выполнить поиск в Confluence: произошла ошибка сервера. Попробуйте повторить запрос позже.",
+    "status": "error_tool",
+    "error_reason": "Confluence 500 Internal Server Error: Timeout during query execution",
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "Confluence"
+    ],
+    "total_tokens": 110867
+  },
+  {
+    "request_id": "req_20260725_069",
+    "timestamp": "2026-07-25T21:40:17.460125+00:00",
+    "user_id": "u_003",
+    "user_name": "Сергей",
+    "department": "Sales",
+    "model": "llama-3-8b-ollama",
+    "query_text": "Поищи в CRM статус сделки №45091 с Альфа-Банком",
+    "response_text": "Запрос по теме 'Поищи в CRM статус сделки №45091 с Альфа-Банком' успешно обработан в системе CRM. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "jargon",
+    "tools_used": [
+      "CRM"
+    ],
+    "total_tokens": 62851
+  },
+  {
+    "request_id": "req_20260725_070",
+    "timestamp": "2026-07-25T21:48:57.568115+00:00",
+    "user_id": "u_006",
+    "user_name": "Ольга",
+    "department": "Finance",
+    "model": "claude-3-5-sonnet",
+    "query_text": "Найди список авторизованных поставщиков серверного оборудования",
+    "response_text": "Запрос по теме 'Найди список авторизованных поставщиков серверного оборудования' успешно обработан в системе 1C:Enterprise. Найдены 3 релевантные записи и ссылки на соответствующие документы.",
+    "status": "success",
+    "error_reason": null,
+    "category": "information_search",
+    "style": "formal",
+    "tools_used": [
+      "1C:Enterprise",
+      "Google Search"
+    ],
+    "total_tokens": 93506
+  }
+]
