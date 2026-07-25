@@ -197,7 +197,9 @@ make demo
 - Dependency lock policy неоднородна: frontend lock tracked, Python lock-файлы отсутствуют.
 - Полный end-to-end зависит от Postgres/Qdrant и выбранного embeddings provider; unit-тесты не
   заменяют smoke на чистых volumes перед демонстрацией.
-- Входной timestamp файлов сейчас не читается normalizer: для Dynamics синтезируется шкала за
-  `NORMALIZE_TIMESTAMP_SPAN_DAYS` (по умолчанию 14). Реальные даты требуют контрактного изменения.
+- Normalizer читает реальный `timestamp` из записи (ISO), а при его отсутствии/ошибке —
+  синтезирует шкалу за `NORMALIZE_TIMESTAMP_SPAN_DAYS` (по умолчанию 14). Токены берутся из
+  `total_tokens`, затем fallback на `simulated_context_tokens`. Поля `user_id`/`user_name`/
+  `department` пробрасываются в `dataset_records` и питают MAU/разрезы по департаментам в ROI.
 - Корневой Compose — single-host demo/staging. Для production нужны TLS/firewall/secrets/backups,
   task broker + общий job state, IAM/RBAC, monitoring и migration policy embeddings.
