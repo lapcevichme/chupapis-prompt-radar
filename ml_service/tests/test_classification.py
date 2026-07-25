@@ -212,7 +212,7 @@ def test_embedding_centroid_empty_centroids():
 
 # --------------------------------------------------------------------------- real .cbm if present
 def test_load_real_cbm_if_present():
-    """Load shipped artifact when available; dim mismatch falls back cleanly."""
+    """Load shipped text CatBoost artifact when available; predict from text only."""
     repo_model = (
         Path(__file__).resolve().parents[1] / "app" / "models" / "catboost_task_classifier.cbm"
     )
@@ -226,10 +226,13 @@ def test_load_real_cbm_if_present():
     assert clf.model_available is True
     assert clf.is_ready is True
     assert set(clf.model_classes_) == set(CORE_TASK_TYPES) or len(clf.model_classes_) == 7
-    # Wrong dim → fallback to keyword
-    bad = np.zeros((1, 16), dtype=np.float32)
-    out = clf.predict(["SELECT * FROM t"], bad)
+    out = clf.predict(["SELECT * FROM t JOIN excel_sales WHERE region = 'RU'"])
     assert out[0]["task_type"] in list(CORE_TASK_TYPES) + ["unknown"]
+    assert out[0]["source"] == "catboost"
+    # Text model: no embedding required
+    one = clf.predict_with_confidence("Напиши unit-тесты на Python для parse_csv")
+    assert one["task_type"] in list(CORE_TASK_TYPES) + ["unknown"]
+    assert one["source"] == "catboost"
 
 
 # --------------------------------------------------------------------------- eval skeleton

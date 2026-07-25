@@ -35,6 +35,11 @@ def _force_inmemory() -> bool:
     return os.getenv("ALLOW_INMEMORY_STORE", "").lower() in ("1", "true", "yes")
 
 
+def _require_qdrant() -> bool:
+    """When true, never silently fall back to mock — fail closed for Docker."""
+    return os.getenv("QDRANT_REQUIRED", "").lower() in ("1", "true", "yes")
+
+
 class QdrantStore:
     """
     Point per request_id. Payload:
@@ -54,7 +59,11 @@ class QdrantStore:
             or config.get("qdrant_url")
             or "http://localhost:6333"
         )
-        self.collection = config.get("qdrant_collection", "prompt_radar_vectors")
+        self.collection = (
+            os.getenv("QDRANT_COLLECTION")
+            or config.get("qdrant_collection")
+            or "prompt_radar_vectors"
+        )
         self.vector_size = int(config.get("vector_size") or vector_size)
         self.client: Any = None
         self._mock = True
@@ -65,17 +74,52 @@ class QdrantStore:
             logger.info("QdrantStore: ALLOW_INMEMORY_STORE=true → mock mode")
             return
         if not _HAS_QDRANT:
-            logger.warning("qdrant-client not installed → mock mode")
+            msg = "qdrant-client not installed"
+            if _require_qdrant():
+                raise RuntimeError(f"{msg} and QDRANT_REQUIRED=true")
+            logger.warning("%s → mock mode", msg)
             return
-        try:
-            self.client = QdrantClient(url=self.url, timeout=2.0)
-            self.ensure_collection(self.vector_size)
-            self._mock = False
-            logger.info("QdrantStore connected collection=%s", self.collection)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("Qdrant unreachable (%s) → mock mode", exc)
-            self.client = None
-            self._mock = True
+
+        # Docker compose: qdrant may need a few seconds after healthcheck
+        attempts = int(os.getenv("QDRANT_CONNECT_RETRIES", "15"))
+        timeout = float(os.getenv("QDRANT_TIMEOUT_SEC", "5"))
+        last_exc: Optional[BaseException] = None
+        for attempt in range(1, max(1, attempts) + 1):
+            try:
+                self.client = QdrantClient(url=self.url, timeout=timeout)
+                # cheap ping when available (real client); FakeClient tests may omit it
+                if hasattr(self.client, "get_collections"):
+                    self.client.get_collections()
+                self.ensure_collection(self.vector_size)
+                self._mock = False
+                logger.info(
+                    "QdrantStore connected url=%s collection=%s dim=%s attempt=%s",
+                    self.url,
+                    self.collection,
+                    self.vector_size,
+                    attempt,
+                )
+                return
+            except Exception as exc:  # noqa: BLE001
+                last_exc = exc
+                self.client = None
+                self._mock = True
+                logger.warning(
+                    "Qdrant connect attempt %s/%s failed (%s)",
+                    attempt,
+                    attempts,
+                    exc,
+                )
+                if attempt < attempts:
+                    import time
+
+                    time.sleep(min(2.0, 0.3 * attempt))
+
+        if _require_qdrant():
+            raise RuntimeError(
+                f"Qdrant required but unreachable at {self.url}: {last_exc}"
+            )
+        logger.warning("Qdrant unreachable after %s attempts → mock mode", attempts)
 
     @property
     def is_mock(self) -> bool:

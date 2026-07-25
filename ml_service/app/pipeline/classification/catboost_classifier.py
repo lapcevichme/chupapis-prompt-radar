@@ -1,4 +1,7 @@
-"""Task-type classifier: CatBoost .cbm + confidence/unknown + fallbacks (ТЗ §8.3).
+"""Task-type classifier: CatBoost .cbm on raw text + confidence/unknown + fallbacks (ТЗ §8.3).
+
+Primary path: CatBoost text_features (query_text) — no embeddings required.
+Embeddings are only used by the optional embedding_centroid fallback.
 
 fallback_mode:
   - fail_fast            — no model → error / CLASSIFIER_NOT_AVAILABLE
@@ -25,16 +28,19 @@ logger = logging.getLogger(__name__)
 
 try:
     import catboost as cb
+    import pandas as pd
 
     _HAS_CATBOOST = True
 except ImportError:  # pragma: no cover
     cb = None  # type: ignore
+    pd = None  # type: ignore
     _HAS_CATBOOST = False
 
 # Optional LLM callable: (query_text, allowed_labels) -> raw response string
 LlmFn = Callable[[str, Sequence[str]], str]
 
 DEFAULT_MODEL_NAME = "catboost_task_classifier.cbm"
+TEXT_FEATURE_NAME = "query_text"
 VALID_FALLBACK_MODES = frozenset(
     {"fail_fast", "llm", "embedding_centroid", "keyword"}
 )
@@ -73,7 +79,7 @@ def resolve_model_path(explicit: Optional[str] = None) -> Path:
             ml_root / "models" / DEFAULT_MODEL_NAME,
             ml_root / "app" / "models" / DEFAULT_MODEL_NAME,
             ml_root / DEFAULT_MODEL_NAME,
-            ml_root / "catboost_embedding_model.cbm",
+            ml_root / "catboost" / "catboost_task_classifier.cbm",
             Path.cwd() / "app" / "models" / DEFAULT_MODEL_NAME,
             Path.cwd() / "models" / DEFAULT_MODEL_NAME,
             Path.cwd() / DEFAULT_MODEL_NAME,
@@ -141,6 +147,9 @@ class CatBoostClassifier:
         self.catboost_model = None
         self.model_classes_: List[str] = []
         self.model_available = False
+        # "text" = CatBoost text_features on query_text; "embedding" = legacy float matrix
+        self.model_input_kind: str = "text"
+        self.text_feature_name: str = TEXT_FEATURE_NAME
         self._llm_fn = llm_fn
         self._class_centroids: Dict[str, np.ndarray] = {}
         if class_centroids:
@@ -192,11 +201,54 @@ class CatBoostClassifier:
             classes = getattr(model, "classes_", None)
             if classes is not None:
                 self.model_classes_ = [str(c) for c in classes]
-            logger.info("Loaded CatBoost model from %s classes=%s", path, self.model_classes_)
+            self.model_input_kind, self.text_feature_name = self._detect_model_input(model, path)
+            logger.info(
+                "Loaded CatBoost model from %s classes=%s input=%s",
+                path,
+                self.model_classes_,
+                self.model_input_kind,
+            )
         except Exception as e:  # noqa: BLE001
             logger.error("Failed to load CatBoost model from %s: %s", path, e)
             self.catboost_model = None
             self.model_available = False
+
+    def _detect_model_input(self, model: Any, path: Path) -> tuple[str, str]:
+        """Prefer text CatBoost; fall back to embedding matrix for legacy .cbm."""
+        text_name = TEXT_FEATURE_NAME
+        meta_path = path.with_suffix(".meta.json")
+        if meta_path.is_file():
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                if meta.get("embeddings") is False or meta.get("input") == "text":
+                    return "text", str(meta.get("text_feature") or TEXT_FEATURE_NAME)
+                if meta.get("input") == "embedding" or meta.get("embeddings") is True:
+                    return "embedding", text_name
+            except Exception:  # noqa: BLE001
+                pass
+
+        names = list(getattr(model, "feature_names_", None) or [])
+        if names:
+            lowered = [str(n).lower() for n in names]
+            if any(n in ("query_text", "text") for n in lowered):
+                for n in names:
+                    if str(n).lower() in ("query_text", "text"):
+                        return "text", str(n)
+                return "text", str(names[0])
+            # Dense emb models: emb_0.. or hundreds of numeric cols
+            if len(names) >= 64:
+                return "embedding", text_name
+
+        try:
+            n_feat = int(model.feature_count_)
+            if n_feat >= 64:
+                return "embedding", text_name
+            if n_feat <= 8:
+                return "text", text_name
+        except Exception:  # noqa: BLE001
+            pass
+        # Default for new pipeline
+        return "text", text_name
 
     @property
     def is_ready(self) -> bool:
@@ -256,17 +308,29 @@ class CatBoostClassifier:
         texts: List[str],
         embeddings: Optional[np.ndarray] = None,
     ) -> List[Dict[str, Any]]:
+        """Classify texts. Embeddings optional (only for legacy emb models / centroid fallback)."""
         if not texts:
             return []
 
-        if self.model_available and self.catboost_model is not None and embeddings is not None:
+        if self.model_available and self.catboost_model is not None:
             try:
-                return self._predict_catboost(embeddings)
+                if self.model_input_kind == "text":
+                    return self._predict_catboost_text(texts)
+                if embeddings is not None:
+                    return self._predict_catboost_embeddings(embeddings)
+                logger.warning(
+                    "Legacy embedding CatBoost loaded but no embeddings provided — fallback"
+                )
             except Exception as e:  # noqa: BLE001
-                logger.error("CatBoost prediction error: %s — using fallback_mode=%s", e, self.fallback_mode)
+                logger.error(
+                    "CatBoost prediction error: %s — using fallback_mode=%s",
+                    e,
+                    self.fallback_mode,
+                )
 
-        # No model / no embeddings / error → fallback
-        return [self._apply_fallback(t, self._row_emb(embeddings, i)) for i, t in enumerate(texts)]
+        return [
+            self._apply_fallback(t, self._row_emb(embeddings, i)) for i, t in enumerate(texts)
+        ]
 
     def _row_emb(self, embeddings: Optional[np.ndarray], i: int) -> Optional[np.ndarray]:
         if embeddings is None:
@@ -278,18 +342,12 @@ class CatBoostClassifier:
             return arr[i]
         return None
 
-    def _predict_catboost(self, embeddings: np.ndarray) -> List[Dict[str, Any]]:
-        X = np.asarray(embeddings, dtype=np.float32)
-        if X.ndim == 1:
-            X = X.reshape(1, -1)
-        preds = self.catboost_model.predict(X)
-        probs = self.catboost_model.predict_proba(X)
+    def _pack_predictions(self, preds: Any, probs: Any, n: int) -> List[Dict[str, Any]]:
         out: List[Dict[str, Any]] = []
-        for i in range(X.shape[0]):
+        for i in range(n):
             p = preds[i]
             label = str(p[0] if isinstance(p, (list, np.ndarray)) else p)
             conf = float(np.max(probs[i])) if probs is not None else 0.5
-            # Map to taxonomy if needed
             label = self._normalize_label(label) or "other"
             out.append(
                 {
@@ -299,6 +357,26 @@ class CatBoostClassifier:
                 }
             )
         return out
+
+    def _predict_catboost_text(self, texts: List[str]) -> List[Dict[str, Any]]:
+        """Primary path: CatBoost text_features on query_text."""
+        assert self.catboost_model is not None and pd is not None and cb is not None
+        col = self.text_feature_name
+        df = pd.DataFrame({col: [(t or "") for t in texts]})
+        pool = cb.Pool(df, text_features=[col])
+        preds = self.catboost_model.predict(pool)
+        probs = self.catboost_model.predict_proba(pool)
+        return self._pack_predictions(preds, probs, len(texts))
+
+    def _predict_catboost_embeddings(self, embeddings: np.ndarray) -> List[Dict[str, Any]]:
+        """Legacy path: dense float features from an embedding model."""
+        assert self.catboost_model is not None
+        X = np.asarray(embeddings, dtype=np.float32)
+        if X.ndim == 1:
+            X = X.reshape(1, -1)
+        preds = self.catboost_model.predict(X)
+        probs = self.catboost_model.predict_proba(X)
+        return self._pack_predictions(preds, probs, X.shape[0])
 
     def _normalize_label(self, raw: str) -> Optional[str]:
         if self._taxonomy_obj is not None:
@@ -377,48 +455,40 @@ class CatBoostClassifier:
             "source": "llm_fallback",
         }
 
-    def _default_openrouter_llm(self, text: str, labels: Sequence[str]) -> str:
-        """Sync OpenRouter chat; raises on hard failure."""
-        import urllib.error
-        import urllib.request
-
-        if not self.openrouter_api_key:
-            raise RuntimeError("OPENROUTER_API_KEY not set for llm fallback")
-
-        payload = {
-            "model": self.llm_model,
-            "messages": [{"role": "user", "content": self._build_llm_prompt(text, labels)}],
-            "temperature": 0.1,
-            "response_format": {"type": "json_object"},
-        }
-        body = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            self.openrouter_chat_url,
-            data=body,
-            headers={
-                "Authorization": f"Bearer {self.openrouter_api_key}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://github.com/prompt-radar",
-                "X-Title": "PromptRadar_Classifier",
-            },
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=60) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-            return data["choices"][0]["message"]["content"]
-        except urllib.error.HTTPError as e:
-            err_body = e.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"OpenRouter HTTP {e.code}: {err_body[:300]}") from e
-
     def _llm_fallback(self, text: str) -> Dict[str, Any]:
+        """LLM classify via ChatOpenRouter.with_structured_output(Pydantic)."""
         labels = self.class_labels
         try:
             if self._llm_fn is not None:
-                raw = self._llm_fn(text, labels)
-            else:
-                raw = self._default_openrouter_llm(text, labels)
-            return self._parse_llm_response(raw)
+                return self._parse_llm_response(self._llm_fn(text, labels))
+
+            from pydantic import BaseModel, Field
+
+            from app.adapters.llm import chat_openrouter
+
+            class LlmClassOut(BaseModel):
+                task_type: str = Field(description="One allowed task_type label")
+                confidence: float = Field(description="Confidence 0..1", ge=0.0, le=1.0)
+
+            if not self.openrouter_api_key:
+                raise RuntimeError("OPENROUTER_API_KEY not set for llm fallback")
+
+            chat = chat_openrouter(
+                model=self.llm_model,
+                api_key=self.openrouter_api_key,
+                temperature=0.1,
+            )
+            structured = chat.with_structured_output(LlmClassOut)
+            out = structured.invoke(self._build_llm_prompt(text, labels))
+            if isinstance(out, dict):
+                out = LlmClassOut.model_validate(out)
+            task_type = self._normalize_label(out.task_type) or "other"
+            conf = max(0.0, min(1.0, float(out.confidence)))
+            return {
+                "task_type": task_type,
+                "confidence": conf,
+                "source": "llm_fallback",
+            }
         except Exception as e:  # noqa: BLE001
             logger.error("LLM fallback failed: %s", e)
             return {
@@ -500,7 +570,11 @@ class CatBoostClassifier:
         text: str,
         embedding: Optional[np.ndarray] = None,
     ) -> Dict[str, Any]:
-        """Classify one text; confidence < threshold → task_type=unknown."""
+        """Classify one text; confidence < threshold → task_type=unknown.
+
+        ``embedding`` is unused for text CatBoost models; kept for centroid fallback
+        and legacy embedding-based .cbm files.
+        """
         emb = None
         if embedding is not None:
             emb = np.asarray(embedding, dtype=np.float32)

@@ -1,50 +1,74 @@
-# Prompt Radar ML stack (ТЗ §14, §17)
-# Usage: docker compose up -d --build
-# Optional local embeddings: docker compose --profile ollama up -d
+# Prompt Radar ML stack standalone (ТЗ §14, §17)
+# Usage from ml_service/:
+#   docker compose up -d --build
+# Optional local embeddings:
+#   docker compose --profile ollama up -d
 
 services:
   qdrant:
     image: qdrant/qdrant:v1.12.5
     ports:
-      - "6333:6333"
-      - "6334:6334"
+      - "${QDRANT_HOST_PORT:-6333}:6333"
+      - "${QDRANT_GRPC_HOST_PORT:-6334}:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/6333'"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 10s
+    restart: unless-stopped
 
   ml-service:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "${ML_HOST_PORT:-8000}:8000"
     environment:
       ML_SERVICE_TOKEN: ${ML_SERVICE_TOKEN:-}
-      EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-mock}
+      # Real Qdrant — no silent in-memory mock
+      ALLOW_INMEMORY_STORE: "false"
+      QDRANT_REQUIRED: "true"
       QDRANT_URL: http://qdrant:6333
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-prompt_radar_vectors}
+      QDRANT_CONNECT_RETRIES: "20"
+      QDRANT_TIMEOUT_SEC: "5"
       ML_META_DB_URL: ${ML_META_DB_URL:-sqlite:////data/ml/meta.db}
       CLASSIFIER_MODEL_PATH: /app/app/models/catboost_task_classifier.cbm
+      CLASSIFIER_FALLBACK_MODE: ${CLASSIFIER_FALLBACK_MODE:-fail_fast}
+      CLASSIFIER_CONFIDENCE_THRESHOLD: ${CLASSIFIER_CONFIDENCE_THRESHOLD:-0.30}
       ML_CONFIG_PATH: /app/config.yaml
+      EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-mock}
+      EMBEDDINGS_MODE: ${EMBEDDINGS_MODE:-mock}
+      EMBEDDINGS_DIM: ${EMBEDDINGS_DIM:-2560}
+      EMBEDDINGS_MAX_CONCURRENCY: ${EMBEDDINGS_MAX_CONCURRENCY:-4}
+      EMBEDDINGS_MAX_RETRIES: ${EMBEDDINGS_MAX_RETRIES:-8}
       OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3-embedding:4b}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-qwen/qwen3-embedding-4b}
-      OPENROUTER_CHAT_URL: ${OPENROUTER_CHAT_URL:-https://openrouter.ai/api/v1/chat/completions}
       OPENROUTER_EMBEDDINGS_URL: ${OPENROUTER_EMBEDDINGS_URL:-https://openrouter.ai/api/v1/embeddings}
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      CLASSIFIER_FALLBACK_MODE: ${CLASSIFIER_FALLBACK_MODE:-llm}
-      CLASSIFIER_CONFIDENCE_THRESHOLD: ${CLASSIFIER_CONFIDENCE_THRESHOLD:-0.60}
+      OPENROUTER_CHAT_URL: ${OPENROUTER_CHAT_URL:-https://openrouter.ai/api/v1/chat/completions}
+      OPENROUTER_CHAT_MODEL: ${OPENROUTER_CHAT_MODEL:-google/gemma-4-26b-a4b-it}
+      LLM_MODE: ${LLM_MODE:-online}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openrouter}
+      INGEST_WORKER_CONCURRENCY: ${INGEST_WORKER_CONCURRENCY:-4}
       ONLINE_SIMILARITY_THRESHOLD: ${ONLINE_SIMILARITY_THRESHOLD:-0.85}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     volumes:
       - ml_meta_data:/data/ml
     depends_on:
       qdrant:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health/live"]
-      interval: 15s
+      interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 40s
+      retries: 12
+      start_period: 45s
+    restart: unless-stopped
 
   # Optional local embedding provider (ТЗ §14)
   ollama:
@@ -54,6 +78,7 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+    restart: unless-stopped
 
 volumes:
   qdrant_data:

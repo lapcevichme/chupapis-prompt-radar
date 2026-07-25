@@ -144,6 +144,65 @@ async def test_http_adapter_non_retryable_fails_fast():
         with pytest.raises(EmbeddingError) as ei:
             await adapter.embed(["x"])
     assert ei.value.retryable is False
+    # slot released after failure
+    assert adapter.concurrency_snapshot()["in_flight"] == 0
+    await adapter.close()
+
+
+@pytest.mark.asyncio
+async def test_adaptive_concurrency_scales_down_on_busy_and_retries():
+    """Busy/429 → limit //= 2; failed call is retried; successes recover slowly."""
+    from app.pipeline.embeddings.adapter import AdaptiveConcurrency
+
+    lim = AdaptiveConcurrency(max_limit=4, min_limit=1, recover_every=2)
+    assert lim.limit == 4
+    await lim.acquire()
+    await lim.acquire()
+    assert lim.in_flight == 2
+    await lim.release(success=False, busy=True)  # 4 → 2
+    assert lim.limit == 2
+    await lim.release(success=False, busy=True)  # 2 → 1
+    assert lim.limit == 1
+    assert lim.in_flight == 0
+
+    # recover after success streak
+    await lim.acquire()
+    await lim.release(success=True)
+    await lim.acquire()
+    await lim.release(success=True)  # recover_every=2 → 1→2
+    assert lim.limit == 2
+
+    # Http adapter: busy errors reduce concurrency and still succeed via retry
+    cfg = EmbeddingsSettings(
+        provider="openrouter",
+        batch_size=1,
+        max_retries=3,
+        max_concurrency=4,
+        cache_enabled=False,
+        openrouter_api_key="test-key",
+    )
+    adapter = HttpEmbeddingAdapter(cfg)
+    assert adapter.concurrency_limit == 4
+    calls = {"n": 0}
+
+    async def flaky_or(texts: List[str]) -> List[List[float]]:
+        calls["n"] += 1
+        if calls["n"] <= 2:
+            raise EmbeddingError(
+                "OpenRouter 200: code=429 Model busy",
+                retryable=True,
+                busy=True,
+            )
+        return [[0.2] * 4 for _ in texts]
+
+    with patch.object(adapter, "_openrouter", side_effect=flaky_or):
+        with patch("app.pipeline.embeddings.adapter.asyncio.sleep", new_callable=AsyncMock):
+            vecs = await adapter.embed(["a"])
+    assert calls["n"] == 3
+    assert len(vecs[0]) == 4
+    # After 2 busy events: 4 → 2 → 1
+    assert adapter.concurrency_limit == 1
+    assert adapter.concurrency_snapshot()["in_flight"] == 0
     await adapter.close()
 
 

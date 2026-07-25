@@ -92,7 +92,7 @@ def _failure_signals(log: dict[str, Any]) -> list[str]:
 
 
 async def _process_one(log: dict[str, Any]) -> dict[str, Any]:
-    """Classify → embed → online cluster → persist meta + qdrant."""
+    """Classify (text CatBoost) → embed → online cluster → persist meta + qdrant."""
     request_id = log["request_id"]
     query_text = (log.get("query_text") or "").strip()
     if not query_text:
@@ -102,21 +102,13 @@ async def _process_one(log: dict[str, Any]) -> dict[str, Any]:
     if meta.has_assignment(request_id):
         return {"request_id": request_id, "duplicate": True}
 
-    # .cbm trained on Ollama embeddings: embed once → CatBoost → online cluster (same vector).
-    import numpy as np
-
-    original, normalized, lt, emb_list = await app.state.online.embed_query(query_text)
-    emb = np.asarray(emb_list, dtype=np.float32)
-    clf = app.state.classifier.predict_with_confidence(query_text, embedding=emb)
+    # Text CatBoost does not need embeddings; embed only for clustering / Qdrant.
+    clf = app.state.classifier.predict_with_confidence(query_text)
     task_type = clf["task_type"]
     online = await app.state.online.process(
         request_id=request_id,
         query_text=query_text,
         task_type=task_type,
-        embedding=emb_list,
-        long_text=lt,
-        original_text=original,
-        normalized_text=normalized,
     )
 
     signals = _failure_signals(log)

@@ -63,25 +63,16 @@ async def test_openrouter_embedding_adapter(require_openrouter, live_settings):
 
 
 @pytest.mark.asyncio
-async def test_openrouter_catboost_on_embeddings(
-    require_openrouter, require_cbm, live_settings
-):
+async def test_openrouter_catboost_text(require_cbm, live_settings):
+    """Text CatBoost predicts without embeddings."""
     from app.domain.taxonomy import Taxonomy
     from app.pipeline.classification.catboost_classifier import CatBoostClassifier
-    from app.pipeline.embeddings.adapter import create_embedding_adapter
-
-    live_settings.embeddings.mode = "online"
-    live_settings.embeddings.provider = "openrouter"
-    live_settings.embeddings.openrouter_api_key = require_openrouter
-    adapter = create_embedding_adapter(live_settings.embeddings)
 
     queries = [
         "напиши sql запрос для отчёта по продажам из excel",
         "debug python asyncio exception in worker",
         "создай письмо клиенту с извинениями за задержку",
     ]
-    vecs = await adapter.embed(queries)
-    await adapter.close()
 
     tax = Taxonomy()
     clf = CatBoostClassifier(
@@ -90,7 +81,8 @@ async def test_openrouter_catboost_on_embeddings(
         config={"fallback_mode": "fail_fast", "confidence_threshold": 0.01},
     )
     assert clf.model_available
-    preds = clf.predict(queries, np.asarray(vecs, dtype=np.float32))
+    assert clf.model_input_kind == "text"
+    preds = clf.predict(queries)
     for q, p in zip(queries, preds):
         assert p.get("source") == "catboost", p
         conf = float(p["confidence"])

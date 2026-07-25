@@ -1,0 +1,16 @@
+{
+  "input": "text",
+  "text_feature": "query_text",
+  "classes": [
+    "code_help",
+    "data_analysis",
+    "education",
+    "information_search",
+    "other",
+    "task_management",
+    "text_generation"
+  ],
+  "holdout_accuracy": 0.75,
+  "n_samples": 700,
+  "embeddings": false
+}

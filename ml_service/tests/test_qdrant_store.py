@@ -7,7 +7,8 @@ from app.store import qdrant as qdrant_module
 from app.store.qdrant import QdrantStore
 
 
-def test_mock_upsert_search_count():
+def test_mock_upsert_search_count(monkeypatch):
+    monkeypatch.setenv("ALLOW_INMEMORY_STORE", "true")
     store = QdrantStore({"qdrant_url": "http://127.0.0.1:9"}, vector_size=4)
     assert store.is_mock is True
     store.upsert(
@@ -64,6 +65,9 @@ def test_real_client_creates_collection_during_initialization(monkeypatch):
         def __init__(self, *, url: str, timeout: float):
             calls["init"] = (url, timeout)
 
+        def get_collections(self):
+            return []
+
         def collection_exists(self, collection_name: str) -> bool:
             calls["checked"] = collection_name
             return False
@@ -71,10 +75,23 @@ def test_real_client_creates_collection_during_initialization(monkeypatch):
         def create_collection(self, *, collection_name: str, vectors_config: object):
             calls["created"] = (collection_name, vectors_config)
 
+    class FakeDistance:
+        COSINE = "Cosine"
+
+    class FakeVectorParams:
+        def __init__(self, *, size: int, distance: object):
+            self.size = size
+            self.distance = distance
+
     monkeypatch.delenv("ALLOW_INMEMORY_STORE", raising=False)
+    monkeypatch.delenv("QDRANT_REQUIRED", raising=False)
     monkeypatch.delenv("QDRANT_URL", raising=False)
+    monkeypatch.setenv("QDRANT_TIMEOUT_SEC", "2")
+    monkeypatch.setenv("QDRANT_CONNECT_RETRIES", "1")
     monkeypatch.setattr(qdrant_module, "_HAS_QDRANT", True)
     monkeypatch.setattr(qdrant_module, "QdrantClient", FakeClient)
+    monkeypatch.setattr(qdrant_module, "Distance", FakeDistance)
+    monkeypatch.setattr(qdrant_module, "VectorParams", FakeVectorParams)
 
     store = QdrantStore(
         {

@@ -113,7 +113,7 @@ class OnlinePipeline:
                 chunk_overlap_tokens=self.settings.long_text.chunk_overlap_tokens,
             )
 
-        # 3) embed summary / direct representation (reuse if provided — CatBoost needs same vector)
+        # 3) embed summary / direct representation (reuse if caller already embedded)
         if embedding is not None:
             emb_list = list(embedding)
         else:
@@ -151,7 +151,7 @@ class OnlinePipeline:
         )
 
     async def embed_query(self, query_text: str) -> tuple[str, str, LongTextResult, list[float]]:
-        """Preprocess + long-text + embed once (for CatBoost → cluster reuse)."""
+        """Preprocess + long-text + embed once (for cluster / Qdrant reuse)."""
         original, normalized = preprocess_query(query_text)
         lt = prepare_for_embedding(
             normalized,

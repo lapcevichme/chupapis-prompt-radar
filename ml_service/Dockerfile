@@ -34,9 +34,14 @@ COPY scripts ./scripts
 ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
     CLASSIFIER_MODEL_PATH=/app/app/models/catboost_task_classifier.cbm \
+    CLASSIFIER_CONFIDENCE_THRESHOLD=0.30 \
     ML_CONFIG_PATH=/app/config.yaml \
     EMBEDDINGS_PROVIDER=mock \
+    EMBEDDINGS_DIM=2560 \
+    ALLOW_INMEMORY_STORE=false \
+    QDRANT_REQUIRED=true \
     QDRANT_URL=http://qdrant:6333 \
+    QDRANT_COLLECTION=prompt_radar_vectors \
     ML_META_DB_URL=sqlite:////data/ml/meta.db \
     LOG_LEVEL=INFO
 

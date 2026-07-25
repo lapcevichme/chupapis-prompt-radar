@@ -65,25 +65,16 @@ async def test_live_ollama_embedding_adapter(require_embedding_model, live_setti
 
 
 @pytest.mark.asyncio
-async def test_live_catboost_on_ollama_embeddings(
-    require_embedding_model, require_cbm, live_settings
-):
-    """CatBoost .cbm predicts using real Ollama vectors (source=catboost)."""
+async def test_live_catboost_text(require_cbm, live_settings):
+    """Text CatBoost .cbm predicts from query_text only (source=catboost)."""
     from app.domain.taxonomy import Taxonomy
     from app.pipeline.classification.catboost_classifier import CatBoostClassifier
-    from app.pipeline.embeddings.adapter import create_embedding_adapter
-
-    live_settings.embeddings.mode = "offline"
-    live_settings.embeddings.provider = "ollama"
-    adapter = create_embedding_adapter(live_settings.embeddings)
 
     queries = [
         "напиши sql запрос для отчёта по продажам из excel",
         "debug python asyncio exception in worker",
         "создай письмо клиенту с извинениями за задержку",
     ]
-    vecs = await adapter.embed(queries)
-    await adapter.close()
 
     tax = Taxonomy()
     clf = CatBoostClassifier(
@@ -96,9 +87,9 @@ async def test_live_catboost_on_ollama_embeddings(
     )
     assert clf.model_available is True
     assert clf.is_ready is True
+    assert clf.model_input_kind == "text"
 
-    X = np.asarray(vecs, dtype=np.float32)
-    preds = clf.predict(queries, X)
+    preds = clf.predict(queries)
     assert len(preds) == 3
     for q, p in zip(queries, preds):
         assert p.get("source") == "catboost", p

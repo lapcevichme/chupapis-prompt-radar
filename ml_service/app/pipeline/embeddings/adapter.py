@@ -28,10 +28,106 @@ class EmbeddingError(Exception):
         *,
         retryable: bool = False,
         code: str = "EMBEDDING_REQUEST_FAILED",
+        busy: bool = False,
     ):
         super().__init__(message)
         self.retryable = retryable
         self.code = code
+        # True when provider is overloaded / rate-limited (scale concurrency down)
+        self.busy = bool(busy) or (
+            retryable
+            and any(
+                t in (message or "").lower()
+                for t in (
+                    "429",
+                    "model busy",
+                    "engine_overloaded",
+                    "overloaded",
+                    "rate limit",
+                    "retry later",
+                )
+            )
+        )
+
+
+class AdaptiveConcurrency:
+    """Dynamic concurrency gate: scale down on busy, recover on success streak.
+
+    Classic AIMD-ish control for OpenRouter "model busy" / 429:
+      - busy  → limit = max(min_limit, limit // 2)
+      - N successes in a row → limit = min(max_limit, limit + 1)
+    """
+
+    def __init__(
+        self,
+        max_limit: int = 4,
+        *,
+        min_limit: int = 1,
+        recover_every: int = 8,
+    ):
+        self.max_limit = max(1, int(max_limit))
+        self.min_limit = max(1, min(int(min_limit), self.max_limit))
+        self.recover_every = max(1, int(recover_every))
+        self._limit = self.max_limit
+        self._in_flight = 0
+        self._success_streak = 0
+        self._busy_events = 0
+        self._lock = asyncio.Lock()
+        self._cond = asyncio.Condition(self._lock)
+
+    @property
+    def limit(self) -> int:
+        return self._limit
+
+    @property
+    def in_flight(self) -> int:
+        return self._in_flight
+
+    async def acquire(self) -> None:
+        async with self._cond:
+            while self._in_flight >= self._limit:
+                await self._cond.wait()
+            self._in_flight += 1
+
+    async def release(self, *, success: bool = False, busy: bool = False) -> None:
+        async with self._cond:
+            self._in_flight = max(0, self._in_flight - 1)
+            if busy:
+                self._busy_events += 1
+                self._success_streak = 0
+                old = self._limit
+                self._limit = max(self.min_limit, self._limit // 2)
+                if self._limit != old:
+                    logger.warning(
+                        "Adaptive concurrency ↓ %s → %s (busy/rate-limit, in_flight=%s)",
+                        old,
+                        self._limit,
+                        self._in_flight,
+                    )
+            elif success:
+                self._success_streak += 1
+                if (
+                    self._success_streak >= self.recover_every
+                    and self._limit < self.max_limit
+                ):
+                    self._limit += 1
+                    self._success_streak = 0
+                    logger.info(
+                        "Adaptive concurrency ↑ → %s (after successes, in_flight=%s)",
+                        self._limit,
+                        self._in_flight,
+                    )
+            self._cond.notify_all()
+
+    def snapshot(self) -> dict:
+        return {
+            "limit": self._limit,
+            "max_limit": self.max_limit,
+            "min_limit": self.min_limit,
+            "in_flight": self._in_flight,
+            "success_streak": self._success_streak,
+            "busy_events": self._busy_events,
+        }
 
 
 class EmbeddingAdapter(ABC):
@@ -140,14 +236,21 @@ class MockEmbeddingAdapter(EmbeddingAdapter):
 
 
 class HttpEmbeddingAdapter(EmbeddingAdapter):
-    """HTTP-backed adapter with batching, timeout, retries, concurrency limit."""
+    """HTTP-backed adapter with batching, timeout, retries, adaptive concurrency."""
 
     def __init__(self, cfg: EmbeddingsSettings, cache: Optional[EmbeddingCache] = None):
         self.cfg = cfg
         self._session: Optional[aiohttp.ClientSession] = None
         self._dim: Optional[int] = None
         self._session_lock = asyncio.Lock()
-        self._sem = asyncio.Semaphore(max(1, cfg.max_concurrency))
+        # Adaptive gate shared across all concurrent embed() / workers
+        self._limiter = AdaptiveConcurrency(
+            max_limit=max(1, int(cfg.max_concurrency)),
+            min_limit=1,
+            recover_every=8,
+        )
+        # back-compat alias used by older tests/code
+        self._sem = self._limiter
         self._cache = cache
 
     @property
@@ -157,6 +260,14 @@ class HttpEmbeddingAdapter(EmbeddingAdapter):
     @property
     def provider_name(self) -> str:
         return (self.cfg.provider or "unknown").lower()
+
+    @property
+    def concurrency_limit(self) -> int:
+        """Current adaptive concurrency limit."""
+        return self._limiter.limit
+
+    def concurrency_snapshot(self) -> dict:
+        return self._limiter.snapshot()
 
     async def _session_get(self) -> aiohttp.ClientSession:
         if self._session is None or self._session.closed:
@@ -207,7 +318,7 @@ class HttpEmbeddingAdapter(EmbeddingAdapter):
         for i in range(0, len(texts), batch_size):
             batches.append((i, list(texts[i : i + batch_size])))
 
-        # Concurrent batches, limited by semaphore inside _embed_batch_with_retry
+        # Concurrent batches; AdaptiveConcurrency gate inside retry path
         async def _one(offset: int, batch: List[str]) -> Tuple[int, List[List[float]]]:
             vectors = await self._embed_batch_with_retry(batch)
             return offset, vectors
@@ -223,38 +334,55 @@ class HttpEmbeddingAdapter(EmbeddingAdapter):
         last_err: Optional[Exception] = None
         attempts = self.cfg.max_retries + 1
         for attempt in range(attempts):
+            await self._limiter.acquire()
             try:
-                async with self._sem:
-                    return await self._embed_batch(texts)
+                result = await self._embed_batch(texts)
             except EmbeddingError as e:
                 last_err = e
+                busy = bool(getattr(e, "busy", False))
+                # Always free the slot; scale down if provider is overloaded
+                await self._limiter.release(success=False, busy=busy)
                 if not e.retryable or attempt >= self.cfg.max_retries:
                     raise
-                delay = min(4.0, 0.5 * (2**attempt))
+                base = 2.0 if busy else 1.0
+                delay = min(45.0, base * (2**attempt))
                 logger.warning(
-                    "Embedding retryable error (attempt %s/%s): %s",
+                    "Embedding retryable error (attempt %s/%s, sleep=%.1fs, "
+                    "concurrency=%s, busy=%s): %s",
                     attempt + 1,
                     attempts,
+                    delay,
+                    self._limiter.limit,
+                    busy,
                     e,
                 )
                 await asyncio.sleep(delay)
+                continue
             except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                 last_err = e
+                await self._limiter.release(success=False, busy=True)
                 if attempt >= self.cfg.max_retries:
                     raise EmbeddingError(
                         f"Embedding provider unavailable: {e}",
                         retryable=True,
+                        busy=True,
                         code="EMBEDDING_PROVIDER_UNAVAILABLE",
                     ) from e
-                delay = min(4.0, 0.5 * (2**attempt))
+                delay = min(45.0, 1.5 * (2**attempt))
                 logger.warning(
-                    "Embedding transport error (attempt %s/%s): %s",
+                    "Embedding transport error (attempt %s/%s, sleep=%.1fs, concurrency=%s): %s",
                     attempt + 1,
                     attempts,
+                    delay,
+                    self._limiter.limit,
                     e,
                 )
                 await asyncio.sleep(delay)
-        raise EmbeddingError(str(last_err), retryable=True) from last_err
+                continue
+            else:
+                await self._limiter.release(success=True, busy=False)
+                return result
+        raise EmbeddingError(str(last_err), retryable=True, busy=True) from last_err
 
     async def _embed_batch(self, texts: List[str]) -> List[List[float]]:
         provider = (self.cfg.provider or "").lower()
@@ -322,38 +450,134 @@ class HttpEmbeddingAdapter(EmbeddingAdapter):
                 retryable=False,
                 code="EMBEDDING_PROVIDER_UNAVAILABLE",
             )
+        # Empty inputs: return empty vectors without calling the API.
+        if not texts:
+            return []
+        # Prefer single-input calls under load — some OpenRouter models return
+        # partial/empty `data` for multi-input batches.
+        if len(texts) > 1:
+            try:
+                return await self._openrouter_request(texts)
+            except EmbeddingError as e:
+                if "unexpected embeddings count" not in str(e) and "empty embeddings" not in str(e):
+                    raise
+                logger.warning(
+                    "OpenRouter batch size=%s failed (%s); falling back to one-by-one",
+                    len(texts),
+                    e,
+                )
+                out: List[List[float]] = []
+                for t in texts:
+                    out.extend(await self._openrouter_request([t]))
+                return out
+        return await self._openrouter_request(texts)
+
+    @staticmethod
+    def _openrouter_payload_error(data: object) -> Optional[str]:
+        """OpenRouter sometimes returns HTTP 200 with ``{"error": {...}}`` body."""
+        if not isinstance(data, dict) or "error" not in data:
+            return None
+        err = data.get("error")
+        if isinstance(err, dict):
+            msg = str(err.get("message") or err)
+            code = err.get("code")
+            return f"code={code} {msg}"
+        return str(err)
+
+    @staticmethod
+    def _is_busy_or_rate_limit(status: int, message: str) -> bool:
+        m = (message or "").lower()
+        if status == 429 or status >= 500:
+            return True
+        return any(
+            tok in m
+            for tok in (
+                "429",
+                "rate limit",
+                "rate-limit",
+                "model busy",
+                "engine_overloaded",
+                "overloaded",
+                "try again",
+                "retry later",
+                "temporarily",
+            )
+        )
+
+    async def _openrouter_request(self, texts: List[str]) -> List[List[float]]:
         session = await self._session_get()
         headers = {
             "Authorization": f"Bearer {self.cfg.openrouter_api_key}",
             "Content-Type": "application/json",
         }
-        payload = {"model": self.cfg.openrouter_model, "input": texts}
+        # OpenAI-compatible API: single string or list of strings
+        payload_input: object = texts[0] if len(texts) == 1 else texts
+        payload = {"model": self.cfg.openrouter_model, "input": payload_input}
         async with session.post(
             self.cfg.openrouter_url, headers=headers, json=payload
         ) as resp:
             body = await resp.text()
-            if resp.status >= 500 or resp.status == 429:
-                raise EmbeddingError(
-                    f"OpenRouter {resp.status}: {body[:200]}",
-                    retryable=True,
-                    code="EMBEDDING_PROVIDER_UNAVAILABLE",
-                )
-            if resp.status != 200:
-                raise EmbeddingError(
-                    f"OpenRouter {resp.status}: {body[:200]}",
-                    retryable=False,
-                    code="EMBEDDING_REQUEST_FAILED",
-                )
-            data = await resp.json(content_type=None)
+            status = int(resp.status)
+            try:
+                data = await resp.json(content_type=None) if body else {}
+            except Exception:  # noqa: BLE001
+                data = {}
 
-        items = data.get("data") or []
-        items = sorted(items, key=lambda x: x.get("index", 0))
-        embeddings = [item["embedding"] for item in items]
+            payload_err = self._openrouter_payload_error(data)
+            combined = payload_err or body[:300]
+
+            if status != 200 or payload_err:
+                retryable = self._is_busy_or_rate_limit(status, combined)
+                raise EmbeddingError(
+                    f"OpenRouter {status}: {combined[:240]}",
+                    retryable=retryable,
+                    busy=retryable,
+                    code=(
+                        "EMBEDDING_PROVIDER_UNAVAILABLE"
+                        if retryable
+                        else "EMBEDDING_REQUEST_FAILED"
+                    ),
+                )
+
+        items = data.get("data") if isinstance(data, dict) else None
+        if items is None:
+            # rare alt shape: {"embeddings": [[...]]}
+            alt = data.get("embeddings") if isinstance(data, dict) else None
+            if isinstance(alt, list) and alt and isinstance(alt[0], (list, tuple)):
+                items = [{"index": i, "embedding": v} for i, v in enumerate(alt)]
+            else:
+                items = []
+
+        if not items:
+            raise EmbeddingError(
+                f"OpenRouter empty embeddings payload (expected {len(texts)}): {str(data)[:200]}",
+                retryable=True,
+                busy=True,
+                code="EMBEDDING_PROVIDER_UNAVAILABLE",
+            )
+
+        items = sorted(items, key=lambda x: x.get("index", 0) if isinstance(x, dict) else 0)
+        embeddings: List[List[float]] = []
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            emb = item.get("embedding")
+            if emb is None:
+                continue
+            # Some providers wrap as {"embedding": {"values": [...]}}
+            if isinstance(emb, dict):
+                emb = emb.get("values") or emb.get("embedding") or emb.get("vector")
+            if not isinstance(emb, (list, tuple)):
+                continue
+            embeddings.append(list(emb))
+
         if len(embeddings) != len(texts):
             raise EmbeddingError(
-                "OpenRouter returned unexpected embeddings count",
-                retryable=False,
-                code="EMBEDDING_REQUEST_FAILED",
+                f"OpenRouter returned unexpected embeddings count "
+                f"(got {len(embeddings)}, expected {len(texts)}, raw_items={len(items)})",
+                retryable=True,  # transient partial responses under rate limit
+                busy=True,
+                code="EMBEDDING_PROVIDER_UNAVAILABLE",
             )
         return embeddings
 
