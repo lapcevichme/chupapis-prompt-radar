@@ -28,7 +28,7 @@ restart:       ## recreate backend only (after code change)
 feed:          ## stream live demo requests to the running backend
 	python tools/feed_live.py --url $(BACKEND_URL) --token $(INGEST_TOKEN) --count 30 --interval 0.5
 
-demo: up       ## bring the stack up and run the end-to-end demo (ingest -> dashboard -> ROI -> export)
+demo: up       ## mutating API smoke: adds a demo source, recomputes, checks dashboard/ROI/export
 	python tools/demo.py --url $(BACKEND_URL)
 
 test:          ## run backend unit + API tests

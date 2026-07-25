@@ -11,13 +11,15 @@ Frontend + Backend + Postgres + Qdrant + ml-service одной командой:
 ```bash
 cp .env.example .env                         # Compose/backend, опционально
 cp ml_service/.env.example ml_service/.env   # модели; добавь API-ключи локально
-docker compose up -d --build    # или: make up
+docker compose up -d --build --wait --wait-timeout 240    # или: make up
 ```
 
 - Приложение: <http://localhost:3000>
 - Backend API + Swagger: <http://localhost:8080/api/docs>
 - ML health: <http://localhost:8000/health/ready>
 - Demo-логин: `test@gmail.com` / `test123`
+- Пошаговый показ платформы и формат своих датасетов:
+  [`docs/DEMO_AND_DATASET_GUIDE.md`](docs/DEMO_AND_DATASET_GUIDE.md)
 
 При первом старте backend создаёт три предзагруженных аналитических workspace: **Knowledge &
 Communications** (170 записей), **Engineering & Data** (106) и **Operations & Planning** (109).
@@ -30,9 +32,10 @@ Communications** (170 записей), **Engineering & Data** (106) и **Operati
 > (сетевой URL Qdrant, service token и пути внутри контейнера) задаёт Compose поверх этого файла.
 > Контракты и структура — в `docs/`, актуальная карта реализации — `docs/CODEBASE_MAP.md`.
 
-**End-to-end прогон:** `python tools/demo.py --url http://localhost:8080` гоняет сценарий
+**Mutating API smoke:** `python tools/demo.py --url http://localhost:8080` гоняет сценарий
 `login → ingest demo → recompute (best-effort) → dashboard → ROI → export` с печатью саммари.
-`make demo` поднимает стек и печатает шаги для ручного прогона.
+Он добавляет отдельный demo source и меняет глобальные totals; перед визуальной презентацией
+лучше использовать runbook выше. `make demo` поднимает стек и запускает этот smoke.
 
 **Фронтенд (SPA):** ест только backend REST (контракт `docs/contracts/backend-frontend.md` +
 `docs/contracts/openapi-backend-frontend.yaml`). В Docker его раздаёт nginx на `:3000`, а `/api`
@@ -44,7 +47,7 @@ Communications** (170 записей), **Engineering & Data** (106) и **Operati
 ROI-саммари, разрезов по категориям и сценариям. XLSX собирается нативно (stdlib, без доп.
 зависимостей); CSV — с BOM для корректной кириллицы в Excel.
 
-**Тесты бэкенда:** `make test` (`cd backend && poetry run pytest`) — 56 unit + API-тестов
+**Тесты бэкенда:** `make test` (`cd backend && poetry run pytest`) — 57 unit + API-тестов
 (ROI-калькулятор, нормализация, стриминг в ML, экспорт, валидация `/statistics`, контракт роутов).
 Линт: `make lint`. Полная проверка фронтенда: `make frontend-check`.
 

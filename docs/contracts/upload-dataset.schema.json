@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prompt-radar/contracts/upload-dataset.schema.json",
+  "title": "Prompt Radar — recommended JSON upload dataset",
+  "description": "Recommended source format for generated JSON datasets. The runtime also accepts JSONL and CSV with the same field names.",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "type": "object",
+    "additionalProperties": true,
+    "anyOf": [
+      { "required": ["user_query"] },
+      { "required": ["query_text"] }
+    ],
+    "properties": {
+      "request_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Unique within this file. The backend scopes it by source_id."
+      },
+      "user_query": {
+        "type": "string",
+        "minLength": 1
+      },
+      "query_text": {
+        "type": "string",
+        "minLength": 1
+      },
+      "status": {
+        "type": "string",
+        "enum": ["success", "error_tool", "hallucination_loop"]
+      },
+      "simulated_context_tokens": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Token usage for ROI and wasted-token metrics."
+      },
+      "estimated_manual_time_minutes": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Estimated human time for the same task, used by FTE/ROI."
+      },
+      "tools_used": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Tools used by a successful agent execution."
+      },
+      "category": {
+        "type": "string",
+        "enum": [
+          "text_generation",
+          "code_help",
+          "data_analysis",
+          "education",
+          "information_search",
+          "task_management",
+          "other"
+        ],
+        "description": "Optional gold label; it does not override ML classification."
+      },
+      "style": {
+        "type": "string"
+      },
+      "agent_steps": {
+        "type": "integer",
+        "minimum": 0
+      }
+    }
+  }
+}

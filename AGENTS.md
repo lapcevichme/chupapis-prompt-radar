@@ -16,7 +16,9 @@ ROI/FTE. Главная продуктовая ценность — объясн
 2. Релевантный контракт в `docs/contracts/`.
 3. Для backend — `docs/backend/BACKEND_TASK.md`; для ML — `ml_service/ТЗ.md` и
    `docs/taxonomy/taxonomy_v1.md`.
-4. Реальный код и тесты затронутого компонента.
+4. Для запуска, загрузки своих данных и продуктовой демонстрации —
+   `docs/DEMO_AND_DATASET_GUIDE.md`.
+5. Реальный код и тесты затронутого компонента.
 
 При расхождении доверяй в таком порядке: исполняемый код и тесты → JSON Schema/OpenAPI и
 контракты → актуальная карта `docs/CODEBASE_MAP.md` → README/исторические планы. `TASKS.md`,
@@ -35,6 +37,10 @@ ROI/FTE. Главная продуктовая ценность — объясн
 - Backend и ML не импортируют код друг друга. Интеграция идёт только по HTTP-контракту.
 - Frontend обращается только к backend REST и всегда использует cookie credentials; напрямую к
   ML он не ходит.
+- Один загруженный файл — один dataset workspace (`source_id`). Одинаковые внешние request IDs
+  scoped по источнику и не дедуплицируют разные датасеты.
+- Compose по умолчанию создаёт три preloaded workspace; пользовательские JSON/JSONL/CSV остаются
+  отдельными `origin=upload`. После нескольких загрузок heavy recompute запускают один раз.
 - Основной поток — streaming CQRS: `PUT /api/v1/logs` в ML для записи,
   `POST /api/v1/recompute` для тяжёлого пересчёта, быстрые `GET /statistics`, `/scenarios` и
   `/assignments` для чтения.
@@ -65,7 +71,7 @@ ROI/FTE. Главная продуктовая ценность — объясн
 
 ```bash
 make up                 # frontend + backend + Postgres + Qdrant + ML
-make demo               # полный demo-flow через backend
+make demo               # mutating API smoke: добавляет ещё один demo source
 make feed               # поток live-логов
 make test               # backend tests
 make lint               # backend Ruff
@@ -108,5 +114,15 @@ cd frontend && npm run dev
 - Онлайн-центроиды ML пока не восстанавливаются из meta-store после рестарта.
 - Backend кэширует read-модель `/statistics` в памяти с TTL и инвалидирует её после ingestion и
   recompute.
+- Входные timestamps файлов пока не читаются: backend синтезирует 14-дневную шкалу.
 - Lock-файлы и документация местами исторически рассинхронизированы; перед утверждением текущего
   статуса проверяй код, тесты и `git status`.
+- Compose — single-host demo/staging baseline, не hardened multi-tenant production. Не обещай
+  SLA/горизонтальное масштабирование без task broker, общего job state, IAM и monitoring.
+
+## Последний проверенный baseline
+
+2026-07-25 основной Compose на чистых volumes прошёл online E2E: OpenRouter embeddings/LLM,
+CatBoost и Qdrant ready; 385 записей в трёх preloaded workspace; 385 векторов размерности 2560;
+22 названных сценария; Dashboard/Logs/ROI согласованы; XLSX/CSV возвращают 200. Backend: 57 tests
+и Ruff; ML: 95 tests, 8 live deselected; frontend: lint, 5 tests и production build.

@@ -140,6 +140,8 @@ autologin в текущей вкладке.
 ## Контракты и версии
 
 - `docs/contracts/log.schema.json` — backend → ML, одна нормализованная запись.
+- `docs/contracts/upload-dataset.schema.json` — рекомендуемый сырой JSON для пользовательской
+  загрузки и генераторов датасетов.
 - `docs/contracts/statistics.schema.json` — ML → backend, готовая аналитическая read-модель.
 - `docs/contracts/backend-ml.md` — HTTP и деградация между backend/ML.
 - `docs/contracts/backend-frontend.md` и `openapi-backend-frontend.yaml` — публичный REST.
@@ -165,18 +167,20 @@ make demo
 Для hot reload можно отдельно запустить `cd frontend && npm ci && npm run dev`. Demo credentials:
 `test@gmail.com` / `test123`. Provider/model config и секреты ML хранятся только в локальном
 `ml_service/.env`; Compose загружает его напрямую, но переопределяет контейнерные URL/пути.
+Практический runbook для local/remote demo и формат генерируемых датасетов находится в
+`docs/DEMO_AND_DATASET_GUIDE.md`.
 
 ## Состояние и границы проверки
 
 На момент актуализации:
 
-- backend: `56 passed`; `ruff check src tests` проходит;
+- backend: `57 passed`; `ruff check src tests` проходит;
 - ML: `95 passed, 8 deselected` в runtime-образе с mock providers; отдельный online smoke через
   OpenRouter создал реальные embeddings/assignments в Qdrant;
 - frontend: lint, пять Vitest-тестов и production build проходят; npm audit не находит уязвимостей;
-- изолированный полный Compose поднял три preloaded источника (170 + 106 + 109 = 385),
-  классифицировал их через online ML, завершил heavy recompute и проверен по dashboard, scenarios,
-  logs, ROI и XLSX/CSV через frontend/nginx.
+- основной Compose на чистых volumes поднял три preloaded источника (170 + 106 + 109 = 385),
+  создал 385 OpenRouter-векторов размерности 2560, завершил heavy recompute с 22 сценариями и
+  проверен по dashboard, scenarios, logs, ROI и XLSX/CSV через frontend/nginx.
 
 Исторические `TASKS.md` и локальные планы могут содержать уже неверные статусы. Они полезны для
 причин решений, но не для ответа «что работает сейчас» без повторной проверки кода и тестов.
@@ -193,3 +197,7 @@ make demo
 - Dependency lock policy неоднородна: frontend lock tracked, Python lock-файлы отсутствуют.
 - Полный end-to-end зависит от Postgres/Qdrant и выбранного embeddings provider; unit-тесты не
   заменяют smoke на чистых volumes перед демонстрацией.
+- Входной timestamp файлов сейчас не читается normalizer: для Dynamics синтезируется шкала за
+  `NORMALIZE_TIMESTAMP_SPAN_DAYS` (по умолчанию 14). Реальные даты требуют контрактного изменения.
+- Корневой Compose — single-host demo/staging. Для production нужны TLS/firewall/secrets/backups,
+  task broker + общий job state, IAM/RBAC, monitoring и migration policy embeddings.
