@@ -14,7 +14,7 @@
     "task_management",
     "text_generation"
   ],
-  "holdout_accuracy": 0.7622478386167147,
-  "n_samples": 3469,
+  "holdout_accuracy": 0.8096707818930041,
+  "n_samples": 4858,
   "text_feature": null
 }
