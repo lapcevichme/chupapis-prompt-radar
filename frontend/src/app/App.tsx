@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState} from 'react';
-import {Activity, DollarSign, LayoutDashboard, Target} from 'lucide-react';
+import {Activity, Database, DollarSign, LayoutDashboard, Target} from 'lucide-react';
 import {promptRadarApi} from '@/shared/api/promptRadarApi';
 import {ApiError} from '@/shared/api/http';
 import {DEMO_EMAIL, DEMO_PASSWORD, FALLBACK_DEMO_EMAIL, FALLBACK_DEMO_PASSWORD} from '@/shared/config/env';
@@ -8,13 +8,15 @@ import DashboardPage from '@/pages/dashboard/DashboardPage';
 import LogsPage from '@/pages/logs/LogsPage';
 import RoiPage from '@/pages/roi/RoiPage';
 import ScenariosPage from '@/pages/scenarios/ScenariosPage';
+import SourcesPage from '@/pages/sources/SourcesPage';
 import {AppShell, type NavItem} from '@/widgets/app-shell/AppShell';
 import {ErrorState, LoadingState} from '@/widgets/data-state/DataState';
 
-type TabId = 'dashboard' | 'scenarios' | 'logs' | 'roi';
+type TabId = 'dashboard' | 'sources' | 'scenarios' | 'logs' | 'roi';
 
 const navItems: NavItem<TabId>[] = [
   {id: 'dashboard', label: 'Overview', icon: LayoutDashboard},
+  {id: 'sources', label: 'Ingestion & Sources', icon: Database},
   {id: 'scenarios', label: 'Scenarios', icon: Target},
   {id: 'logs', label: 'Logs & Outliers', icon: Activity},
   {id: 'roi', label: 'ROI Analytics', icon: DollarSign},
@@ -110,6 +112,7 @@ export default function App() {
       onToggleTheme={() => setIsDark((value) => !value)}
     >
       {activeTab === 'dashboard' && <DashboardPage refreshKey={refreshKey} />}
+      {activeTab === 'sources' && <SourcesPage refreshKey={refreshKey} onWorkspaceChanged={refreshData} />}
       {activeTab === 'scenarios' && <ScenariosPage refreshKey={refreshKey} />}
       {activeTab === 'logs' && <LogsPage refreshKey={refreshKey} />}
       {activeTab === 'roi' && <RoiPage refreshKey={refreshKey} />}
