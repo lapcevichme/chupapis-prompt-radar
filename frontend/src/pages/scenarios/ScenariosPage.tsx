@@ -21,8 +21,8 @@ export default function ScenariosPage({filters, refreshKey, workspaceFiltersCont
   const [taskType, setTaskType] = useState('');
   const {data, error, isLoading} = useApiResource(() => promptRadarApi.getScenarios(filters), [filters, refreshKey]);
   const scenarioDetailState = useApiResource<Scenario | null>(
-    () => (selectedScenarioId ? promptRadarApi.getScenario(selectedScenarioId) : Promise.resolve(null)),
-    [selectedScenarioId, refreshKey],
+    () => (selectedScenarioId ? promptRadarApi.getScenario(selectedScenarioId, filters) : Promise.resolve(null)),
+    [selectedScenarioId, filters, refreshKey],
   );
   const allScenarios = data?.items ?? [];
   const taskTypes = useMemo(

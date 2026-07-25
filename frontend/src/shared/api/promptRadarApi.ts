@@ -53,8 +53,10 @@ export const promptRadarApi = {
   },
   getScenarios: (query?: WorkspaceFilters & {task_type?: string}) =>
     apiRequest<Paginated<Scenario>>('/scenarios', {query: query ? {...query} : undefined}),
-  getScenario: (scenarioId: string) =>
-    apiRequest<Scenario>(`/scenarios/${encodeURIComponent(scenarioId)}`),
+  getScenario: (scenarioId: string, query?: WorkspaceFilters) =>
+    apiRequest<Scenario>(`/scenarios/${encodeURIComponent(scenarioId)}`, {
+      query: query ? {...query} : undefined,
+    }),
   getLogs: (query?: {
     source_id?: string;
     from?: string;

@@ -16,5 +16,7 @@ async def list_scenarios(
 
 
 @router.get("/scenarios/{scenario_id}", response_model=ScenarioOut)
-async def get_scenario(scenario_id: str, service: DashboardServiceDep) -> ScenarioOut:
-    return await service.get_scenario(scenario_id)
+async def get_scenario(
+    scenario_id: str, service: DashboardServiceDep, filters: FiltersDep
+) -> ScenarioOut:
+    return await service.get_scenario(scenario_id, filters)

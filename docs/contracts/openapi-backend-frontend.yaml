@@ -50,7 +50,7 @@ components:
       properties:
         source_id: { type: string, example: src_01 }
         name: { type: string, example: prompt_radar_dataset.json }
-        origin: { type: string, enum: [upload, demo], example: demo }
+        origin: { type: string, enum: [preloaded, upload, demo, live], example: preloaded }
         records_total: { type: integer, example: 350 }
         records_valid: { type: integer, example: 348 }
         records_rejected: { type: integer, example: 2 }
@@ -422,6 +422,9 @@ paths:
       summary: Детали сценария
       parameters:
         - { name: scenario_id, in: path, required: true, schema: { type: string } }
+        - { name: source_id, in: query, required: false, schema: { type: string } }
+        - { name: from, in: query, required: false, schema: { type: string, format: date } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date } }
       responses:
         "200":
           description: OK

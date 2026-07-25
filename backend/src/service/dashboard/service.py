@@ -48,13 +48,19 @@ class DashboardService:
     async def get_scenarios(self, filters: dict[str, Any]) -> Paginated[ScenarioOut]:
         scenarios = await self._ml.get_scenarios(filters)
         items = [_map_scenario(s) for s in scenarios]
+        if _has_workspace_filter(filters):
+            items = [item for item in items if item.count > 0]
         return Paginated[ScenarioOut](items=items, total=len(items))
 
-    async def get_scenario(self, scenario_id: str) -> ScenarioOut:
-        scenarios = await self._ml.get_scenarios(None)
+    async def get_scenario(
+        self, scenario_id: str, filters: dict[str, Any] | None = None
+    ) -> ScenarioOut:
+        scenarios = await self._ml.get_scenarios(filters)
         for raw in scenarios:
             if str(raw.get("scenario_id")) == scenario_id:
-                return _map_scenario(raw)
+                item = _map_scenario(raw)
+                if not _has_workspace_filter(filters) or item.count > 0:
+                    return item
         raise NotFoundError("Scenario not found", error_code="SCENARIO_NOT_FOUND")
 
     async def get_logs(
@@ -243,6 +249,10 @@ def _map_log_row(row: Any) -> LogItem:
 
 def _pct(count: int, total: int) -> float:
     return round((count / total) * 100, 1) if total > 0 else 0.0
+
+
+def _has_workspace_filter(filters: dict[str, Any] | None) -> bool:
+    return bool(filters) and any(filters.get(key) for key in ("source_id", "from", "to"))
 
 
 def _as_uuid(value: Any) -> UUID:

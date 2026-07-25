@@ -3,8 +3,9 @@
 **Сервер:** backend. **Клиент:** frontend. Префикс: `/api/v1`. Формат — JSON.
 Ломающее изменение → `/api/v2`. Владелец файла — backend.
 
-Модель — **глобальный живой дашборд** (D3): данные по всему стору, опц. фильтры
-`?source_id=&from=&to=`. Дашборд читает ТОЛЬКО отсюда. ROI считает backend.
+Модель — **живой дашборд с workspace по датасетам**: данные можно смотреть по всему стору или
+выбранному источнику через `?source_id=&from=&to=`. Дашборд читает ТОЛЬКО backend. ROI считает
+backend.
 
 ## 0. Общие правила
 
@@ -20,6 +21,7 @@
 - **Формат ошибки** (единый): `{ "error_code": "not_found", "message": "...", "details": null }`.
 - **Пагинация** (списки): `?limit=50&offset=0`, ответ `{ "items": [...], "total": 123 }`.
 - **Фильтры дашборда** (везде опц.): `source_id` (заливка), `from`/`to` (ISO-даты).
+- Выбор workspace на frontend — это фильтр `source_id`; смена дат не должна сбрасывать его.
 - Даты — ISO 8601 UTC. Деньги — рубли (число). Проценты — число 0..100.
 
 ## 1. Auth
@@ -37,6 +39,8 @@
 
 Multipart `file` (`.json` | `.jsonl` | `.csv`) **или** JSON `{ "use_demo": true }`.
 Backend нормализует и стримит батчами в ML. Ответ — сразу, обработка асинхронная.
+`request_id` внутри аналитического контура детерминированно scoped по `source_id`, поэтому
+одинаковые внешние ID из разных файлов не дедуплицируют друг друга.
 
 Response `202`:
 
@@ -55,8 +59,10 @@ Response `202`:
 
 ### `GET /api/v1/sources` → `200`
 
-`{ "items": [ { "source_id", "name", "records_total", "status", "created_at" } ], "total": n }`.
+`{ "items": [ { "source_id", "name", "origin", "records_total", "status", "created_at" } ], "total": n }`.
 `status` ∈ `ingesting | classified | recomputed | failed`.
+`origin` ∈ `preloaded | upload | demo | live`. Compose по умолчанию идемпотентно создаёт три
+`preloaded` workspace; обычная файловая загрузка остаётся `upload`.
 
 ### `GET /api/v1/sources/{source_id}` → `200`
 
@@ -146,11 +152,13 @@ Backend проксирует в ML. `{ "job_id": "rc_01", "status": "running" }`
 
 ### `GET /api/v1/scenarios` → `200`
 
-Полный список сценариев (не только top). Фильтры те же. `{ "items": [ <scenario> ], "total": n }`.
+Полный список сценариев (не только top). Фильтры те же. При фильтре workspace сценарии с нулевым
+числом запросов не возвращаются. `{ "items": [ <scenario> ], "total": n }`.
 
 ### `GET /api/v1/scenarios/{scenario_id}` → `200`
 
-Детали + `representative_request_ids`, `records_count`, `statistical_reliability`.
+Детали + `representative_request_ids`, `records_count`, `statistical_reliability`. Принимает те же
+`source_id`/`from`/`to`, чтобы count и примеры не выходили за выбранный workspace.
 
 ### `GET /api/v1/logs` → `200`
 
