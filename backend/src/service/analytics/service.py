@@ -78,12 +78,13 @@ class AnalyticsService:
             failure_count = 0
             outlier_count = 0
             for r in u_rows:
-                ttype = r.task_type or "general_qa"
+                ttype = r.task_type or r.gold_category or "general_qa"
                 cat_counts[ttype] = cat_counts.get(ttype, 0) + 1
                 if r.has_failure_signals or r.status in ("error", "error_tool", "hallucination_loop"):
                     failure_count += 1
                 if r.is_outlier or ttype == "unknown":
                     outlier_count += 1
+
 
             top_cat = max(cat_counts, key=cat_counts.get) if cat_counts else "general_qa"
 
@@ -225,9 +226,10 @@ class AnalyticsService:
             # Top task type
             ttype_cnt: dict[str, int] = {}
             for r in m_rows:
-                tt = r.task_type or "general_qa"
+                tt = r.task_type or r.gold_category or "general_qa"
                 ttype_cnt[tt] = ttype_cnt.get(tt, 0) + 1
                 task_model_stats.setdefault(tt, {}).setdefault(m_id, []).append(r)
+
 
             top_ttype = max(ttype_cnt, key=ttype_cnt.get) if ttype_cnt else "general_qa"
 
@@ -290,6 +292,7 @@ class AnalyticsService:
             select(
                 DatasetRecord.request_id,
                 DatasetRecord.query_text,
+                DatasetRecord.gold_category,
                 DatasetRecord.user_id,
                 DatasetRecord.user_name,
                 DatasetRecord.department,
@@ -310,6 +313,7 @@ class AnalyticsService:
                 )
             )
         )
+
 
         source_id = filters.get("source_id")
         if source_id:
