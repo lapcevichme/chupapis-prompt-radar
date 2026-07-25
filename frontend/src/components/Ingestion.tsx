@@ -207,26 +207,85 @@ export default function Ingestion() {
                     <h3 className="text-sm font-semibold text-primary break-words">{selectedSource.name}</h3>
                     <p className="text-[10px] font-mono text-secondary uppercase tracking-widest mt-1">ID: {selectedSource.source_id}</p>
                   </div>
+                  
                   <div className="space-y-3 pt-4 border-t border-divider">
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-secondary">Status</span>
-                      <Badge variant={selectedSource.status === 'recomputed' ? 'success' : 'warning'}>
+                      <Badge variant={selectedSource.status === 'recomputed' || selectedSource.status === 'classified' ? 'success' : 'warning'}>
                         {selectedSource.status}
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-secondary">Records</span>
-                      <span className="text-xs font-mono text-primary">{selectedSource.records_total} total / {selectedSource.records_valid} valid</span>
-                    </div>
-                    <div className="flex justify-between items-center">
                       <span className="text-xs text-secondary">Origin</span>
-                      <span className="text-xs font-mono text-primary">{selectedSource.origin}</span>
+                      <span className="text-xs font-mono text-primary bg-surface-hover px-2 py-0.5 rounded">{selectedSource.origin}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-secondary">Uploaded</span>
-                      <span className="text-xs font-mono text-primary">{new Date(selectedSource.created_at).toLocaleDateString()}</span>
+                      <span className="text-xs font-mono text-primary">{new Date(selectedSource.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
                     </div>
                   </div>
+
+                  <div className="pt-4 border-t border-divider space-y-4">
+                    <div>
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="text-xs font-medium text-primary">Data Health</span>
+                        <span className="text-xs font-mono text-primary">
+                          {selectedSource.records_total > 0 
+                            ? Math.round((selectedSource.records_valid / selectedSource.records_total) * 100) 
+                            : 0}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-surface-hover rounded-full overflow-hidden flex">
+                        <div 
+                          className="h-full bg-emerald-500 transition-all duration-500" 
+                          style={{ width: `${selectedSource.records_total > 0 ? (selectedSource.records_valid / selectedSource.records_total) * 100 : 0}%` }}
+                        />
+                        <div 
+                          className="h-full bg-red-500 transition-all duration-500" 
+                          style={{ width: `${selectedSource.records_total > 0 ? (selectedSource.records_rejected / selectedSource.records_total) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-surface-hover rounded-lg p-3 border border-divider">
+                        <div className="text-[10px] font-mono text-secondary uppercase tracking-widest mb-1">Valid Records</div>
+                        <div className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{selectedSource.records_valid}</div>
+                      </div>
+                      <div className="bg-surface-hover rounded-lg p-3 border border-divider">
+                        <div className="text-[10px] font-mono text-secondary uppercase tracking-widest mb-1">Rejected</div>
+                        <div className="text-lg font-semibold text-red-600 dark:text-red-400">{selectedSource.records_rejected}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedSource.normalization_report && (
+                    <div className="pt-4 border-t border-divider space-y-3">
+                      <span className="text-xs font-medium text-primary">Normalization Report</span>
+                      
+                      {(selectedSource.normalization_report.synthesized_request_id || selectedSource.normalization_report.synthesized_timestamp) ? (
+                        <div className="text-xs text-secondary bg-accent/5 border border-accent/10 rounded-lg p-3 space-y-1.5">
+                          <p className="font-medium text-accent">Auto-generated missing fields:</p>
+                          {selectedSource.normalization_report.synthesized_request_id ? <p>• {selectedSource.normalization_report.synthesized_request_id} missing Request IDs synthesized</p> : null}
+                          {selectedSource.normalization_report.synthesized_timestamp ? <p>• {selectedSource.normalization_report.synthesized_timestamp} missing timestamps synthesized</p> : null}
+                        </div>
+                      ) : null}
+
+                      {selectedSource.normalization_report.rejected_reasons && Object.keys(selectedSource.normalization_report.rejected_reasons).length > 0 && (
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-mono text-secondary uppercase tracking-widest">Rejection Reasons</span>
+                          <ul className="space-y-1">
+                            {Object.entries(selectedSource.normalization_report.rejected_reasons).map(([reason, count]) => (
+                              <li key={reason} className="flex justify-between items-center text-xs">
+                                <span className="text-secondary">{reason.replace(/_/g, ' ')}</span>
+                                <span className="font-mono text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded">{count}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-center text-secondary space-y-3 py-12">

@@ -95,4 +95,9 @@ export interface Source {
   records_rejected: number;
   status: string;
   created_at: string;
+  normalization_report?: {
+    synthesized_request_id?: number;
+    synthesized_timestamp?: number;
+    rejected_reasons?: Record<string, number>;
+  };
 }
