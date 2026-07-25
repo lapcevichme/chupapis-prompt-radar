@@ -466,8 +466,9 @@ make demo            # e2e smoke по живому стеку: login → ingest 
 
 ## 14. Команда
 
-| | |
-|---|---|
-| **@laughin_me** | backend, инфраструктура, интеграция, ROI |
-| **@lapcevichme** | ML-пайплайн, датасеты, Open WebUI |
-| **@oatis123** | frontend, визуализация |
+| |                                          |
+|---|------------------------------------------|
+| [@laughin_me](https://github.com/laughin_me) | backend, инфраструктура, интеграция, ROI |
+| [@lapcevichme](https://github.com/lapcevichme) | Датасеты, Open WebUI, ROI                |
+| [@oatis123](https://github.com/oatis123) | Catboost, ML-pipeline                    |
+| [@luhgeek1](https://github.com/luhgeek1) | frontend, визуализация                   |
