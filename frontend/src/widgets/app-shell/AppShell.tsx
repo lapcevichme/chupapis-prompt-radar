@@ -16,6 +16,7 @@ interface AppShellProps<T extends string> {
   isDark: boolean;
   isLoggingOut: boolean;
   navItems: NavItem<T>[];
+  secondaryToolbar?: ReactNode;
   user: User;
   onLogout: () => void;
   onRefresh: () => void;
@@ -29,6 +30,7 @@ export function AppShell<T extends string>({
   isDark,
   isLoggingOut,
   navItems,
+  secondaryToolbar,
   user,
   onLogout,
   onRefresh,
@@ -128,6 +130,8 @@ export function AppShell<T extends string>({
         <div className="md:hidden p-4 border-b border-divider bg-surface">
           <WorkspaceActions onRefresh={onRefresh} />
         </div>
+
+        {secondaryToolbar}
 
         <div className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto">{children}</div>

@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {Bot, Loader2, Minus, Target, TrendingDown, TrendingUp} from 'lucide-react';
 import type {Scenario} from '@/entities/scenario/types';
 import {promptRadarApi} from '@/shared/api/promptRadarApi';
@@ -8,19 +8,33 @@ import {cn} from '@/shared/lib/cn';
 import {Badge} from '@/shared/ui/Badge';
 import {Card, CardContent, CardHeader, CardTitle} from '@/shared/ui/Card';
 import {EmptyState, ErrorState, LoadingState} from '@/widgets/data-state/DataState';
+import type {WorkspaceFilters} from '@/entities/workspace/types';
 
 interface ScenariosPageProps {
+  filters: WorkspaceFilters;
   refreshKey: number;
 }
 
-export default function ScenariosPage({refreshKey}: ScenariosPageProps) {
+export default function ScenariosPage({filters, refreshKey}: ScenariosPageProps) {
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
-  const {data, error, isLoading} = useApiResource(() => promptRadarApi.getScenarios(), [refreshKey]);
+  const [taskType, setTaskType] = useState('');
+  const {data, error, isLoading} = useApiResource(() => promptRadarApi.getScenarios(filters), [filters, refreshKey]);
   const scenarioDetailState = useApiResource<Scenario | null>(
     () => (selectedScenarioId ? promptRadarApi.getScenario(selectedScenarioId) : Promise.resolve(null)),
     [selectedScenarioId, refreshKey],
   );
-  const scenarios = data?.items ?? [];
+  const allScenarios = data?.items ?? [];
+  const taskTypes = useMemo(
+    () => [...new Set(allScenarios.map((scenario) => scenario.task_type).filter((value): value is string => Boolean(value)))].sort(),
+    [allScenarios],
+  );
+  const scenarios = taskType ? allScenarios.filter((scenario) => scenario.task_type === taskType) : allScenarios;
+
+  useEffect(() => {
+    if (taskType && !taskTypes.includes(taskType)) {
+      setTaskType('');
+    }
+  }, [taskType, taskTypes]);
 
   useEffect(() => {
     if (scenarios.length === 0) {
@@ -47,8 +61,16 @@ export default function ScenariosPage({refreshKey}: ScenariosPageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-secondary">{data.total} auto-discovered user interaction clusters</h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-sm font-medium text-secondary">{scenarios.length} auto-discovered user interaction clusters</h2>
+        <select
+          className="h-9 rounded-md border border-divider bg-surface px-3 text-sm text-primary outline-none focus:border-accent"
+          value={taskType}
+          onChange={(event) => setTaskType(event.target.value)}
+        >
+          <option value="">All task types</option>
+          {taskTypes.map((value) => <option key={value} value={value}>{titleFromCode(value)}</option>)}
+        </select>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">

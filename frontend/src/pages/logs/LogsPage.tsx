@@ -1,24 +1,46 @@
-import {useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {promptRadarApi} from '@/shared/api/promptRadarApi';
 import {useApiResource} from '@/shared/api/useApiResource';
 import {formatDateTime, titleFromCode} from '@/shared/lib/format';
 import {Card, CardContent} from '@/shared/ui/Card';
 import {Pagination} from '@/shared/ui/Pagination';
 import {EmptyState, ErrorState, LoadingState} from '@/widgets/data-state/DataState';
+import type {WorkspaceFilters} from '@/entities/workspace/types';
 
 const PAGE_SIZE = 7;
 
 interface LogsPageProps {
+  filters: WorkspaceFilters;
   refreshKey: number;
 }
 
-export default function LogsPage({refreshKey}: LogsPageProps) {
+export default function LogsPage({filters, refreshKey}: LogsPageProps) {
   const [offset, setOffset] = useState(0);
   const [onlyFailures, setOnlyFailures] = useState(false);
+  const [taskType, setTaskType] = useState('');
+  const [scenarioId, setScenarioId] = useState('');
+  const scenariosState = useApiResource(() => promptRadarApi.getScenarios(filters), [filters, refreshKey]);
   const {data, error, isLoading} = useApiResource(
-    () => promptRadarApi.getLogs({limit: PAGE_SIZE, offset, only_failures: onlyFailures}),
-    [refreshKey, offset, onlyFailures],
+    () => promptRadarApi.getLogs({...filters, limit: PAGE_SIZE, offset, only_failures: onlyFailures, task_type: taskType, scenario_id: scenarioId}),
+    [filters, refreshKey, offset, onlyFailures, taskType, scenarioId],
   );
+  const scenarios = scenariosState.data?.items ?? [];
+  const taskTypes = useMemo(
+    () => [...new Set(scenarios.map((scenario) => scenario.task_type).filter((value): value is string => Boolean(value)))].sort(),
+    [scenarios],
+  );
+  const scenarioOptions = taskType ? scenarios.filter((scenario) => scenario.task_type === taskType) : scenarios;
+
+  useEffect(() => {
+    setOffset(0);
+    setTaskType('');
+    setScenarioId('');
+  }, [filters]);
+
+  useEffect(() => {
+    setOffset(0);
+    setScenarioId('');
+  }, [taskType]);
 
   if (isLoading) {
     return <LoadingState title="Loading logs" />;
@@ -39,7 +61,26 @@ export default function LogsPage({refreshKey}: LogsPageProps) {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h2 className="text-sm font-medium text-secondary">Raw prompt data and classification · {data.total} records</h2>
-        <label className="flex items-center gap-2 text-sm font-medium text-primary">
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            className="h-9 rounded-md border border-divider bg-surface px-3 text-sm text-primary outline-none focus:border-accent"
+            value={taskType}
+            onChange={(event) => setTaskType(event.target.value)}
+          >
+            <option value="">All task types</option>
+            {taskTypes.map((value) => <option key={value} value={value}>{titleFromCode(value)}</option>)}
+          </select>
+          <select
+            className="h-9 max-w-xs rounded-md border border-divider bg-surface px-3 text-sm text-primary outline-none focus:border-accent"
+            value={scenarioId}
+            onChange={(event) => { setOffset(0); setScenarioId(event.target.value); }}
+          >
+            <option value="">All scenarios</option>
+            {scenarioOptions.map((scenario) => (
+              <option key={scenario.scenario_id} value={scenario.scenario_id}>{scenario.name ?? scenario.scenario_id}</option>
+            ))}
+          </select>
+          <label className="flex items-center gap-2 text-sm font-medium text-primary">
           <input
             type="checkbox"
             className="h-4 w-4 accent-[var(--color-accent)]"
@@ -50,7 +91,8 @@ export default function LogsPage({refreshKey}: LogsPageProps) {
             }}
           />
           Failures only
-        </label>
+          </label>
+        </div>
       </div>
 
       {data.items.length === 0 ? (

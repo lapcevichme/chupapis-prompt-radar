@@ -5,15 +5,17 @@ import {useApiResource} from '@/shared/api/useApiResource';
 import {formatDateTime, formatPercent} from '@/shared/lib/format';
 import {Card, CardContent, CardHeader, CardTitle} from '@/shared/ui/Card';
 import {EmptyState, ErrorState, LoadingState} from '@/widgets/data-state/DataState';
+import type {WorkspaceFilters} from '@/entities/workspace/types';
 
 const COLORS = ['#2563EB', '#635BFF', '#3B82F6', '#8B5CF6', '#0EA5E9', '#64748B'];
 
 interface DashboardPageProps {
+  filters: WorkspaceFilters;
   refreshKey: number;
 }
 
-export default function DashboardPage({refreshKey}: DashboardPageProps) {
-  const {data, error, isLoading} = useApiResource(() => promptRadarApi.getDashboard(), [refreshKey]);
+export default function DashboardPage({filters, refreshKey}: DashboardPageProps) {
+  const {data, error, isLoading} = useApiResource(() => promptRadarApi.getDashboard(filters), [filters, refreshKey]);
 
   if (isLoading) {
     return <LoadingState title="Loading dashboard" />;

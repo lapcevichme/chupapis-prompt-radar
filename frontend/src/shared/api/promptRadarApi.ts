@@ -4,6 +4,7 @@ import type {RoiData} from '@/entities/roi/types';
 import type {Scenario} from '@/entities/scenario/types';
 import type {RecomputeJob, RecomputeStatus, Source} from '@/entities/source/types';
 import type {User} from '@/entities/user/types';
+import type {WorkspaceFilters} from '@/entities/workspace/types';
 import {API_BASE_URL, API_HEALTH_URL} from '@/shared/config/env';
 import {apiRequest} from './http';
 import {mapDashboard} from './mappers';
@@ -41,29 +42,28 @@ export const promptRadarApi = {
   startRecompute: () => apiRequest<RecomputeJob>('/recompute', {method: 'POST'}),
   getRecomputeStatus: () => apiRequest<RecomputeStatus>('/recompute/status'),
 
-  getDashboard: async (query?: {source_id?: string; from?: string; to?: string}) => {
-    const dashboard = await apiRequest<DashboardApi>('/dashboard', {query});
+  getDashboard: async (query?: WorkspaceFilters) => {
+    const dashboard = await apiRequest<DashboardApi>('/dashboard', {query: query ? {...query} : undefined});
     return mapDashboard(dashboard);
   },
-  getScenarios: (query?: {source_id?: string; task_type?: string}) =>
-    apiRequest<Paginated<Scenario>>('/scenarios', {query}),
+  getScenarios: (query?: WorkspaceFilters & {task_type?: string}) =>
+    apiRequest<Paginated<Scenario>>('/scenarios', {query: query ? {...query} : undefined}),
   getScenario: (scenarioId: string) =>
     apiRequest<Scenario>(`/scenarios/${encodeURIComponent(scenarioId)}`),
   getLogs: (query?: {
     source_id?: string;
+    from?: string;
+    to?: string;
     task_type?: string;
     scenario_id?: string;
     only_failures?: boolean;
     limit?: number;
     offset?: number;
   }) => apiRequest<Paginated<LogItem>>('/logs', {query}),
-  getRoi: (query?: {
-    source_id?: string;
-    from?: string;
-    to?: string;
+  getRoi: (query?: WorkspaceFilters & {
     fte_hourly_rate_rub?: number;
     token_cost_per_1k_rub?: number;
-  }) => apiRequest<RoiData>('/roi', {query}),
+  }) => apiRequest<RoiData>('/roi', {query: query ? {...query} : undefined}),
   exportResults: async (format: 'xlsx' | 'csv') => {
     const response = await fetch(`${API_BASE_URL}/export?format=${format}`, {
       credentials: 'include',

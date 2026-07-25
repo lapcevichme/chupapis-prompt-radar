@@ -9,15 +9,17 @@ import {Badge} from '@/shared/ui/Badge';
 import {Card, CardContent, CardHeader, CardTitle} from '@/shared/ui/Card';
 import {Pagination} from '@/shared/ui/Pagination';
 import {EmptyState, ErrorState, LoadingState} from '@/widgets/data-state/DataState';
+import type {WorkspaceFilters} from '@/entities/workspace/types';
 
 interface RoiPageProps {
+  filters: WorkspaceFilters;
   refreshKey: number;
 }
 
 const SCENARIOS_PER_PAGE = 3;
 
-export default function RoiPage({refreshKey}: RoiPageProps) {
-  const {data, error, isLoading} = useApiResource(() => promptRadarApi.getRoi(), [refreshKey]);
+export default function RoiPage({filters, refreshKey}: RoiPageProps) {
+  const {data, error, isLoading} = useApiResource(() => promptRadarApi.getRoi(filters), [filters, refreshKey]);
 
   if (isLoading) {
     return <LoadingState title="Loading ROI analytics" />;

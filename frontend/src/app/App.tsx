@@ -10,6 +10,8 @@ import {
   FALLBACK_DEMO_PASSWORD,
 } from '@/shared/config/env';
 import type {User} from '@/entities/user/types';
+import type {WorkspaceFilters as WorkspaceFilterValues} from '@/entities/workspace/types';
+import {WorkspaceFilters} from '@/features/workspace-filters/WorkspaceFilters';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import LogsPage from '@/pages/logs/LogsPage';
 import LoginPage from '@/pages/auth/LoginPage';
@@ -38,6 +40,7 @@ export default function App() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [filters, setFilters] = useState<WorkspaceFilterValues>({});
   const autoLoginAttempted = useRef(false);
 
   const refreshData = useCallback(() => {
@@ -150,6 +153,11 @@ export default function App() {
       activeTab={activeTab}
       isDark={isDark}
       navItems={navItems}
+      secondaryToolbar={
+        activeTab === 'sources' ? undefined : (
+          <WorkspaceFilters filters={filters} onChange={setFilters} refreshKey={refreshKey} />
+        )
+      }
       user={user}
       isLoggingOut={isLoggingOut}
       onLogout={() => void handleLogout()}
@@ -157,11 +165,11 @@ export default function App() {
       onSelectTab={(tab) => setActiveTab(tab)}
       onToggleTheme={() => setIsDark((value) => !value)}
     >
-      {activeTab === 'dashboard' && <DashboardPage refreshKey={refreshKey} />}
+      {activeTab === 'dashboard' && <DashboardPage filters={filters} refreshKey={refreshKey} />}
       {activeTab === 'sources' && <SourcesPage refreshKey={refreshKey} onWorkspaceChanged={refreshData} />}
-      {activeTab === 'scenarios' && <ScenariosPage refreshKey={refreshKey} />}
-      {activeTab === 'logs' && <LogsPage refreshKey={refreshKey} />}
-      {activeTab === 'roi' && <RoiPage refreshKey={refreshKey} />}
+      {activeTab === 'scenarios' && <ScenariosPage filters={filters} refreshKey={refreshKey} />}
+      {activeTab === 'logs' && <LogsPage filters={filters} refreshKey={refreshKey} />}
+      {activeTab === 'roi' && <RoiPage filters={filters} refreshKey={refreshKey} />}
     </AppShell>
   );
 }
