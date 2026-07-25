@@ -234,16 +234,16 @@ def _map_log_row(row: Any) -> LogItem:
     if row.task_type is None and row.status in _FAILURE_STATUSES:
         has_failure = True
 
-    conf = row.classification_confidence
-    if conf is None or conf == 0.0:
-        conf = 0.92 if row.task_type else 0.50
-
+    # Report what the classifier actually produced. A record with no assignment
+    # yet is genuinely unclassified (null), and must not be dressed up with a
+    # placeholder score — the dashboard defends a methodology, so a displayed
+    # confidence has to be a real model output.
     return LogItem(
         request_id=row.request_id,
         query_text=row.query_text,
         task_type=row.task_type,
         label=label(row.task_type) if row.task_type else None,
-        classification_confidence=conf,
+        classification_confidence=row.classification_confidence,
         scenario_id=row.scenario_id,
         scenario_name=row.scenario_name,
         is_outlier=bool(row.is_outlier) if row.is_outlier is not None else False,

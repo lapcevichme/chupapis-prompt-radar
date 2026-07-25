@@ -77,13 +77,21 @@ export interface RoiData {
 export interface LogItem {
   request_id: string;
   query_text: string;
-  task_type: string;
-  classification_confidence: number;
+  task_type: string | null;
+  label?: string | null;
+  classification_confidence: number | null;
   scenario_id: string | null;
   scenario_name: string | null;
   is_outlier: boolean;
   has_failure_signals: boolean;
   timestamp: string;
+}
+
+export interface SourceProgress {
+  classified: number;
+  total: number;
+  percent: number;
+  done: boolean;
 }
 
 export interface Source {
@@ -97,12 +105,37 @@ export interface Source {
   classification_percentage?: number;
   status: string;
   created_at: string;
-
+  progress?: SourceProgress | null;
   normalization_report?: {
     synthesized_request_id?: number;
     synthesized_timestamp?: number;
     rejected_reasons?: Record<string, number>;
   };
+}
+
+export interface ProcessingSource {
+  source_id: string;
+  name: string;
+  origin: string;
+  status: string;
+  records_total: number;
+  records_valid: number;
+  records_rejected: number;
+  classified: number;
+  percent: number;
+  done: boolean;
+}
+
+export interface ProcessingStatus {
+  indexing: boolean;
+  total_valid: number;
+  total_classified: number;
+  percent: number;
+  recompute_status: string;
+  recompute_pending: boolean;
+  logs_since_last_recompute: number;
+  scenarios_named: number;
+  sources: ProcessingSource[];
 }
 
 export interface UserAnalyticsData {
