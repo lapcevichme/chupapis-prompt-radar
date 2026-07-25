@@ -42,8 +42,10 @@ def get_roi_service(session: SessionDep, settings: SettingsDep) -> RoiService:
     return RoiService(session, settings)
 
 
-def get_analytics_service(session: SessionDep) -> AnalyticsService:
-    return AnalyticsService(session)
+def get_analytics_service(
+    session: SessionDep, settings: SettingsDep
+) -> AnalyticsService:
+    return AnalyticsService(session, settings)
 
 
 def get_recompute_service(settings: SettingsDep) -> RecomputeService:

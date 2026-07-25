@@ -58,7 +58,10 @@ export default function UsersModelsView({ onFetchSuccess, refreshTrigger }: User
   }
 
   const { summary: uSummary, by_department: depts, users } = userData;
-  const { summary: mSummary, models, task_fit } = modelData;
+  const { summary: mSummary, models } = modelData;
+
+  const totalQueries = users.reduce((acc, u) => acc + u.total_queries, 0);
+  const totalSavedHours = users.reduce((acc, u) => acc + u.saved_hours, 0);
 
   return (
     <div className="space-y-6">
@@ -107,16 +110,19 @@ export default function UsersModelsView({ onFetchSuccess, refreshTrigger }: User
             <UserCheck className="w-4 h-4 text-accent" />
           </div>
           <div className="text-2xl font-bold text-primary">{uSummary.total_users}</div>
-          <div className="text-xs text-secondary mt-1">Активных (L7): <span className="font-medium text-emerald-400">{uSummary.active_users_l7}</span></div>
+          <div className="text-xs text-secondary mt-1">
+            Активных за {uSummary.active_window_days} дн.:{' '}
+            <span className="font-medium text-emerald-400">{uSummary.active_users_l7}</span>
+          </div>
         </div>
 
         <div className="bg-surface p-4 border border-divider rounded-xl">
           <div className="flex items-center justify-between text-secondary mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Индекс Adoption</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">Запросов всего</span>
             <Award className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-2xl font-bold text-primary">{uSummary.avg_adoption_score}%</div>
-          <div className="text-xs text-secondary mt-1">Уровень внедрения ИИ в рутину</div>
+          <div className="text-2xl font-bold text-primary">{totalQueries.toLocaleString('ru-RU')}</div>
+          <div className="text-xs text-secondary mt-1">По отфильтрованным логам</div>
         </div>
 
         <div className="bg-surface p-4 border border-divider rounded-xl">
@@ -130,11 +136,11 @@ export default function UsersModelsView({ onFetchSuccess, refreshTrigger }: User
 
         <div className="bg-surface p-4 border border-divider rounded-xl">
           <div className="flex items-center justify-between text-secondary mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Экономия маршрутизации</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">Сэкономлено часов</span>
             <Zap className="w-4 h-4 text-cyan-400" />
           </div>
-          <div className="text-2xl font-bold text-primary">{mSummary.potential_cost_reduction_percent}%</div>
-          <div className="text-xs text-secondary mt-1">Потенциал оптимизации токенов</div>
+          <div className="text-2xl font-bold text-primary">{totalSavedHours.toFixed(1)} ч</div>
+          <div className="text-xs text-secondary mt-1">Методика ROI: успешные запросы × коэф. сессии</div>
         </div>
       </div>
 
@@ -242,82 +248,55 @@ export default function UsersModelsView({ onFetchSuccess, refreshTrigger }: User
         </>
       ) : (
         <>
-          {/* Smart Routing Insight Box */}
-          <div className="bg-gradient-to-r from-accent/20 to-cyan-500/10 p-5 border border-accent/30 rounded-xl space-y-2">
-            <div className="flex items-center gap-2 text-accent font-bold text-md">
-              <Zap className="w-5 h-5" />
-              ИИ-Рекомендация по Маршрутизации и Экономии Токенов
+          {mSummary.status !== 'available' ? (
+            <div className="bg-surface p-8 border border-divider rounded-xl text-center space-y-2">
+              <HelpCircle className="w-10 h-10 text-secondary mx-auto" />
+              <h3 className="text-md font-bold text-primary">Нет данных о моделях</h3>
+              <p className="text-sm text-secondary max-w-xl mx-auto">
+                Ни одна загруженная запись не содержит метаданных модели. Чтобы этот разрез
+                заполнился, источник должен передавать поле <code className="text-accent">model</code>{' '}
+                (или <code className="text-accent">model_name</code> / <code className="text-accent">agent_id</code>)
+                в каждом логе — например, live-поток из Open WebUI.
+              </p>
+              <p className="text-xs text-secondary">
+                Мы не достраиваем модель по догадке: разрез остаётся пустым, пока данных нет.
+              </p>
             </div>
-            <p className="text-sm text-primary leading-relaxed">
-              {mSummary.routing_recommendation}
-            </p>
-          </div>
-
-          {/* Model Performance Matrix */}
-          <div className="bg-surface p-5 border border-divider rounded-xl space-y-4">
-            <h3 className="text-md font-bold text-primary">Матрица Производительности Моделей</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {models.map((m) => (
-                <div key={m.model_id} className="p-4 bg-background border border-divider rounded-xl space-y-3">
-                  <div className="flex items-center justify-between">
+          ) : (
+            <div className="bg-surface p-5 border border-divider rounded-xl space-y-4">
+              <div>
+                <h3 className="text-md font-bold text-primary">Использование моделей</h3>
+                <p className="text-xs text-secondary mt-1">
+                  {mSummary.total_queries_with_model.toLocaleString('ru-RU')} запросов с указанной моделью
+                  · {mSummary.total_models_detected} модел. обнаружено
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {models.map((m) => (
+                  <div key={m.model_id} className="p-4 bg-background border border-divider rounded-xl space-y-3">
                     <div>
                       <h4 className="font-bold text-primary text-base">{m.model_name}</h4>
-                      <span className="text-xs text-secondary">Доля: {m.share_percentage}% ({m.total_queries} зап.)</span>
+                      <span className="text-xs text-secondary">
+                        Доля: {m.share_percentage}% ({m.total_queries} зап.) · чаще всего: {m.top_task_type}
+                      </span>
                     </div>
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${
-                      m.cost_tier === 'premium' ? 'bg-purple-500/20 text-purple-400' : 'bg-cyan-500/20 text-cyan-400'
-                    }`}>
-                      {m.cost_tier.toUpperCase()}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs pt-2 border-t border-divider">
-                    <div>
-                      <div className="text-secondary">Latency</div>
-                      <div className="font-semibold text-primary mt-1">{m.avg_latency_ms} ms</div>
-                    </div>
-                    <div>
-                      <div className="text-secondary">Ошибки</div>
-                      <div className={`font-semibold mt-1 ${m.failure_rate_percent > 5 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                        {m.failure_rate_percent}%
+                    <div className="grid grid-cols-2 gap-2 text-center text-xs pt-2 border-t border-divider">
+                      <div>
+                        <div className="text-secondary">Ошибки</div>
+                        <div className={`font-semibold mt-1 ${m.failure_rate_percent > 5 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          {m.failure_rate_percent}%
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-secondary">Токены</div>
+                        <div className="font-semibold text-primary mt-1">{(m.total_tokens / 1000).toFixed(0)}k</div>
                       </div>
                     </div>
-                    <div>
-                      <div className="text-secondary">Токены</div>
-                      <div className="font-semibold text-primary mt-1">{(m.total_tokens / 1000).toFixed(0)}k</div>
-                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-
-          {/* Model to Task Fit Table */}
-          <div className="bg-surface p-5 border border-divider rounded-xl space-y-4">
-            <h3 className="text-md font-bold text-primary">Категориальное Соответствие (Model-to-Task Fit)</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-primary">
-                <thead className="bg-background border-b border-divider text-xs uppercase text-secondary">
-                  <tr>
-                    <th className="p-3">Категория Запроса</th>
-                    <th className="p-3">Рекомендуемая Модель</th>
-                    <th className="p-3">Количество Запросов</th>
-                    <th className="p-3">Средняя Задержка</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-divider">
-                  {task_fit.map((tf) => (
-                    <tr key={tf.task_type} className="hover:bg-surface-hover transition-colors">
-                      <td className="p-3 font-medium">{tf.label}</td>
-                      <td className="p-3 text-accent font-semibold">{tf.recommended_model}</td>
-                      <td className="p-3">{tf.queries_count}</td>
-                      <td className="p-3 text-secondary">{tf.avg_latency_ms} ms</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          )}
         </>
       )}
     </div>

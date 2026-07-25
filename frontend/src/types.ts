@@ -142,7 +142,7 @@ export interface UserAnalyticsData {
   summary: {
     total_users: number;
     active_users_l7: number;
-    avg_adoption_score: number;
+    active_window_days: number;
     avg_frustration_index: number;
     personas_distribution: {
       persona: string;
@@ -176,30 +176,20 @@ export interface UserAnalyticsData {
 
 export interface ModelAnalyticsData {
   summary: {
+    /** "available" | "not_available" — no model metadata in the ingested records. */
+    status: string;
     total_models_detected: number;
-    avg_latency_ms: number;
+    total_queries_with_model: number;
     total_tokens: number;
-    potential_cost_reduction_percent: number;
-    routing_recommendation: string;
   };
   models: {
     model_id: string;
     model_name: string;
     total_queries: number;
     share_percentage: number;
-    avg_latency_ms: number;
     total_tokens: number;
     failure_rate_percent: number;
-    user_feedback_score: number;
     top_task_type: string;
-    cost_tier: string;
-  }[];
-  task_fit: {
-    task_type: string;
-    label: string;
-    recommended_model: string;
-    queries_count: number;
-    avg_latency_ms: number;
   }[];
 }
 

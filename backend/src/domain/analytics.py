@@ -10,8 +10,10 @@ class PersonaDistItem(BaseModel):
 
 class UserAnalyticsSummary(BaseModel):
     total_users: int
+    # Users seen at least once inside the trailing `active_window_days` window,
+    # measured from the newest timestamp present in the filtered data.
     active_users_l7: int
-    avg_adoption_score: float
+    active_window_days: int = 7
     avg_frustration_index: float
     personas_distribution: list[PersonaDistItem]
 
@@ -46,35 +48,30 @@ class UsersAnalyticsResponse(BaseModel):
 
 
 class ModelItemAnalytics(BaseModel):
+    """One model actually named by the data source.
+
+    Only fields derivable from ingested records live here. Latency and user
+    feedback are NOT part of `log.schema.json`, so they are not reported.
+    """
+
     model_id: str
     model_name: str
     total_queries: int
     share_percentage: float
-    avg_latency_ms: int
     total_tokens: int
     failure_rate_percent: float
-    user_feedback_score: float
     top_task_type: str
-    cost_tier: str
-
-
-class TaskFitItem(BaseModel):
-    task_type: str
-    label: str
-    recommended_model: str
-    queries_count: int
-    avg_latency_ms: int
 
 
 class ModelAnalyticsSummary(BaseModel):
+    # "not_available" when no record carries model metadata — same convention as
+    # statistics.failure_analysis.status. We never guess a model for a record.
+    status: str
     total_models_detected: int
-    avg_latency_ms: int
+    total_queries_with_model: int
     total_tokens: int
-    potential_cost_reduction_percent: float
-    routing_recommendation: str
 
 
 class ModelsAnalyticsResponse(BaseModel):
     summary: ModelAnalyticsSummary
     models: list[ModelItemAnalytics]
-    task_fit: list[TaskFitItem]

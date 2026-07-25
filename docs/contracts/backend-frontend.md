@@ -258,14 +258,28 @@ Backend проксирует в ML. `{ "job_id": "rc_01", "status": "running" }`
 
 Фильтры: `?source_id=&from=&to=`.
 
-Возвращает агрегированный вектор пользователей, метрики вовлечения (DAU/MAU, Adoption Score), распределение по архетипам (User Personas) и список пользователей с Frustration Index для детекции барьеров.
+Возвращает агрегаты по пользователям, распределение по архетипам (User Personas) и список
+пользователей с Frustration Index для детекции барьеров.
+
+**Предпосылки (не измерения):**
+
+- `active_users_l7` — пользователи с активностью в последние `active_window_days` (7) дней,
+  окно отсчитывается от **максимального timestamp в отфильтрованных данных**, а не от `now`:
+  демо-датасеты историчны, и окно от wall-clock дало бы 0.
+- `saved_hours` считается **той же методикой, что и `/roi`** (D6): только записи со
+  `status=success`, `manual_time` × коэффициент сессии (0.3/1.0/2.0 по токенам). Сумма
+  `saved_hours` по всем пользователям сходится с `summary.total_fte_hours_saved` из `/roi`.
+- `frustration_index` = 0.6 × доля записей с failure-сигналами + 0.4 × доля выбросов.
+  Веса — продуктовое суждение, не измерение.
+- `persona` — эвристика по составу категорий и объёму **относительно медианы когорты**
+  (абсолютные пороги вырождали распределение в один архетип на больших датасетах).
 
 ```json
 {
   "summary": {
     "total_users": 15,
     "active_users_l7": 12,
-    "avg_adoption_score": 78.4,
+    "active_window_days": 7,
     "avg_frustration_index": 12.1,
     "personas_distribution": [
       { "persona": "code_craftsman", "label": "Разработчик (Code)", "count": 6, "percentage": 40.0 },
@@ -300,38 +314,36 @@ Backend проксирует в ML. `{ "job_id": "rc_01", "status": "running" }`
 
 Фильтры: `?source_id=&from=&to=`.
 
-Сравнение производительности и стоимости моделей/агентов (Model-to-Task Fit, задержка, токены, уровень ошибок, потенциал оптимизации маршрутизации).
+Разрез по моделям/агентам: доля запросов, токены, уровень ошибок.
+
+**Только реально переданные данные.** Модель определяется по записи `model:<id>` в `tools_used`,
+которую нормализатор пишет из сырого поля `model` / `model_name` / `agent_id`. Записи без этих
+метаданных **исключаются из разреза**, а не приписываются какой-либо модели по догадке.
+
+Если ни одна запись не несёт метаданных модели — `summary.status = "not_available"`, `models: []`.
+Соглашение то же, что у `statistics.failure_analysis.status`.
+
+**Чего здесь намеренно нет:** задержки (`latency`), оценки пользователя (`feedback`) и ценового
+класса модели. Этих полей нет в `log.schema.json`, вывести их не из чего, поэтому они не
+возвращаются вообще — вместо правдоподобных, но выдуманных значений.
 
 ```json
 {
   "summary": {
-    "total_models_detected": 4,
-    "avg_latency_ms": 1420,
-    "total_tokens": 1120000,
-    "potential_cost_reduction_percent": 24.5,
-    "routing_recommendation": "Перенаправление 25% тривиальных запросов General QA с GPT-4o на GPT-4o-mini позволит сэкономить 24.5% токенового бюджета."
+    "status": "available",
+    "total_models_detected": 2,
+    "total_queries_with_model": 348,
+    "total_tokens": 1120000
   },
   "models": [
     {
       "model_id": "gpt-4o",
-      "model_name": "GPT-4o (OpenAI)",
+      "model_name": "gpt-4o",
       "total_queries": 180,
       "share_percentage": 51.7,
-      "avg_latency_ms": 1650,
       "total_tokens": 750000,
       "failure_rate_percent": 3.2,
-      "user_feedback_score": 0.85,
-      "top_task_type": "code_generation",
-      "cost_tier": "premium"
-    }
-  ],
-  "task_fit": [
-    {
-      "task_type": "code_generation",
-      "label": "Генерация кода",
-      "recommended_model": "GPT-4o",
-      "queries_count": 120,
-      "avg_latency_ms": 1500
+      "top_task_type": "Помощь с кодом"
     }
   ]
 }
