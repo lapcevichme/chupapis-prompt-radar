@@ -6,13 +6,14 @@
 
 ### 🚀 Полный стек (Docker Compose)
 
-Backend + Postgres + Qdrant + ml-service одной командой:
+Frontend + Backend + Postgres + Qdrant + ml-service одной командой:
 
 ```bash
 cp .env.example .env            # опционально — работает и с дефолтами
 docker compose up -d --build    # или: make up
 ```
 
+- Приложение: <http://localhost:3000>
 - Backend API + Swagger: <http://localhost:8080/api/docs>
 - ML health: <http://localhost:8000/health/ready>
 - Demo-логин: `test@gmail.com` / `test123`
@@ -23,24 +24,25 @@ docker compose up -d --build    # или: make up
 
 > Для осмысленной классификации/сценариев задай `OPENROUTER_API_KEY` в `.env` (QNA §4 — API-модели
 > разрешены). Без него ml идёт в offline mock-embeddings → низкое качество. Контракты и структура —
-> в `docs/`, задачи и статус — `TASKS.md`.
+> в `docs/`, актуальная карта реализации — `docs/CODEBASE_MAP.md`.
 
 **End-to-end прогон:** `python tools/demo.py --url http://localhost:8080` гоняет сценарий
 `login → ingest demo → recompute (best-effort) → dashboard → ROI → export` с печатью саммари.
 `make demo` поднимает стек и печатает шаги для ручного прогона.
 
 **Фронтенд (SPA):** ест только backend REST (контракт `docs/contracts/backend-frontend.md` +
-`openapi-backend.yaml`). CORS настроен (`CORS_ORIGINS`, по умолчанию localhost:3000/5173/8080),
-cookie-auth — фронт шлёт запросы с `credentials: 'include'`. Независимая разработка на моках —
+`docs/contracts/openapi-backend-frontend.yaml`). В Docker его раздаёт nginx на `:3000`, а `/api`
+проксируется в backend без cross-origin cookie. Для локальной разработки Vite также проксирует
+`/api` на backend `:8080`. Независимая разработка на моках —
 `docs/contracts/FRONTEND_MOCKING.md`.
 
 **Экспорт ROI в Excel/CSV** (кейсовая тема): `GET /api/v1/export?format=xlsx|csv` — выгрузка
 ROI-саммари, разрезов по категориям и сценариям. XLSX собирается нативно (stdlib, без доп.
 зависимостей); CSV — с BOM для корректной кириллицы в Excel.
 
-**Тесты бэкенда:** `make test` (`cd backend && poetry run pytest`) — 43 unit + API-теста
+**Тесты бэкенда:** `make test` (`cd backend && poetry run pytest`) — 51 unit + API-тест
 (ROI-калькулятор, нормализация, стриминг в ML, экспорт, валидация `/statistics`, контракт роутов).
-Линт: `make lint`.
+Линт: `make lint`. Полная проверка фронтенда: `make frontend-check`.
 
 #### Ограничения MVP (осознанные компромиссы)
 
@@ -142,4 +144,3 @@ uv run python load_tester.py --url http://localhost:8000/api/v1/logs --batch-siz
 * **Claude Code**: @laughin_me
 * **Antigravity**: @lapcevichme
 * **Grok Build**: @oatis123
-

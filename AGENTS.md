@@ -64,11 +64,12 @@ ROI/FTE. Главная продуктовая ценность — объясн
 Из корня:
 
 ```bash
-make up                 # backend + Postgres + Qdrant + ML
+make up                 # frontend + backend + Postgres + Qdrant + ML
 make demo               # полный demo-flow через backend
 make feed               # поток live-логов
 make test               # backend tests
 make lint               # backend Ruff
+make frontend-check     # frontend lint + tests + build
 docker compose down     # остановка с сохранением volumes
 ```
 
@@ -83,19 +84,20 @@ cd ml_service && uv run pytest -q
 
 cd frontend && npm ci
 cd frontend && npm run lint
+cd frontend && npm test
 cd frontend && npm run build
 cd frontend && npm run dev
 ```
 
 Не запускай `make down-clean` без явного намерения удалить локальные volumes. Корневой Compose
-пока не поднимает frontend; Vite запускается отдельно на порту 3000 и проксирует `/api` на backend
-`:8080`.
+поднимает production-сборку frontend через nginx на порту 3000; `/api` проксируется в backend.
+Для разработки Vite можно запускать отдельно той же командой `npm run dev`.
 
 ## Минимальная проверка
 
 - Backend: релевантные тесты, затем Ruff; при изменении API также проверь OpenAPI/contract tests.
 - ML: релевантные unit/contract/smoke-тесты с mock embeddings; сетевой LLM не нужен для тестов.
-- Frontend: `npm run lint` и `npm run build`.
+- Frontend: `npm run lint`, `npm test` и `npm run build`.
 - Интеграция/infra: health endpoints и `tools/demo.py` либо `make demo`.
 - Если зависимостей или сервисов нет, не выдавай проверку за успешную — явно зафиксируй предел.
 
@@ -108,4 +110,3 @@ cd frontend && npm run dev
   recompute.
 - Lock-файлы и документация местами исторически рассинхронизированы; перед утверждением текущего
   статуса проверяй код, тесты и `git status`.
-

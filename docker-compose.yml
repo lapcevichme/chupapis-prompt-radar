@@ -1,8 +1,8 @@
 name: prompt-radar
 
-# Full stack: backend (API + orchestration + Postgres) + ml-service (CQRS) + qdrant.
+# Full stack: frontend/nginx + backend (API + orchestration + Postgres) + ml-service + qdrant.
 # Quick start:  docker compose up -d --build
-# Then: login test@gmail.com/test123 at http://localhost:8080/api/docs, or `make feed`.
+# Then: login test@gmail.com/test123 at http://localhost:3000, or `make feed`.
 
 services:
   db:
