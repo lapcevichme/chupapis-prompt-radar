@@ -1,8 +1,8 @@
-import {useMemo, useState} from 'react';
-import {Clock, Coins, Percent, Wallet} from 'lucide-react';
+import {useEffect, useMemo, useState} from 'react';
+import {Clock, Coins, Download, Loader2, Percent, RotateCcw, Wallet} from 'lucide-react';
 import {Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import type {RoiData} from '@/entities/roi/types';
-import {promptRadarApi} from '@/shared/api/promptRadarApi';
+import {promptRadarApi, type RoiQuery} from '@/shared/api/promptRadarApi';
 import {useApiResource} from '@/shared/api/useApiResource';
 import {formatCurrencyRub, formatPercent} from '@/shared/lib/format';
 import {Badge} from '@/shared/ui/Badge';
@@ -19,7 +19,60 @@ interface RoiPageProps {
 const SCENARIOS_PER_PAGE = 3;
 
 export default function RoiPage({filters, refreshKey}: RoiPageProps) {
-  const {data, error, isLoading} = useApiResource(() => promptRadarApi.getRoi(filters), [filters, refreshKey]);
+  const [appliedOverrides, setAppliedOverrides] = useState<Pick<RoiQuery, 'fte_hourly_rate_rub' | 'token_cost_per_1k_rub'>>({});
+  const [draftFteRate, setDraftFteRate] = useState('');
+  const [draftTokenCost, setDraftTokenCost] = useState('');
+  const [defaultRates, setDefaultRates] = useState<{fte: number; token: number} | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState<'xlsx' | 'csv' | null>(null);
+  const query = useMemo(() => ({...filters, ...appliedOverrides}), [appliedOverrides, filters]);
+  const {data, error, isLoading} = useApiResource(() => promptRadarApi.getRoi(query), [query, refreshKey]);
+
+  useEffect(() => {
+    if (!data || defaultRates) {
+      return;
+    }
+    const defaults = {
+      fte: data.assumptions.fte_hourly_rate_rub,
+      token: data.assumptions.token_cost_per_1k_rub,
+    };
+    setDefaultRates(defaults);
+    setDraftFteRate(String(defaults.fte));
+    setDraftTokenCost(String(defaults.token));
+  }, [data, defaultRates]);
+
+  const applyOverrides = () => {
+    const fte = Number(draftFteRate);
+    const token = Number(draftTokenCost);
+    if (!Number.isFinite(fte) || fte <= 0 || !Number.isFinite(token) || token <= 0) {
+      setActionError('Rates must be positive numbers');
+      return;
+    }
+    setActionError(null);
+    setAppliedOverrides({fte_hourly_rate_rub: fte, token_cost_per_1k_rub: token});
+  };
+
+  const resetOverrides = () => {
+    setAppliedOverrides({});
+    setActionError(null);
+    if (defaultRates) {
+      setDraftFteRate(String(defaultRates.fte));
+      setDraftTokenCost(String(defaultRates.token));
+    }
+  };
+
+  const exportRoi = async (format: 'xlsx' | 'csv') => {
+    setExporting(format);
+    setActionError(null);
+    try {
+      const result = await promptRadarApi.exportResults(format, query);
+      downloadBlob(result.blob, result.filename);
+    } catch (exportError) {
+      setActionError(exportError instanceof Error ? exportError.message : 'Export failed');
+    } finally {
+      setExporting(null);
+    }
+  };
 
   if (isLoading) {
     return <LoadingState title="Loading ROI analytics" />;
@@ -35,11 +88,60 @@ export default function RoiPage({filters, refreshKey}: RoiPageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <h2 className="text-sm font-medium text-secondary">
           FTE rate {formatCurrencyRub(data.assumptions.fte_hourly_rate_rub)}/h · token cost {data.assumptions.token_cost_per_1k_rub} RUB per 1k
         </h2>
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="flex flex-col gap-1 text-xs font-medium text-secondary">
+            FTE rate, RUB/h
+            <input
+              className="h-9 w-36 rounded-md border border-divider bg-surface px-3 text-sm text-primary outline-none focus:border-accent"
+              min="0.01"
+              step="0.01"
+              type="number"
+              value={draftFteRate}
+              onChange={(event) => setDraftFteRate(event.target.value)}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-medium text-secondary">
+            Token cost / 1k
+            <input
+              className="h-9 w-36 rounded-md border border-divider bg-surface px-3 text-sm text-primary outline-none focus:border-accent"
+              min="0.000001"
+              step="0.001"
+              type="number"
+              value={draftTokenCost}
+              onChange={(event) => setDraftTokenCost(event.target.value)}
+            />
+          </label>
+          <button className="h-9 rounded-md bg-accent px-4 text-sm font-semibold text-white hover:opacity-90" onClick={applyOverrides} type="button">
+            Apply
+          </button>
+          <button
+            aria-label="Reset ROI assumptions"
+            className="inline-flex h-9 items-center gap-2 rounded-md border border-divider px-3 text-sm font-medium text-secondary hover:bg-surface-hover"
+            onClick={resetOverrides}
+            type="button"
+          >
+            <RotateCcw className="h-4 w-4" /> Reset
+          </button>
+          {(['xlsx', 'csv'] as const).map((format) => (
+            <button
+              key={format}
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-divider bg-surface px-3 text-sm font-medium text-primary hover:bg-surface-hover disabled:opacity-60"
+              disabled={exporting !== null}
+              onClick={() => void exportRoi(format)}
+              type="button"
+            >
+              {exporting === format ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              {format.toUpperCase()}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {actionError && <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">{actionError}</div>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard icon={Wallet} label="Net Savings" value={formatCurrencyRub(data.summary.net_savings_rub)} detail={`ROI Multiplier: ${data.summary.roi_multiplier}x`} accent />
@@ -221,4 +323,15 @@ function MetricCard({icon: Icon, label, value, detail, accent = false}: {icon: t
       </CardContent>
     </Card>
   );
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 }
