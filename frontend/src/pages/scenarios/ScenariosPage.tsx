@@ -1,5 +1,5 @@
 import {useEffect, useMemo, useState} from 'react';
-import {Bot, Loader2, Minus, Target, TrendingDown, TrendingUp} from 'lucide-react';
+import {Bot, ChevronDown, Loader2, Minus, Target, TrendingDown, TrendingUp} from 'lucide-react';
 import type {Scenario} from '@/entities/scenario/types';
 import {promptRadarApi} from '@/shared/api/promptRadarApi';
 import {useApiResource} from '@/shared/api/useApiResource';
@@ -74,22 +74,22 @@ export default function ScenariosPage({filters, refreshKey}: ScenariosPageProps)
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="grid auto-rows-min grid-cols-1 gap-4 md:grid-cols-2">
           {scenarios.map((scenario) => (
             <button
               key={scenario.scenario_id}
               type="button"
-              className="h-full text-left"
+              className="text-left"
               onClick={() => setSelectedScenarioId(scenario.scenario_id)}
             >
               <Card
                 className={cn(
-                  'flex h-full flex-col transition-colors hover:border-accent/50',
+                  'transition-colors hover:border-accent/50',
                   scenario.scenario_id === selectedScenarioId && 'border-accent bg-accent-muted/10',
                 )}
               >
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between gap-3 mb-3">
+                <CardHeader className="p-5 pb-3">
+                  <div className="mb-3 flex items-start justify-between gap-3">
                     <Badge variant="secondary">{titleFromCode(scenario.task_type)}</Badge>
                     {scenario.automation_potential === 'high' && (
                       <Badge variant="success" className="flex items-center gap-1">
@@ -101,33 +101,17 @@ export default function ScenariosPage({filters, refreshKey}: ScenariosPageProps)
                   <CardTitle className="text-primary">{scenario.name ?? 'Unnamed scenario'}</CardTitle>
                   <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-secondary">{scenario.summary ?? 'No summary available'}</p>
                 </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="space-y-5">
-                    <div>
-                      <div className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-secondary">
-                        <Target className="w-3.5 h-3.5" /> User Goal
-                      </div>
-                      <p className="line-clamp-2 text-sm text-primary">{scenario.user_goal ?? 'Not defined'}</p>
+                <CardContent className="p-5 pt-0">
+                  <div className="rounded-md border border-divider bg-background/30 p-3">
+                    <div className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-secondary">
+                      <Target className="h-3.5 w-3.5" /> User Goal
                     </div>
-                    <div>
-                      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-secondary">Pain Points</div>
-                      {scenario.pain_points.length > 0 ? (
-                        <ul className="space-y-1 text-sm text-primary">
-                          {scenario.pain_points.slice(0, 2).map((point) => (
-                            <li key={point} className="truncate">
-                              {point}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-sm text-secondary">No pain points detected</p>
-                      )}
-                    </div>
+                    <p className="line-clamp-2 text-sm text-primary">{scenario.user_goal ?? 'Not defined'}</p>
                   </div>
                 </CardContent>
-                <div className="flex items-center justify-between rounded-b-lg border-t border-divider bg-surface-hover p-4 text-sm">
+                <div className="flex items-center justify-between rounded-b-lg border-t border-divider bg-surface-hover px-5 py-3 text-sm">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg font-semibold text-primary">{scenario.count}</span>
+                    <span className="font-semibold text-primary">{scenario.count}</span>
                     <span className="text-secondary">requests</span>
                   </div>
                   <Trend trend={scenario.trend} growth={scenario.growth_rate_percent} />
@@ -156,6 +140,12 @@ function ScenarioDetailsPanel({
   isLoading: boolean;
   error: string | null;
 }) {
+  const [areExamplesExpanded, setAreExamplesExpanded] = useState(false);
+
+  useEffect(() => {
+    setAreExamplesExpanded(false);
+  }, [scenario?.scenario_id]);
+
   return (
     <Card className="min-h-[520px]">
       <CardHeader>
@@ -201,7 +191,11 @@ function ScenarioDetailsPanel({
               <p className="text-sm leading-relaxed text-primary">{scenario.user_goal ?? 'Not defined'}</p>
             </div>
 
-            <DetailList title="Representative Examples" items={scenario.representative_examples} emptyText="No examples available" />
+            <RepresentativeExamples
+              items={scenario.representative_examples}
+              isExpanded={areExamplesExpanded}
+              onToggle={() => setAreExamplesExpanded((value) => !value)}
+            />
             <DetailList title="Pain Points" items={scenario.pain_points} emptyText="No pain points detected" />
           </div>
         )}
@@ -233,6 +227,49 @@ function DetailList({title, items, emptyText}: {title: string; items: string[]; 
         </ul>
       ) : (
         <p className="text-sm text-secondary">{emptyText}</p>
+      )}
+    </div>
+  );
+}
+
+function RepresentativeExamples({
+  items,
+  isExpanded,
+  onToggle,
+}: {
+  items: string[];
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="space-y-3 border-t border-divider pt-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h4 className="text-sm font-semibold text-primary">Representative Examples</h4>
+          <p className="mt-1 text-xs text-secondary">
+            {items.length > 0 ? `${items.length} prompts hidden` : 'No examples available'}
+          </p>
+        </div>
+        {items.length > 0 && (
+          <button
+            type="button"
+            className="inline-flex h-8 items-center gap-1 rounded-md border border-divider px-2.5 text-xs font-semibold text-primary hover:bg-surface-hover"
+            onClick={onToggle}
+          >
+            {isExpanded ? 'Hide' : 'Show'}
+            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', isExpanded && 'rotate-180')} />
+          </button>
+        )}
+      </div>
+
+      {items.length > 0 && isExpanded && (
+        <ul className="max-h-[300px] space-y-2 overflow-y-auto pr-1">
+          {items.slice(0, 5).map((item) => (
+            <li key={item} className="rounded-md bg-background/40 p-3 text-sm leading-relaxed text-primary">
+              {item}
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
