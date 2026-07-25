@@ -2,7 +2,7 @@ import type {DashboardApi, DashboardSummary} from '@/entities/dashboard/types';
 import type {LogItem} from '@/entities/log/types';
 import type {RoiData} from '@/entities/roi/types';
 import type {Scenario} from '@/entities/scenario/types';
-import type {RecomputeStatus, Source} from '@/entities/source/types';
+import type {RecomputeJob, RecomputeStatus, Source} from '@/entities/source/types';
 import type {User} from '@/entities/user/types';
 import {API_BASE_URL, API_HEALTH_URL} from '@/shared/config/env';
 import {apiRequest} from './http';
@@ -38,7 +38,7 @@ export const promptRadarApi = {
   getSources: () => apiRequest<Paginated<Source>>('/sources'),
   getSource: (sourceId: string) => apiRequest<Source>(`/sources/${encodeURIComponent(sourceId)}`),
 
-  startRecompute: () => apiRequest<RecomputeStatus>('/recompute', {method: 'POST'}),
+  startRecompute: () => apiRequest<RecomputeJob>('/recompute', {method: 'POST'}),
   getRecomputeStatus: () => apiRequest<RecomputeStatus>('/recompute/status'),
 
   getDashboard: async (query?: {source_id?: string; from?: string; to?: string}) => {

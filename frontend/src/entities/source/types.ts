@@ -6,14 +6,23 @@ export interface Source {
   records_valid: number;
   records_rejected: number;
   status: 'ingesting' | 'classified' | 'recomputed' | 'failed' | string;
+  ingested?: number | null;
+  classified?: number | null;
+  assigned?: number | null;
   normalization_report?: Record<string, unknown> | null;
   created_at: string;
 }
 
-export interface RecomputeStatus {
+export interface RecomputeJob {
   job_id: string;
   status: 'running' | 'completed' | 'failed' | string;
-  clusters_created: number;
-  scenarios_named: number;
+  started_at?: string | null;
+}
+
+export interface RecomputeStatus {
+  job_id: string | null;
+  status: 'running' | 'completed' | 'failed' | string;
+  clusters_created: number | null;
+  scenarios_named: number | null;
   finished_at: string | null;
 }
