@@ -93,8 +93,11 @@ export interface Source {
   records_total: number;
   records_valid: number;
   records_rejected: number;
+  records_classified?: number;
+  classification_percentage?: number;
   status: string;
   created_at: string;
+
   normalization_report?: {
     synthesized_request_id?: number;
     synthesized_timestamp?: number;

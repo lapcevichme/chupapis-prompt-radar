@@ -228,7 +228,7 @@ export default function Ingestion() {
                   <div className="pt-4 border-t border-divider space-y-4">
                     <div>
                       <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-xs font-medium text-primary">Data Health</span>
+                        <span className="text-xs font-medium text-primary">Data Health (Ingestion)</span>
                         <span className="text-xs font-mono text-primary">
                           {selectedSource.records_total > 0 
                             ? Math.round((selectedSource.records_valid / selectedSource.records_total) * 100) 
@@ -247,17 +247,45 @@ export default function Ingestion() {
                       </div>
                     </div>
 
+                    <div>
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="text-xs font-medium text-primary">ML Classification Progress</span>
+                        <span className="text-xs font-mono text-emerald-400 font-bold">
+                          {selectedSource.status === 'recomputed' || selectedSource.status === 'classified'
+                            ? '100%'
+                            : `${selectedSource.classification_percentage ?? 0}%`}
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-surface-hover rounded-full overflow-hidden flex">
+                        <div 
+                          className="h-full bg-accent transition-all duration-500" 
+                          style={{
+                            width: `${
+                              selectedSource.status === 'recomputed' || selectedSource.status === 'classified'
+                                ? 100
+                                : (selectedSource.classification_percentage ?? 0)
+                            }%`
+                          }}
+                        />
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-surface-hover rounded-lg p-3 border border-divider">
                         <div className="text-[10px] font-mono text-secondary uppercase tracking-widest mb-1">Valid Records</div>
                         <div className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{selectedSource.records_valid}</div>
                       </div>
                       <div className="bg-surface-hover rounded-lg p-3 border border-divider">
-                        <div className="text-[10px] font-mono text-secondary uppercase tracking-widest mb-1">Rejected</div>
-                        <div className="text-lg font-semibold text-red-600 dark:text-red-400">{selectedSource.records_rejected}</div>
+                        <div className="text-[10px] font-mono text-secondary uppercase tracking-widest mb-1">Classified</div>
+                        <div className="text-lg font-semibold text-accent">
+                          {selectedSource.status === 'recomputed' || selectedSource.status === 'classified'
+                            ? selectedSource.records_valid
+                            : (selectedSource.records_classified ?? selectedSource.records_valid)}
+                        </div>
                       </div>
                     </div>
                   </div>
+
 
                   {selectedSource.normalization_report && (
                     <div className="pt-4 border-t border-divider space-y-3">

@@ -31,9 +31,12 @@ class SourceOut(BaseModel):
     records_total: int
     records_valid: int
     records_rejected: int
+    records_classified: int = 0
+    classification_percentage: float = 0.0
     status: SourceStatus
     created_at: datetime
     normalization_report: NormalizationReport | None = None
+
 
 
 class LiveIngestRequest(BaseModel):

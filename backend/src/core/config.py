@@ -60,7 +60,7 @@ class Settings(BaseSettings):
 
     # --- ROI defaults ---
     ROI_FTE_HOURLY_RATE_RUB: float = 1200.0
-    ROI_TOKEN_COST_PER_1K_RUB: float = 0.015
+    ROI_TOKEN_COST_PER_1K_RUB: float = 0.1
     # Session-length coefficients applied to manual_time (customer FTE method, D6).
     ROI_SESSION_COEFF_SHORT: float = 0.3
     ROI_SESSION_COEFF_MEDIUM: float = 1.0

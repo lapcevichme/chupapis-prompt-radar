@@ -151,14 +151,30 @@ class IngestionService:
             .scalars()
             .all()
         )
-        items = [_to_out(row) for row in rows]
+        asgn_map = await self._get_assignments_counts()
+        items = [_to_out(row, classified_count=asgn_map.get(row.id)) for row in rows]
         return Paginated[SourceOut](items=items, total=len(items))
 
     async def get_source(self, source_id: str) -> SourceOut:
-        source = await self._session.get(IngestionSource, _as_uuid(source_id))
+        sid = _as_uuid(source_id)
+        source = await self._session.get(IngestionSource, sid)
         if source is None:
             raise SourceNotFoundError()
-        return _to_out(source, source.normalization_report)
+        asgn_map = await self._get_assignments_counts(sid)
+        return _to_out(source, source.normalization_report, classified_count=asgn_map.get(sid))
+
+    async def _get_assignments_counts(self, source_id: UUID | None = None) -> dict[UUID, int]:
+        from database.relational_db import LogAssignment
+        from sqlalchemy import func
+
+        stmt = select(LogAssignment.source_id, func.count().label("cnt")).where(
+            LogAssignment.task_type.is_not(None)
+        ).group_by(LogAssignment.source_id)
+        if source_id:
+            stmt = stmt.where(LogAssignment.source_id == source_id)
+        res = await self._session.execute(stmt)
+        return {row[0]: row[1] for row in res.all()}
+
 
     def _load_demo(self) -> tuple[bytes, str]:
         path = Path(self._settings.DEMO_DATASET_PATH)
@@ -286,10 +302,28 @@ async def _set_status(source_id: str, status: str) -> None:
             await session.commit()
 
 
-def _to_out(source: IngestionSource, report: dict[str, Any] | None = None) -> SourceOut:
+def _to_out(
+    source: IngestionSource,
+    report: dict[str, Any] | None = None,
+    classified_count: int | None = None,
+) -> SourceOut:
     normalization = (
         NormalizationReport.model_validate(report) if report is not None else None
     )
+    if classified_count is not None and classified_count > 0:
+        classified = classified_count
+    elif source.status in ("classified", "recomputed"):
+        classified = source.records_valid
+    else:
+        classified = 0
+
+    if source.records_valid > 0:
+        pct = round(min(100.0, (classified / source.records_valid) * 100.0), 1)
+    elif source.status in ("classified", "recomputed"):
+        pct = 100.0
+    else:
+        pct = 0.0
+
     return SourceOut(
         source_id=str(source.id),
         name=source.name,
@@ -297,10 +331,13 @@ def _to_out(source: IngestionSource, report: dict[str, Any] | None = None) -> So
         records_total=source.records_total,
         records_valid=source.records_valid,
         records_rejected=source.records_rejected,
+        records_classified=classified,
+        classification_percentage=pct,
         status=SourceStatus(source.status),
         created_at=source.created_at,
         normalization_report=normalization,
     )
+
 
 
 def _as_uuid(value: str) -> UUID:
