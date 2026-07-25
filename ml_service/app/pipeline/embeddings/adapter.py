@@ -363,13 +363,29 @@ def create_embedding_adapter(
     *,
     cache: Optional[EmbeddingCache] = None,
 ) -> EmbeddingAdapter:
-    """Factory: mock | ollama | openrouter.
+    """Factory from mode/provider.
 
-    Mock only when ``provider=mock`` (default for tests/offline). Production
-    sets provider via config/env (``EMBEDDINGS_PROVIDER``).
+    - mode=offline → Ollama ``qwen3-embedding:4b``
+    - mode=online  → OpenRouter ``qwen/qwen3-embedding-4b``
+    - mode=mock    → deterministic hash vectors (tests)
     """
     cfg = cfg or default_settings.embeddings
-    provider = (cfg.provider or "mock").lower()
+    raw = (cfg.provider or "").lower()
+    known = {"mock", "ollama", "openrouter", ""}
+    # explicit unknown provider string → hard fail (unit tests / misconfig)
+    if raw and raw not in known:
+        raise ValueError(f"Unknown embeddings provider: {raw}")
+    # If caller set provider=mock explicitly, force mock mode
+    if raw == "mock":
+        cfg.mode = "mock"
+
+    provider = (
+        cfg.resolve_provider()
+        if hasattr(cfg, "resolve_provider")
+        else (cfg.provider or "mock").lower()
+    )
+    # keep cfg.provider in sync for HttpEmbeddingAdapter branching
+    cfg.provider = provider
 
     if cache is None and cfg.cache_enabled:
         cache = EmbeddingCache(max_size=cfg.cache_max_size)

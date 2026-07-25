@@ -1,4 +1,9 @@
-"""LLM scenario summarization with Pydantic validation, retries, and technical fallback."""
+"""LLM scenario summarization: offline (Ollama) | online (OpenRouter).
+
+Models (same family):
+  offline → Ollama chat gemma4:26b-a4b-it
+  online  → OpenRouter google/gemma-4-26b-a4b-it
+"""
 
 from __future__ import annotations
 
@@ -39,7 +44,6 @@ def technical_summary(
     except (ValueError, IndexError):
         n = 0
     name = f"Сценарий {task_type} {n}"
-    # keep ≤ 4 words if task_type is long
     words = name.split()
     if len(words) > 4:
         name = " ".join(words[:4])
@@ -72,7 +76,6 @@ class ScenarioSummary(BaseModel):
         if not v:
             raise ValueError("name must be non-empty")
         if _word_count(v) > 4:
-            # soft-trim rather than hard-fail for slightly long names from LLM
             words = v.split()
             v = " ".join(words[:4])
         return v
@@ -87,19 +90,21 @@ class ScenarioSummary(BaseModel):
 
 
 class Summarizer:
-    """LLM-based summarizer for scenarios (OpenRouter-compatible chat API)."""
+    """LLM summarizer: backend ollama (offline) or openrouter (online)."""
 
     def __init__(
         self,
+        *,
+        backend: str = "openrouter",
         api_key: str = "",
         model: str = "google/gemma-4-26b-a4b-it",
-        *,
         url: str = "https://openrouter.ai/api/v1/chat/completions",
         max_retries: int = 2,
         scenario_name_max_words: int = 4,
-        timeout_sec: float = 60.0,
+        timeout_sec: float = 120.0,
         session: Optional[aiohttp.ClientSession] = None,
     ) -> None:
+        self.backend = (backend or "openrouter").lower()
         self.api_key = api_key or ""
         self.model = model
         self.url = url
@@ -110,35 +115,97 @@ class Summarizer:
         self._owns_session = session is None
 
     @classmethod
+    def from_settings(cls, settings: Any = None, **overrides: Any) -> "Summarizer":
+        """Build from app Settings (mode offline/online)."""
+        if settings is None:
+            from app.core.config import settings as default_settings
+
+            settings = default_settings
+        llm = settings.llm
+        backend = overrides.get("backend") or llm.resolve_provider()
+        if backend == "ollama":
+            base = (overrides.get("url") or llm.ollama_url or "http://127.0.0.1:11434").rstrip(
+                "/"
+            )
+            url = base if base.endswith("/api/chat") else f"{base}/api/chat"
+            model = overrides.get("model") or llm.ollama_model or "gemma4:26b-a4b-it"
+            api_key = ""
+        else:
+            url = (
+                overrides.get("url")
+                or llm.openrouter_url
+                or "https://openrouter.ai/api/v1/chat/completions"
+            )
+            model = (
+                overrides.get("model")
+                or llm.openrouter_model
+                or "google/gemma-4-26b-a4b-it"
+            )
+            api_key = overrides.get("api_key") or llm.openrouter_api_key or ""
+        sum_cfg = settings.summarization
+        return cls(
+            backend=backend,
+            api_key=api_key,
+            model=model,
+            url=url,
+            max_retries=int(
+                overrides.get("max_retries", sum_cfg.max_llm_retries)
+            ),
+            scenario_name_max_words=int(sum_cfg.scenario_name_max_words),
+            timeout_sec=float(overrides.get("timeout_sec", llm.timeout_sec)),
+        )
+
+    @classmethod
     def from_config(cls, config: Optional[dict] = None, **overrides: Any) -> "Summarizer":
-        """Build from config.yaml-like dict + env-friendly overrides."""
+        """Legacy dict config; prefer from_settings."""
         import os
 
         cfg = config or {}
         sum_cfg = cfg.get("summarization") or {}
         llm = cfg.get("llm") or cfg.get("models", {}).get("llm") or {}
-        openrouter = llm.get("openrouter") or {}
-        api_key = overrides.get("api_key") or os.getenv("OPENROUTER_API_KEY", "")
-        model = (
-            overrides.get("model")
-            or openrouter.get("model_name")
-            or "google/gemma-4-26b-a4b-it"
-        )
-        url = (
+        mode = (llm.get("mode") or os.getenv("LLM_MODE") or "offline").lower()
+        if mode in ("online", "openrouter", "cloud"):
+            openrouter = llm.get("openrouter") or {}
+            return cls(
+                backend="openrouter",
+                api_key=overrides.get("api_key")
+                or openrouter.get("api_key")
+                or os.getenv("OPENROUTER_API_KEY", ""),
+                model=overrides.get("model")
+                or openrouter.get("model_name")
+                or "google/gemma-4-26b-a4b-it",
+                url=overrides.get("url")
+                or openrouter.get("url")
+                or os.getenv(
+                    "OPENROUTER_CHAT_URL",
+                    "https://openrouter.ai/api/v1/chat/completions",
+                ),
+                max_retries=int(
+                    overrides.get("max_retries", sum_cfg.get("max_llm_retries", 2))
+                ),
+                scenario_name_max_words=int(sum_cfg.get("scenario_name_max_words", 4)),
+            )
+        ollama = llm.get("ollama") or {}
+        base = (
             overrides.get("url")
-            or openrouter.get("url")
-            or os.getenv("OPENROUTER_CHAT_URL", "https://openrouter.ai/api/v1/chat/completions")
-        )
+            or ollama.get("url")
+            or os.getenv("OLLAMA_LLM_URL")
+            or os.getenv("OLLAMA_URL")
+            or "http://127.0.0.1:11434"
+        ).rstrip("/")
+        url = base if base.endswith("/api/chat") else f"{base}/api/chat"
         return cls(
-            api_key=api_key,
-            model=model,
+            backend="ollama",
+            api_key="",
+            model=overrides.get("model")
+            or ollama.get("model_name")
+            or os.getenv("OLLAMA_LLM_MODEL")
+            or "gemma4:26b-a4b-it",
             url=url,
             max_retries=int(
                 overrides.get("max_retries", sum_cfg.get("max_llm_retries", 2))
             ),
-            scenario_name_max_words=int(
-                sum_cfg.get("scenario_name_max_words", 4)
-            ),
+            scenario_name_max_words=int(sum_cfg.get("scenario_name_max_words", 4)),
         )
 
     async def close(self) -> None:
@@ -153,21 +220,23 @@ class Summarizer:
             self._owns_session = True
         return self._session
 
+    def is_available(self) -> bool:
+        if self.backend == "ollama":
+            return True  # local; readiness probe is optional
+        return bool(self.api_key)
+
     async def summarize_scenario(
         self,
         scenario_id: str,
         examples: List[str],
         task_type: str,
     ) -> ScenarioSummary:
-        """
-        Generate structured summary. Retries on invalid JSON/schema;
-        falls back to technical name.
-        """
+        """Generate structured summary; fallback to technical name on failure."""
         if not examples:
             return technical_summary(scenario_id, task_type, examples)
 
-        if not self.api_key:
-            logger.info("No LLM api_key — technical fallback for %s", scenario_id)
+        if self.backend == "openrouter" and not self.api_key:
+            logger.info("No OpenRouter api_key — technical fallback for %s", scenario_id)
             return technical_summary(scenario_id, task_type, examples)
 
         prompt = self._build_summarization_prompt(scenario_id, examples, task_type)
@@ -181,7 +250,6 @@ class Summarizer:
                 if not isinstance(parsed, dict):
                     raise ValueError("LLM response is not a JSON object")
                 summary = ScenarioSummary(**parsed)
-                # enforce max words strictly after soft-trim validator
                 if _word_count(summary.name) > self.scenario_name_max_words:
                     words = summary.name.split()[: self.scenario_name_max_words]
                     summary = summary.model_copy(update={"name": " ".join(words)})
@@ -191,10 +259,11 @@ class Summarizer:
             except Exception as exc:  # noqa: BLE001
                 last_err = exc
                 logger.warning(
-                    "summarize attempt %s/%s failed for %s: %s",
+                    "summarize attempt %s/%s failed for %s (%s): %s",
                     attempt + 1,
                     attempts,
                     scenario_id,
+                    self.backend,
                     exc,
                 )
 
@@ -207,6 +276,11 @@ class Summarizer:
         return technical_summary(scenario_id, task_type, examples)
 
     async def _call_llm(self, prompt: str) -> str:
+        if self.backend == "ollama":
+            return await self._call_ollama(prompt)
+        return await self._call_openrouter(prompt)
+
+    async def _call_openrouter(self, prompt: str) -> str:
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -223,9 +297,31 @@ class Summarizer:
         async with session.post(self.url, headers=headers, json=payload) as response:
             if response.status != 200:
                 body = await response.text()
-                raise RuntimeError(f"LLM HTTP {response.status}: {body[:200]}")
+                raise RuntimeError(f"OpenRouter HTTP {response.status}: {body[:200]}")
             data = await response.json()
             return data["choices"][0]["message"]["content"]
+
+    async def _call_ollama(self, prompt: str) -> str:
+        """Ollama /api/chat — local Gemma-class model."""
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "stream": False,
+            "format": "json",
+            "options": {"temperature": 0.3},
+        }
+        session = await self._get_session()
+        async with session.post(self.url, json=payload) as response:
+            if response.status != 200:
+                body = await response.text()
+                raise RuntimeError(f"Ollama HTTP {response.status}: {body[:200]}")
+            data = await response.json(content_type=None)
+            # chat response: message.content
+            msg = data.get("message") or {}
+            content = msg.get("content") or data.get("response") or ""
+            if not content:
+                raise RuntimeError("Ollama returned empty content")
+            return content
 
     def _build_summarization_prompt(
         self,
@@ -260,6 +356,5 @@ class Summarizer:
 
 Правила:
 - Не выдумывай факты вне примеров.
-- Используй только информацию из примеров.
-- Если мало данных — укажи 'insufficient examples'.
+- Если мало данных — укажи 'insufficient examples' в summary.
 """

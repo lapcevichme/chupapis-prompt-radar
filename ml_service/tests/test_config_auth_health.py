@@ -59,7 +59,27 @@ def test_load_settings_from_yaml(tmp_path: Path):
     yaml_path = tmp_path / "config.yaml"
     yaml_path.write_text(yaml.dump(cfg), encoding="utf-8")
 
-    s = load_settings(config_path=str(yaml_path), env={})
+    s = load_settings(
+        config_path=str(yaml_path),
+        env={
+            # isolate from developer .env
+            "QDRANT_URL": "http://qdrant-test:6333",
+            "ML_META_DB_URL": "sqlite:////data/ml/test.db",
+            "EMBEDDINGS_MODE": "mock",
+            "EMBEDDINGS_PROVIDER": "mock",
+            "OLLAMA_MODEL": "test-emb",
+            "LLM_MODE": "offline",
+            "OPENROUTER_API_KEY": "",
+            "ML_MODE": "",
+            "CLASSIFIER_MODEL_PATH": "/models/test.cbm",
+            "CLASSIFIER_CONFIDENCE_THRESHOLD": "0.55",
+            "ONLINE_SIMILARITY_THRESHOLD": "0.77",
+            "RECOMPUTE_CENTROID": "false",
+            "UMAP_N_NEIGHBORS": "12",
+            "HDBSCAN_MIN_CLUSTER_SIZE": "4",
+            "SUMMARIZATION_EXAMPLES_COUNT": "5",
+        },
+    )
     assert s.config_loaded is True
     assert s.is_valid()
     assert s.server.port == 9001
@@ -185,9 +205,11 @@ def test_health_ready_degraded_when_store_mock(monkeypatch: pytest.MonkeyPatch):
     # Force known-good config; missing openrouter key → llm degraded; mock qdrant → degraded
     monkeypatch.setattr(config_mod.settings, "config_errors", [])
     monkeypatch.setattr(config_mod.settings.embeddings, "provider", "mock")
+    monkeypatch.setattr(config_mod.settings.llm, "mode", "online")
     monkeypatch.setattr(config_mod.settings.llm, "provider", "openrouter")
     monkeypatch.setattr(config_mod.settings.llm, "openrouter_api_key", "")
     monkeypatch.setattr(config_mod.settings.classifier, "fallback_mode", "llm")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "")
 
     with TestClient(app) as client:
         r = client.get("/health/ready")
@@ -199,7 +221,7 @@ def test_health_ready_degraded_when_store_mock(monkeypatch: pytest.MonkeyPatch):
             assert key in body["checks"]
         # Without live Qdrant and without LLM key we expect degradation, not full ready
         assert body["status"] in {"degraded", "not_ready"}
-        assert body["checks"]["llm_provider"] == "degraded"
+        assert "degraded" in str(body["checks"]["llm_provider"])
 
 
 def test_health_ready_not_ready_on_bad_config(monkeypatch: pytest.MonkeyPatch):

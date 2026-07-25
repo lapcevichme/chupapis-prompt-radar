@@ -29,6 +29,12 @@ package = false
 asyncio_mode = "auto"
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = [
+    "live: real provider integration (no mocks); Ollama or OpenRouter",
+    "openrouter: live tests against OpenRouter API",
+]
+# Default unit run skips live tests (use: pytest tests/live -m live)
+addopts = "-m \"not live\""
 
 [tool.ruff]
 line-length = 100

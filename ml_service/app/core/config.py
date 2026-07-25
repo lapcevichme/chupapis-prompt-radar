@@ -63,8 +63,17 @@ class StoreSettings:
 
 @dataclass
 class EmbeddingsSettings:
-    provider: str = "mock"  # mock | ollama | openrouter
-    ollama_url: str = "http://ollama:11434"
+    """Embeddings: mode offline (Ollama) | online (OpenRouter) | mock (tests).
+
+    Same model family in both modes:
+      offline → qwen3-embedding:4b (Ollama)
+      online  → qwen/qwen3-embedding-4b (OpenRouter)
+    """
+
+    mode: str = "offline"  # offline | online | mock
+    # resolved transport (kept for back-compat with EMBEDDINGS_PROVIDER)
+    provider: str = "ollama"  # mock | ollama | openrouter
+    ollama_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen3-embedding:4b"
     openrouter_url: str = "https://openrouter.ai/api/v1/embeddings"
     openrouter_model: str = "qwen/qwen3-embedding-4b"
@@ -77,15 +86,49 @@ class EmbeddingsSettings:
     cache_enabled: bool = False
     cache_max_size: int = 10_000
 
+    def resolve_provider(self) -> str:
+        p = (self.provider or "").strip().lower()
+        # explicit mock always wins (unit tests)
+        if p == "mock":
+            return "mock"
+        m = (self.mode or "").strip().lower()
+        if m in ("mock", "test"):
+            return "mock"
+        if m in ("online", "cloud", "openrouter"):
+            return "openrouter"
+        if m in ("offline", "local", "ollama"):
+            return "ollama"
+        # fall back to explicit provider
+        return p if p in {"mock", "ollama", "openrouter"} else "ollama"
+
 
 @dataclass
 class LLMSettings:
-    provider: str = "openrouter"
+    """Chat LLM for summarization (and classifier llm-fallback).
+
+    Same model family:
+      offline → Ollama chat gemma4:26b-a4b-it (same family as OpenRouter)
+      online  → OpenRouter google/gemma-4-26b-a4b-it
+    """
+
+    mode: str = "offline"  # offline | online
+    provider: str = "ollama"  # ollama | openrouter (resolved from mode)
+    ollama_url: str = "http://127.0.0.1:11434"
+    ollama_model: str = "gemma4:26b-a4b-it"
     openrouter_url: str = "https://openrouter.ai/api/v1/chat/completions"
     openrouter_model: str = "google/gemma-4-26b-a4b-it"
     openrouter_api_key: str = ""
-    timeout_sec: float = 60.0
+    timeout_sec: float = 120.0
     max_retries: int = 2
+
+    def resolve_provider(self) -> str:
+        m = (self.mode or "").strip().lower()
+        if m in ("online", "cloud", "openrouter"):
+            return "openrouter"
+        if m in ("offline", "local", "ollama"):
+            return "ollama"
+        p = (self.provider or "ollama").lower()
+        return p if p in {"ollama", "openrouter"} else "ollama"
 
 
 @dataclass
@@ -180,8 +223,24 @@ class Settings:
 
     def pipeline_metadata_params(self) -> dict[str, Any]:
         """Parameters that affect results — for /statistics pipeline_metadata."""
+        emb_p = self.embeddings.resolve_provider()
+        llm_p = self.llm.resolve_provider()
         return {
-            "embeddings_provider": self.embeddings.provider,
+            "embeddings_mode": self.embeddings.mode,
+            "embeddings_provider": emb_p,
+            "embedding_provider": emb_p,
+            "embedding_model": (
+                self.embeddings.ollama_model
+                if emb_p == "ollama"
+                else self.embeddings.openrouter_model
+                if emb_p == "openrouter"
+                else "mock"
+            ),
+            "llm_mode": self.llm.mode,
+            "llm_provider": llm_p,
+            "llm_model": (
+                self.llm.ollama_model if llm_p == "ollama" else self.llm.openrouter_model
+            ),
             "classifier_provider": self.classifier.provider,
             "classifier_fallback_mode": self.classifier.fallback_mode,
             "classifier_confidence_threshold": self.classifier.confidence_threshold,
@@ -257,8 +316,19 @@ def _embeddings_from_yaml(raw: Mapping[str, Any]) -> EmbeddingsSettings:
         ollama_base = ollama_url[: -len("/api/embed")] or "http://ollama:11434"
     else:
         ollama_base = ollama_url
-    return EmbeddingsSettings(
-        provider=_as_str(emb.get("provider"), "ollama"),
+    mode = _as_str(emb.get("mode"), "")
+    provider = _as_str(emb.get("provider"), "ollama")
+    if not mode:
+        # derive mode from legacy provider field
+        if provider == "openrouter":
+            mode = "online"
+        elif provider == "mock":
+            mode = "mock"
+        else:
+            mode = "offline"
+    es = EmbeddingsSettings(
+        mode=mode,
+        provider=provider,
         ollama_url=ollama_base,
         ollama_model=_as_str(ollama.get("model_name"), "qwen3-embedding:4b"),
         openrouter_url=_as_str(
@@ -270,13 +340,26 @@ def _embeddings_from_yaml(raw: Mapping[str, Any]) -> EmbeddingsSettings:
         cache_enabled=_as_bool(emb.get("cache_enabled"), False),
         cache_max_size=_as_int(emb.get("cache_max_size"), 10_000),
     )
+    es.provider = es.resolve_provider()
+    return es
 
 
 def _llm_from_yaml(raw: Mapping[str, Any]) -> LLMSettings:
     llm = _dig(raw, "models", "llm") or raw.get("llm") or {}
     openrouter = llm.get("openrouter") or {}
-    return LLMSettings(
-        provider=_as_str(llm.get("provider"), "openrouter"),
+    ollama = llm.get("ollama") or {}
+    mode = _as_str(llm.get("mode"), "")
+    provider = _as_str(llm.get("provider"), "ollama")
+    if not mode:
+        mode = "online" if provider == "openrouter" else "offline"
+    ollama_url = _as_str(ollama.get("url"), "http://127.0.0.1:11434")
+    if ollama_url.endswith("/api/chat"):
+        ollama_url = ollama_url[: -len("/api/chat")]
+    ls = LLMSettings(
+        mode=mode,
+        provider=provider,
+        ollama_url=ollama_url,
+        ollama_model=_as_str(ollama.get("model_name"), "gemma4:26b-a4b-it"),
         openrouter_url=_as_str(
             openrouter.get("url"), "https://openrouter.ai/api/v1/chat/completions"
         ),
@@ -284,6 +367,8 @@ def _llm_from_yaml(raw: Mapping[str, Any]) -> LLMSettings:
             openrouter.get("model_name"), "google/gemma-4-26b-a4b-it"
         ),
     )
+    ls.provider = ls.resolve_provider()
+    return ls
 
 
 def _classifier_from_yaml(raw: Mapping[str, Any]) -> ClassifierSettings:
@@ -381,11 +466,28 @@ def _apply_env_overrides(s: Settings) -> Settings:
     if v := os.getenv("ML_META_DB_URL"):
         s.store.meta_db_url = v
 
-    # Embeddings
+    # Global mode shortcut (sets both embeddings + llm unless overridden)
+    global_mode = (os.getenv("ML_MODE") or "").strip().lower()
+
+    # Embeddings mode: offline=Ollama, online=OpenRouter, mock=tests
+    if v := os.getenv("EMBEDDINGS_MODE"):
+        s.embeddings.mode = v.strip().lower()
+    elif global_mode in ("offline", "online", "mock"):
+        s.embeddings.mode = global_mode
     if v := os.getenv("EMBEDDINGS_PROVIDER"):
-        s.embeddings.provider = v
+        # legacy: still works; also maps to mode if EMBEDDINGS_MODE unset
+        s.embeddings.provider = v.strip().lower()
+        if not os.getenv("EMBEDDINGS_MODE") and not global_mode:
+            if v.lower() == "openrouter":
+                s.embeddings.mode = "online"
+            elif v.lower() == "mock":
+                s.embeddings.mode = "mock"
+            elif v.lower() == "ollama":
+                s.embeddings.mode = "offline"
     if v := os.getenv("OLLAMA_URL"):
-        s.embeddings.ollama_url = v
+        s.embeddings.ollama_url = v.rstrip("/")
+        if not os.getenv("OLLAMA_LLM_URL"):
+            s.llm.ollama_url = v.rstrip("/")
     if v := os.getenv("OLLAMA_MODEL"):
         s.embeddings.ollama_model = v
     if v := os.getenv("OPENROUTER_EMBEDDINGS_URL"):
@@ -410,14 +512,27 @@ def _apply_env_overrides(s: Settings) -> Settings:
         s.embeddings.cache_enabled = _as_bool(v, s.embeddings.cache_enabled)
     if v := os.getenv("EMBEDDINGS_CACHE_MAX_SIZE"):
         s.embeddings.cache_max_size = _as_int(v, s.embeddings.cache_max_size)
+    # resolve provider from mode after overrides
+    s.embeddings.provider = s.embeddings.resolve_provider()
 
-    # LLM
+    # LLM mode: offline=Ollama chat, online=OpenRouter chat
+    if v := os.getenv("LLM_MODE"):
+        s.llm.mode = v.strip().lower()
+    elif global_mode in ("offline", "online"):
+        s.llm.mode = global_mode
+    if v := os.getenv("LLM_PROVIDER"):
+        s.llm.provider = v.strip().lower()
+        if not os.getenv("LLM_MODE") and not global_mode:
+            s.llm.mode = "online" if v.lower() == "openrouter" else "offline"
+    if v := os.getenv("OLLAMA_LLM_URL"):
+        s.llm.ollama_url = v.rstrip("/")
+    if v := os.getenv("OLLAMA_LLM_MODEL"):
+        s.llm.ollama_model = v
     if v := os.getenv("OPENROUTER_CHAT_URL"):
         s.llm.openrouter_url = v
     if v := os.getenv("OPENROUTER_CHAT_MODEL"):
         s.llm.openrouter_model = v
-    if v := os.getenv("LLM_PROVIDER"):
-        s.llm.provider = v
+    s.llm.provider = s.llm.resolve_provider()
 
     # Classifier
     if v := os.getenv("CLASSIFIER_MODEL_PATH"):
@@ -504,8 +619,14 @@ def _validate(s: Settings) -> Settings:
             "classifier.fallback_mode must be one of: "
             "fail_fast, llm, embedding_centroid, keyword"
         )
-    if s.embeddings.provider not in {"mock", "ollama", "openrouter"}:
-        errors.append("embeddings.provider must be one of: mock, ollama, openrouter")
+    if s.embeddings.mode not in {"offline", "online", "mock", "local", "ollama", "cloud", "openrouter", "test", ""}:
+        errors.append("embeddings.mode must be offline|online|mock")
+    if s.embeddings.resolve_provider() not in {"mock", "ollama", "openrouter"}:
+        errors.append("embeddings.provider must resolve to mock|ollama|openrouter")
+    if s.llm.mode not in {"offline", "online", "local", "ollama", "cloud", "openrouter", ""}:
+        errors.append("llm.mode must be offline|online")
+    if s.llm.resolve_provider() not in {"ollama", "openrouter"}:
+        errors.append("llm.provider must resolve to ollama|openrouter")
     if s.ingest.batch_max_size < 1:
         errors.append("ingest.batch_max_size must be >= 1")
     if s.recompute.umap.n_neighbors < 2:

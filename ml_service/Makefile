@@ -8,14 +8,15 @@ PYTHON ?= python
 SEED_SCRIPT ?= scripts/seed_demo.py
 DATASET ?= ../notebooks/prompt_radar_dataset.json
 
-.PHONY: help ml-up ml-down ml-logs ml-test demo seed smoke lint
+.PHONY: help ml-up ml-down ml-logs ml-test ml-test-live demo seed smoke lint
 
 help:
 	@echo "Targets:"
 	@echo "  ml-up    - build & start ml-service + qdrant"
 	@echo "  ml-down  - stop stack"
 	@echo "  ml-logs  - follow ml-service logs"
-	@echo "  ml-test  - unit + smoke (mock embeddings, no live LLM)"
+	@echo "  ml-test  - unit + smoke (mock embeddings; skips live)"
+	@echo "  ml-test-live - real Ollama + CatBoost (no mocks)"
 	@echo "  smoke    - pytest smoke only"
 	@echo "  seed     - POST demo log batches to running ML"
 	@echo "  demo     - ml-up, wait ready, seed, recompute, print statistics"
@@ -32,6 +33,14 @@ ml-logs:
 
 ml-test:
 	$(PYTHON) -m pytest tests/ -q --tb=short
+
+# Real Ollama embeddings + .cbm (requires ollama serve + qwen3-embedding:4b)
+ml-test-live:
+	$(PYTHON) -m pytest tests/live -m live -v --tb=short
+
+# Real OpenRouter embeddings + LLM (requires OPENROUTER_API_KEY in env/.env)
+ml-test-openrouter:
+	LIVE_BACKEND=openrouter $(PYTHON) -m pytest tests/live/test_openrouter_real.py -m live -v --tb=short
 
 smoke:
 	$(PYTHON) -m pytest tests/test_smoke.py -q --tb=short

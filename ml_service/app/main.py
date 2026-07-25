@@ -1,11 +1,20 @@
 """Prompt Radar ML service — CQRS: write / recompute / read (merged PR A–G)."""
 from __future__ import annotations
 
-import asyncio
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Optional
+
+try:
+    from dotenv import load_dotenv
+
+    # Load ml_service/.env before settings/config import side effects
+    load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+    load_dotenv()  # also CWD .env if present
+except ImportError:  # pragma: no cover
+    pass
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
@@ -198,6 +207,35 @@ async def lifespan(app: FastAPI):
         model_loaded=getattr(app.state.classifier, "model_available", False),
         fallback_mode=fb,
     )
+
+    # Offline (Ollama): auto-pull missing models if OLLAMA_AUTO_PULL (default on)
+    try:
+        from app.core.ollama_bootstrap import ensure_ollama_models, models_for_offline_settings
+
+        ollama_base, ollama_models = models_for_offline_settings(settings)
+        if ollama_models:
+            log_event(
+                logger,
+                "ollama bootstrap start",
+                stage="startup",
+                base=ollama_base,
+                models=",".join(ollama_models),
+            )
+            pull_report = await ensure_ollama_models(ollama_base, ollama_models)
+            app.state.ollama_bootstrap = pull_report
+            log_event(
+                logger,
+                "ollama bootstrap done",
+                stage="startup",
+                models=str(pull_report.get("models")),
+                errors=str(pull_report.get("errors") or []),
+            )
+        else:
+            app.state.ollama_bootstrap = {"models": {}, "errors": []}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("ollama bootstrap skipped: %s", exc)
+        app.state.ollama_bootstrap = {"models": {}, "errors": [str(exc)]}
+
     app.state.online = OnlinePipeline(settings=settings)
     app.state.qdrant = QdrantStore(
         _store_dict(),
@@ -281,20 +319,12 @@ async def validation_error_handler(
 
 
 def _pipeline_metadata() -> dict[str, Any]:
-    emb = settings.embeddings
     meta = {
         "schema_version": SCHEMA_VERSION,
         "pipeline_version": PIPELINE_VERSION,
         "taxonomy_version": TAXONOMY_VERSION,
         "classifier_mode": settings.classifier.provider,
         "classifier_fallback_mode": settings.classifier.fallback_mode,
-        "embedding_provider": emb.provider,
-        "embeddings_provider": emb.provider,
-        "embedding_model": (
-            emb.ollama_model if emb.provider == "ollama" else emb.openrouter_model
-        ),
-        "llm_provider": settings.llm.provider,
-        "llm_model": settings.llm.openrouter_model,
         "online_similarity_threshold": settings.online_clustering.similarity_threshold,
     }
     if hasattr(settings, "pipeline_metadata_params"):
@@ -358,15 +388,25 @@ async def health_ready() -> dict[str, Any]:
     if qdrant is not None:
         qdrant_mock = bool(getattr(qdrant, "is_mock", getattr(qdrant, "_mock", True)))
 
-    llm_key = settings.llm.openrouter_api_key or os.getenv("OPENROUTER_API_KEY", "")
-    llm_status = "ok" if llm_key else "degraded"
+    emb_provider = settings.embeddings.resolve_provider()
+    llm_provider = settings.llm.resolve_provider()
+    if llm_provider == "openrouter":
+        llm_status = (
+            "ok"
+            if (settings.llm.openrouter_api_key or os.getenv("OPENROUTER_API_KEY", ""))
+            else "degraded"
+        )
+    else:
+        llm_status = "ok"  # ollama offline — assume local; failure surfaces at recompute
 
     checks = {
         "config": "ok" if settings.is_valid() else "fail",
-        "embeddings_provider": settings.embeddings.provider,
+        "embeddings_mode": settings.embeddings.mode,
+        "embeddings_provider": emb_provider,
+        "llm_mode": settings.llm.mode,
+        "llm_provider": f"{llm_provider}:{llm_status}",
         "classifier": clf_status,
         "qdrant": "mock" if (qdrant is None or qdrant_mock) else "ok",
-        "llm_provider": llm_status,
         "meta_store": "ok" if getattr(app.state, "meta", None) else "missing",
         "clusters_loaded": app.state.online.clusterer.cluster_count()
         if getattr(app.state, "online", None)
@@ -472,8 +512,7 @@ def _pending_for_recompute() -> list[dict[str, Any]]:
 
 @app.post("/api/v1/recompute", status_code=202, dependencies=[Depends(require_service_token)])
 async def post_recompute(background: BackgroundTasks) -> dict[str, str]:
-    api_key = settings.llm.openrouter_api_key or os.getenv("OPENROUTER_API_KEY", "")
-    summarizer = Summarizer(api_key=api_key) if api_key else Summarizer(api_key="")
+    summarizer = Summarizer.from_settings(settings)
     store = job_mod.STORE
     job = RecomputeJob(
         store=store,
@@ -484,7 +523,11 @@ async def post_recompute(background: BackgroundTasks) -> dict[str, str]:
             "recompute": {
                 "umap": settings.pipeline_metadata_params().get("umap", {}),
                 "hdbscan": settings.pipeline_metadata_params().get("hdbscan", {}),
-            }
+            },
+            "llm": {
+                "mode": settings.llm.mode,
+                "provider": settings.llm.resolve_provider(),
+            },
         },
     )
     app.state.meta.put_job(job.result)

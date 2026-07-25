@@ -5,23 +5,28 @@ server:
 store:
   qdrant_url: "http://localhost:6333"
   qdrant_collection: "prompt_radar_vectors"
-  meta_db_url: "sqlite:////data/ml/meta.db"
+  meta_db_url: "sqlite:///./ml_meta.db"
 
+# offline = Ollama local, online = OpenRouter cloud
+# Same model families: qwen3-embedding-4b, gemma ~26B
 models:
   embeddings:
-    provider: "ollama"  # or openrouter
-    ollama: { model_name: "qwen3-embedding:4b", url: "http://localhost:11434/api/embed" }
+    mode: "offline"   # offline | online | mock
+    provider: "ollama"  # resolved from mode; kept for back-compat
+    ollama: { model_name: "qwen3-embedding:4b", url: "http://127.0.0.1:11434" }
     openrouter: { model_name: "qwen/qwen3-embedding-4b", url: "https://openrouter.ai/api/v1/embeddings" }
 
 llm:
-  provider: "openrouter"
+  mode: "offline"     # offline | online
+  provider: "ollama"
+  ollama: { model_name: "gemma4:26b-a4b-it", url: "http://127.0.0.1:11434" }
   openrouter: { model_name: "google/gemma-4-26b-a4b-it", url: "https://openrouter.ai/api/v1/chat/completions" }
 
 classifier:
   provider: "catboost"
-  model_path: "/app/models/catboost_task_classifier.cbm"
-  confidence_threshold: 0.60
-  fallback_mode: "llm"
+  model_path: "app/models/catboost_task_classifier.cbm"
+  confidence_threshold: 0.30
+  fallback_mode: "fail_fast"
 
 ingest:
   batch_max_size: 200
@@ -30,11 +35,12 @@ ingest:
 
 online_clustering:
   similarity_threshold: 0.85
+  recompute_centroid: true
 
 recompute:
-  scheduler_enabled: false          # opt-in cron; main trigger is POST /recompute
+  scheduler_enabled: false
   interval_hours: 2
-  centroid_match_threshold: 0.75    # stabilize scenario_id across recompute
+  centroid_match_threshold: 0.75
   umap: { n_neighbors: 15, n_components: 10, min_dist: 0.0, metric: "cosine", random_state: 42 }
   hdbscan: { min_cluster_size: 5, min_samples: 3, metric: "euclidean", cluster_selection_method: "eom" }
 
