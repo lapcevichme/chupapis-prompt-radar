@@ -10,7 +10,7 @@
     "task_management",
     "text_generation"
   ],
-  "holdout_accuracy": 0.75,
+  "holdout_accuracy": 0.65,
   "n_samples": 700,
   "embeddings": false
 }
