@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from typing import Any
 
 import httpx
@@ -100,6 +101,34 @@ class MlClient:
                 break
 
         return items
+
+    async def get_assignment_count(self, source_id: str) -> int:
+        page = await self._request(
+            "GET",
+            "/api/v1/assignments",
+            params={"source_id": source_id, "limit": 1, "offset": 0},
+        )
+        return int(page.get("total", 0))
+
+    async def wait_for_assignment_count(self, source_id: str, expected: int) -> int:
+        """Wait until the asynchronous ML worker persisted this source's assignments."""
+        if expected <= 0:
+            return 0
+
+        timeout = float(self._settings.ML_PROCESSING_TIMEOUT_SEC)
+        interval = max(0.1, float(self._settings.ML_PROCESSING_POLL_INTERVAL_SEC))
+        deadline = asyncio.get_running_loop().time() + timeout
+        observed = 0
+        while True:
+            observed = await self.get_assignment_count(source_id)
+            if observed >= expected:
+                return observed
+            if asyncio.get_running_loop().time() >= deadline:
+                raise MLUnavailableError(
+                    f"ML processing timed out for source {source_id}: "
+                    f"expected {expected}, observed {observed}"
+                )
+            await asyncio.sleep(interval)
 
     async def get_scenarios(
         self, filters: dict[str, Any] | None = None

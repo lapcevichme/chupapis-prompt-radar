@@ -23,7 +23,7 @@ Backend превращает сырой датасет (наш `prompt_radar_dat
 | Поле датасета | Поле лога | Правило |
 |---|---|---|
 | `user_query` | `query_text` | как есть (trim) |
-| — | `request_id` | синтез: `req_{index}` (стабильно, ключ идемпотентности) |
+| — | `request_id` | канонический UUIDv5 от `source_id + внешний request_id/req_{index}` |
 | — | `timestamp` | синтез: раскидать по диапазону дат (демо-допущение) или `now` |
 | — | `source_id` | id заливки (для фильтров дашборда) |
 | `status` | `response_status` | `success`→`success`; `error_tool`/`hallucination_loop`→`error` |
@@ -63,7 +63,9 @@ Response `202 Accepted`:
 
 Правила:
 
-- Идемпотентность по `request_id`: повторная присылка того же id не создаёт дубль (обновление/skip).
+- Backend делает `request_id` глобально уникальным и стабильным внутри датасета. Поэтому одинаковый
+  внешний id в разных `source_id` — разные записи, а повторная отправка той же записи одного
+  источника не создаёт дубль.
 - В фоне для каждой записи: CatBoost-классификация → эмбеддинг (async, Ollama/OpenRouter) →
   онлайн-назначение в кластер по cosine-сходству к центроидам (≥ порога → в существующий и
   пересчёт центроида; иначе новый кластер без имени).
@@ -113,7 +115,8 @@ automation_potential, records_count, trend, statistical_reliability).
 { "items": [
   { "request_id": "req_1", "task_type": "data_analysis", "classification_confidence": 0.91,
     "scenario_id": "data_analysis:cluster_01", "scenario_name": "Экспорт отчётов CRM",
-    "is_outlier": false, "has_failure_signals": false }
+    "is_outlier": false, "has_failure_signals": false, "source_id": "src_01",
+    "timestamp": "2026-07-24T10:00:00Z" }
 ], "total": 348 }
 ```
 

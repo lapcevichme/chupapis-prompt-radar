@@ -66,6 +66,19 @@ def test_honors_incoming_request_id(normalize_settings: SimpleNamespace) -> None
     assert logs[0]["request_id"] == "req_custom"
 
 
+def test_request_ids_are_stable_and_scoped_by_dataset(
+    normalize_settings: SimpleNamespace,
+) -> None:
+    raw = [{"user_query": "a", "request_id": "req_custom"}]
+    first = normalize(raw, normalize_settings, request_namespace="source-a").log_records[0]
+    repeated = normalize(raw, normalize_settings, request_namespace="source-a").log_records[0]
+    other = normalize(raw, normalize_settings, request_namespace="source-b").log_records[0]
+
+    assert first["request_id"] == repeated["request_id"]
+    assert first["request_id"] != other["request_id"]
+    assert first["metadata"]["external_request_id"] == "req_custom"
+
+
 def test_rejects_empty_query(normalize_settings: SimpleNamespace) -> None:
     raw = [{"user_query": "ok"}, {"user_query": "   "}, {"status": "success"}, "notdict"]
     result = normalize(raw, normalize_settings)

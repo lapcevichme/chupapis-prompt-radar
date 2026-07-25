@@ -14,7 +14,8 @@ from domain.common import Paginated
 from domain.ingestion import NormalizationReport, SourceOut, SourceStatus
 from service.ml import MlClient
 
-from .normalizer import normalize, parse_raw
+from .normalizer import NormalizationResult, normalize, parse_raw
+from .preloaded import PreloadedDatasetSpec, load_preloaded_records
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +48,62 @@ class IngestionService:
 
         name = filename or "dataset.json"
         raw_records = parse_raw(raw_bytes, name)
-        result = normalize(raw_records, self._settings)
+        source_id = uuid4()
+        result = normalize(
+            raw_records,
+            self._settings,
+            request_namespace=str(source_id),
+        )
 
-        source = IngestionSource(
+        return await self._persist_dataset(
+            source_id=source_id,
             name=name,
             origin="demo" if use_demo else "upload",
+            result=result,
+        )
+
+    async def ensure_preloaded(
+        self, spec: PreloadedDatasetSpec
+    ) -> tuple[IngestResult, bool]:
+        """Create a deterministic preloaded source or return it for reconciliation."""
+        raw_records = load_preloaded_records(self._settings, spec)
+        result = normalize(
+            raw_records,
+            self._settings,
+            request_namespace=str(spec.source_id),
+        )
+        existing = await self._session.get(IngestionSource, spec.source_id)
+        if existing is not None:
+            return (
+                IngestResult(
+                    source_out=_to_out(existing, existing.normalization_report),
+                    source_id=str(existing.id),
+                    log_records=result.log_records,
+                ),
+                False,
+            )
+
+        persisted = await self._persist_dataset(
+            source_id=spec.source_id,
+            name=spec.name,
+            origin="preloaded",
+            result=result,
+        )
+        return persisted, True
+
+    async def _persist_dataset(
+        self,
+        *,
+        source_id: UUID,
+        name: str,
+        origin: str,
+        result: NormalizationResult,
+    ) -> IngestResult:
+
+        source = IngestionSource(
+            id=source_id,
+            name=name,
+            origin=origin,
             records_total=result.report["records_total"],
             records_valid=result.report["records_valid"],
             records_rejected=result.report["records_rejected"],
@@ -61,11 +113,10 @@ class IngestionService:
         self._session.add(source)
         await self._session.flush()
 
-        source_id = source.id
         self._session.add_all(
             [
                 DatasetRecord(
-                    source_id=source_id,
+                    source_id=source.id,
                     request_id=row.request_id,
                     query_text=row.query_text,
                     gold_category=row.gold_category,
@@ -83,7 +134,7 @@ class IngestionService:
 
         return IngestResult(
             source_out=_to_out(source, result.report),
-            source_id=str(source_id),
+            source_id=str(source.id),
             log_records=result.log_records,
         )
 
@@ -118,7 +169,10 @@ class IngestionService:
         """Append live records to a rolling source and stream them to ML now."""
         source = await self._get_or_create_live_source(source_name)
         result = normalize(
-            raw_records, self._settings, id_prefix=f"live_{uuid4().hex[:8]}_"
+            raw_records,
+            self._settings,
+            id_prefix=f"live_{uuid4().hex[:8]}_",
+            request_namespace=str(source.id),
         )
         self._session.add_all(
             [
@@ -189,6 +243,8 @@ async def stream_source_logs(
     try:
         totals = await client.stream_logs(source_id, log_records)
         logger.info("streamed source_id=%s totals=%s", source_id, totals)
+        expected = int(totals.get("accepted", 0)) + int(totals.get("duplicates", 0))
+        await client.wait_for_assignment_count(source_id, expected)
     except Exception as exc:
         status = SourceStatus.failed.value
         logger.warning("streaming failed for source_id=%s: %s", source_id, exc)

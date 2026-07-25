@@ -51,7 +51,8 @@ async def finalize_recompute(settings: Settings, job_id: str) -> None:
     """Background: poll ML until done, then sync assignments and mark recomputed."""
     client = MlClient(settings)
     completed = False
-    for _ in range(60):
+    deadline = asyncio.get_running_loop().time() + settings.ML_RECOMPUTE_TIMEOUT_SEC
+    while asyncio.get_running_loop().time() < deadline:
         try:
             result = await client.get_recompute_status(job_id)
         except Exception as exc:

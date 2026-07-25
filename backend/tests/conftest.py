@@ -70,4 +70,6 @@ def ml_settings() -> SimpleNamespace:
         ML_SERVICE_TOKEN="test-token",
         ML_HTTP_TIMEOUT_SEC=30,
         ML_INGEST_BATCH_SIZE=2,
+        ML_PROCESSING_TIMEOUT_SEC=1,
+        ML_PROCESSING_POLL_INTERVAL_SEC=0.01,
     )

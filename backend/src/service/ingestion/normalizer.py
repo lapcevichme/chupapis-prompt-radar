@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from uuid import NAMESPACE_URL, uuid5
 
 from core.config import Settings
 from core.errors import DatasetInvalidError
@@ -99,7 +100,11 @@ def _synthesize_timestamp(
 
 
 def normalize(
-    raw_records: list[dict[str, Any]], settings: Settings, *, id_prefix: str = "req_"
+    raw_records: list[dict[str, Any]],
+    settings: Settings,
+    *,
+    id_prefix: str = "req_",
+    request_namespace: str | None = None,
 ) -> NormalizationResult:
     """Turn raw records into (log_records, dataset_rows, report)."""
     result = NormalizationResult()
@@ -122,7 +127,8 @@ def normalize(
             )
             continue
 
-        request_id = str(raw.get("request_id") or f"{id_prefix}{index}")
+        external_request_id = str(raw.get("request_id") or f"{id_prefix}{index}")
+        request_id = _canonical_request_id(request_namespace, external_request_id)
         timestamp = _synthesize_timestamp(index, total, settings, now)
         raw_status = raw.get("status")
         response_status, error_code = _STATUS_MAP.get(
@@ -148,6 +154,7 @@ def normalize(
                     "tools_used": tools_used,
                     "manual_time_minutes": manual_time,
                     "agent_steps": _as_int(raw.get("agent_steps")),
+                    "external_request_id": external_request_id,
                 },
             }
         )
@@ -177,6 +184,18 @@ def normalize(
         "rejected_reasons": rejected_reasons,
     }
     return result
+
+
+def _canonical_request_id(namespace: str | None, external_request_id: str) -> str:
+    """Make ML idempotency dataset-scoped while keeping a compact stable identifier."""
+    if not namespace:
+        return external_request_id
+    return str(
+        uuid5(
+            NAMESPACE_URL,
+            f"prompt-radar:{namespace}:{external_request_id}",
+        )
+    )
 
 
 def _as_int(value: Any) -> int | None:

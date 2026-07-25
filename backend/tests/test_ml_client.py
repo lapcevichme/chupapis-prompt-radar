@@ -54,6 +54,21 @@ async def test_missing_ml_url_raises_unavailable() -> None:
         client._client()
 
 
+async def test_waits_for_async_ml_assignments(ml_settings, monkeypatch) -> None:
+    client = MlClient(ml_settings)
+    observed = iter((0, 1, 2))
+
+    async def fake_request(method: str, path: str, **kwargs: Any) -> dict[str, int]:
+        assert method == "GET"
+        assert path == "/api/v1/assignments"
+        assert kwargs["params"]["source_id"] == "source-a"
+        return {"items": [], "total": next(observed)}
+
+    monkeypatch.setattr(client, "_request", fake_request)
+
+    assert await client.wait_for_assignment_count("source-a", 2) == 2
+
+
 def test_clean_drops_none_params() -> None:
     assert _clean({"source_id": "s", "from": None, "to": "x"}) == {
         "source_id": "s",

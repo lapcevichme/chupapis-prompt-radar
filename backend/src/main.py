@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -66,14 +67,26 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        preload_task: asyncio.Task[None] | None = None
         try:
             if check_db_on_startup:
                 await wait_for_db()
                 from scripts.seed_demo_user import seed_demo_user
 
                 await seed_demo_user()
+                if settings.PRELOAD_DATASETS_ENABLED:
+                    from service.ingestion.preloaded import run_preloaded_seed_safely
+
+                    preload_task = asyncio.create_task(
+                        run_preloaded_seed_safely(settings),
+                        name="preloaded-dataset-seed",
+                    )
             yield
         finally:
+            if preload_task is not None:
+                from service.ingestion.preloaded import cancel_preloaded_seed
+
+                await cancel_preloaded_seed(preload_task)
             await dispose_engine()
 
     app = FastAPI(

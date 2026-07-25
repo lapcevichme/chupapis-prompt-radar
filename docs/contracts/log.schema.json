@@ -10,7 +10,7 @@
     "request_id": {
       "type": "string",
       "minLength": 1,
-      "description": "Уникальный id запроса. Backend синтезирует, если в источнике нет. Ключ идемпотентности в ML."
+      "description": "Глобально уникальный канонический id. Backend строит UUIDv5 из source_id и внешнего/синтезированного id. Ключ идемпотентности в ML."
     },
     "query_text": {
       "type": "string",
