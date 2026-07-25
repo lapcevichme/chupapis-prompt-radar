@@ -39,7 +39,7 @@ class RecomputeService:
             status=str(result.get("status", "running")),
             clusters_created=result.get("clusters_created"),
             scenarios_named=result.get("scenarios_named"),
-            finished_at=result.get("finished_at"),
+            finished_at=result.get("finished_at") or result.get("completed_at"),
         )
 
     @property
