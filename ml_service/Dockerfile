@@ -9,7 +9,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python deps from pyproject (reproducible pins via package metadata)
+# Runtime deps, mirroring pyproject minus the test-only ones. Keep the two lists
+# in sync. The numba floor is redundant for pip today (it backtracks numpy on its
+# own) but states the constraint outright: numba caps the numpy it supports, and
+# uv's resolver answered the same unbounded spec with numba 0.53.1 (2021), which
+# does not build. Pinned so the answer no longer depends on which resolver runs.
 COPY pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir \
@@ -24,6 +28,7 @@ RUN pip install --no-cache-dir --upgrade pip \
         "catboost>=1.2.0" \
         "umap-learn>=0.5.6" \
         "hdbscan>=0.8.40" \
+        "numba>=0.60" \
         "qdrant-client>=1.9.0" \
         "pyyaml>=6.0.0" \
         "jsonschema>=4.22.0" \

@@ -429,6 +429,18 @@ class MetaStore:
                 return None
             return self._row_to_job(row)
 
+    def get_last_completed_job(self) -> Optional[Dict[str, Any]]:
+        """Most recent successful recompute, so freshness survives a restart."""
+        with self._lock:
+            cur = self._cursor()
+            cur.execute(
+                "SELECT * FROM recompute_jobs "
+                "WHERE status = 'completed' AND completed_at IS NOT NULL "
+                "ORDER BY completed_at DESC LIMIT 1"
+            )
+            row = cur.fetchone()
+            return self._row_to_job(row) if row else None
+
     # ── ingest_log ───────────────────────────────────────────────────────────
 
     def bump_ingest_log(

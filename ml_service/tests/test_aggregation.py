@@ -264,12 +264,35 @@ def test_totals_and_dynamics():
             "is_outlier": False,
         },
     ]
-    stats = build_statistics(items)
+    clusters = {"data_analysis:cluster_0": {"scenario_id": "data_analysis:cluster_0"}}
+    stats = build_statistics(items, clusters=clusters)
     assert stats["totals"]["records_total"] == 3
     assert stats["totals"]["unknown_count"] == 1
     assert stats["totals"]["scenarios_count"] == 1
     assert stats["outliers_summary"]["total_outliers_count"] == 1
     assert {d["date"] for d in stats["dynamics"]} == {"2026-07-01", "2026-07-02"}
+
+
+def test_scenarios_without_cluster_metadata_are_not_counted():
+    """Online clustering hands out scenario_ids before recompute names them.
+
+    Those provisional ids have no cluster row, so they carry no name or summary.
+    Counting them would put nameless entries in `top_scenarios`; the dashboard
+    shows 0 scenarios plus the "recompute needed" banner instead.
+    """
+    items = [
+        {
+            "request_id": "1",
+            "task_type": "data_analysis",
+            "scenario_id": "data_analysis:cluster_0",
+            "timestamp": "2026-07-01T11:00:00Z",
+            "is_outlier": False,
+        },
+    ]
+    stats = build_statistics(items)
+    assert stats["totals"]["records_total"] == 1
+    assert stats["totals"]["scenarios_count"] == 0
+    assert stats["top_scenarios"] == []
 
 
 def test_source_and_date_filters():

@@ -15,6 +15,13 @@ dependencies = [
     "catboost>=1.2.0",
     "umap-learn>=0.5.6",
     "hdbscan>=0.8.40",
+    # umap-learn/hdbscan need numba, and numba caps the numpy it supports. Left
+    # unbounded, uv took the newest numpy and walked numba back to 0.53.1 (2021),
+    # whose llvmlite 0.36 has no wheels for any Python we run — so `uv sync` died
+    # compiling LLVM and nobody could run the ML tests. Floor numba so numpy is
+    # the side that gives way. (pip already backtracked numpy on its own, which
+    # is why the Docker image was fine while local installs were not.)
+    "numba>=0.60",
     "qdrant-client>=1.9.0",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
@@ -24,6 +31,11 @@ dependencies = [
     "langchain-ollama>=0.3.0",
     "langchain-core>=0.3.0",
 ]
+
+[dependency-groups]
+# `make lint` configures ruff below but never shipped it, so the target has been
+# printing "ruff not installed; skip" instead of checking anything.
+dev = ["ruff>=0.6"]
 
 [tool.uv]
 package = false

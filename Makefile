@@ -1,4 +1,4 @@
-.PHONY: up down down-clean logs ps build restart feed demo test lint frontend-test frontend-check
+.PHONY: up down down-clean logs ps build restart feed demo test lint ml-test ml-lint frontend-test frontend-check
 
 COMPOSE := docker compose
 INGEST_TOKEN ?= dev-ingest-token
@@ -36,6 +36,12 @@ test:          ## run backend unit + API tests
 
 lint:          ## ruff check backend
 	cd backend && poetry run ruff check src tests
+
+ml-test:       ## run ML unit tests (uv sync first; skips live provider tests)
+	cd ml_service && uv sync --quiet && uv run pytest tests/ -q
+
+ml-lint:       ## ruff check ml_service
+	cd ml_service && uv sync --quiet && uv run ruff check app tests scripts
 
 frontend-test: ## run frontend unit/integration tests
 	cd frontend && npm test

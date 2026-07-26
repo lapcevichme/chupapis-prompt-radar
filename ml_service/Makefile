@@ -6,7 +6,9 @@ COMPOSE_FILE ?= docker-compose.yml
 ML_URL ?= http://localhost:8000
 PYTHON ?= python
 SEED_SCRIPT ?= scripts/seed_demo.py
-DATASET ?= ../notebooks/prompt_radar_dataset.json
+# In-tree copy, byte-identical to backend/src/data/prompt_radar_dataset.json.
+# (Was ../notebooks/…, a directory that no longer exists — seed/demo both died on it.)
+DATASET ?= catboost/prompt_radar_dataset.json
 
 .PHONY: help ml-up ml-down ml-logs ml-test ml-test-live demo seed smoke lint
 

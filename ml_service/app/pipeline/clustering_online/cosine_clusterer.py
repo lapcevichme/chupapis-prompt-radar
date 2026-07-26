@@ -6,8 +6,8 @@ PR D (§8.5):
   3) if ≥ threshold → assign + optional running-mean centroid update
   4) else → new scenario_id ``{task_type}:cluster_{n}``
 
-Centroid state is in-memory with dump/load helpers.
-TODO(PR B): persist/load centroids via meta store (clusters table) on restart / after recompute.
+Centroid state is in-memory; `app.main._hydrate_online_clusterer` reloads it from
+the meta store `clusters` table on startup and after each recompute.
 """
 from __future__ import annotations
 
@@ -90,8 +90,6 @@ class CosineClusterer:
         """
         Bulk hydrate from a list of dicts:
           {scenario_id, task_type, centroid, count?}
-
-        TODO(PR B): call this from meta store on service startup / after recompute.
         """
         n = 0
         for row in rows:
@@ -106,9 +104,7 @@ class CosineClusterer:
 
     def dump_centroids(self, task_type: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        Export centroids for persistence.
-
-        TODO(PR B): write this payload into meta store `clusters` table.
+        Export centroids for persistence into the meta store `clusters` table.
         """
         out: List[Dict[str, Any]] = []
         for state in self._clusters.values():

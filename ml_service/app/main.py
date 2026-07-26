@@ -258,6 +258,15 @@ async def lifespan(app: FastAPI):
 
     job_mod.STORE = RecomputeStore(persistence=app.state.meta)
 
+    _restore_recompute_state()
+    n_hydrated = _hydrate_online_clusterer()
+    logger.info(
+        "restored from meta: centroids=%s last_recompute_at=%s logs_at_last_recompute=%s",
+        n_hydrated,
+        _LAST_RECOMPUTE_AT,
+        _LOGS_AT_LAST_RECOMPUTE,
+    )
+
     app.state.ingest_queue = IngestQueue()
     app.state.ingest_worker = IngestWorker(
         app.state.ingest_queue,
@@ -356,6 +365,55 @@ def _agg_config() -> AggregationConfig:
         taxonomy_version=TAXONOMY_VERSION,
         pipeline_version=PIPELINE_VERSION,
     )
+
+
+def _restore_recompute_state() -> None:
+    """Recover freshness bookkeeping from the meta store on startup.
+
+    `last_recompute_at` and the log count it was taken at lived only in module
+    globals, so a restart reported "never recomputed" and the dashboard demanded
+    a fresh (expensive) run over data that was already clustered. Jobs written
+    before `logs_at_completion` existed leave the count at 0, which reads as
+    stale — the conservative direction.
+    """
+    global _LAST_RECOMPUTE_AT, _LOGS_AT_LAST_RECOMPUTE
+    try:
+        job = app.state.meta.get_last_completed_job()
+    except Exception:
+        logger.exception("could not restore recompute state")
+        return
+    if not job:
+        return
+    _LAST_RECOMPUTE_AT = job.get("completed_at")
+    _LOGS_AT_LAST_RECOMPUTE = int(job.get("logs_at_completion") or 0)
+
+
+def _hydrate_online_clusterer() -> int:
+    """Reload cosine centroids from the clusters table.
+
+    Without this the online path starts every boot with no centroids, so the
+    first logs after a restart each open a brand-new scenario instead of joining
+    the clusters recompute already built.
+    """
+    clusterer = getattr(getattr(app.state, "online", None), "clusterer", None)
+    if clusterer is None:
+        return 0
+    try:
+        rows = [
+            {
+                "scenario_id": c["scenario_id"],
+                "task_type": c.get("task_type") or "unknown",
+                "centroid": c["centroid"],
+                "count": int(c.get("records_count") or 1),
+            }
+            for c in app.state.meta.list_clusters()
+            if c.get("centroid")
+        ]
+    except Exception:
+        logger.exception("could not load centroids from meta store")
+        return 0
+    clusterer.clear()
+    return clusterer.load_centroids(rows)
 
 
 def _freshness() -> dict[str, Any]:
@@ -635,11 +693,19 @@ async def post_recompute(background: BackgroundTasks) -> dict[str, str]:
 
             _LAST_RECOMPUTE_AT = result.get("completed_at")
             _LOGS_AT_LAST_RECOMPUTE = app.state.meta.count_assignments()
+            # Ride along on the job row so a restart can restore both.
+            result["logs_at_completion"] = _LOGS_AT_LAST_RECOMPUTE
+            app.state.meta.put_job(result)
+
+            # Recompute replaced the cluster set; move the online path onto the
+            # new centroids so streaming assignments agree with what was stored.
+            n_hydrated = _hydrate_online_clusterer()
             logger.info(
-                "recompute fully done job_id=%s status=%s clusters=%s",
+                "recompute fully done job_id=%s status=%s clusters=%s centroids=%s",
                 job.job_id,
                 result.get("status"),
                 result.get("clusters_created"),
+                n_hydrated,
             )
         except Exception:  # noqa: BLE001
             logger.exception("recompute failed job_id=%s", job.job_id)
