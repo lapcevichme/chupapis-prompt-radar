@@ -17,17 +17,37 @@ class FteRateModel(BaseModel):
 
 
 class TokenCostModel(BaseModel):
-    """How the token price was obtained (QNA §1.2), instead of a magic constant.
+    """Where the token price came from.
 
-    (capex / amortization_years + electricity_per_year) / tokens_per_year × 1000
+    `mandated_per_mln_rub` is the organisers' fixed price (139 RUB per million)
+    so every team's figures are comparable. The infra fields are the independent
+    derivation we keep as an order-of-magnitude check, not as the source.
     """
 
+    mandated_per_mln_rub: float
     infra_capex_rub: float
     amortization_years: float
     electricity_rub_per_year: float
     tokens_per_year: float
+    infra_derived_per_1k_rub: float
     derived_cost_per_1k_rub: float
     is_overridden: bool = False
+
+
+class AnalysisCostModel(BaseModel):
+    """What running Prompt Radar itself costs — asked for by the customer's expert.
+
+    Embedding input is the query text, converted from characters at a stated
+    ratio; summarisation is a one-off per scenario on each recompute. Priced with
+    the same mandated token price as the agent, so the two are comparable.
+    """
+
+    embedding_tokens: int
+    summarization_tokens: int
+    chars_per_token: float
+    tokens_per_scenario: float
+    cost_rub: float
+    cost_per_request_rub: float
 
 
 class PayoffVerdict(BaseModel):
@@ -49,6 +69,7 @@ class Assumptions(BaseModel):
     token_cost_per_1k_rub: float
     fte_rate_model: FteRateModel | None = None
     token_cost_model: TokenCostModel | None = None
+    analysis_cost_model: AnalysisCostModel | None = None
     session_coefficients: SessionCoefficients
     session_short_max_tokens: int
     session_long_min_tokens: int

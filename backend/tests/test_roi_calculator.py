@@ -204,8 +204,8 @@ def test_fte_hourly_rate_derived_from_monthly_salary():
     assert s.roi_fte_hourly_rate == pytest.approx(400_000.0 / 168.0)
 
 
-def test_token_cost_derived_from_infra_economics():
-    """QNA §1.2: (capex/years + electricity) / tokens_per_year * 1000."""
+def test_token_cost_uses_the_mandated_price():
+    """The organisers fix 139 RUB per million so teams' numbers compare."""
     from core.config import Settings
 
     # _env_file=None: assert the shipped defaults, not the developer's local .env
@@ -214,10 +214,43 @@ def test_token_cost_derived_from_infra_economics():
         DATABASE_URL="postgresql+asyncpg://t:t@localhost/t",
         JWT_SECRET="super-secret-test-key-32-chars-long!",
     )
-    expected = (100_000_000.0 / 5.0 + 600_000.0) / 20_000_000_000.0 * 1000.0
 
     assert s.ROI_TOKEN_COST_PER_1K_RUB is None
-    assert s.roi_token_cost_per_1k == pytest.approx(expected)
+    assert s.ROI_TOKEN_COST_PER_MLN_RUB == 139.0
+    assert s.roi_token_cost_per_1k == pytest.approx(0.139)
+
+
+def test_infra_derivation_kept_as_sanity_check():
+    """The independent derivation stays available but no longer sets the price."""
+    from core.config import Settings
+
+    s = Settings(
+        _env_file=None,
+        DATABASE_URL="postgresql+asyncpg://t:t@localhost/t",
+        JWT_SECRET="super-secret-test-key-32-chars-long!",
+    )
+    expected = (100_000_000.0 / 5.0 + 600_000.0) / 20_000_000_000.0 * 1000.0
+
+    assert s.roi_infra_token_cost_per_1k == pytest.approx(expected)
+    assert s.roi_infra_token_cost_per_1k != s.roi_token_cost_per_1k
+
+
+def test_analysis_cost_is_reported(roi_config, make_record):
+    """The expert asked what classification itself costs — it must be an output."""
+    records = [make_record(status="success", tokens=1000, query_chars=300) for _ in range(10)]
+
+    roi = compute_roi(records, roi_config)
+    model = roi.assumptions.analysis_cost_model
+
+    assert model is not None
+    # 10 records x 300 chars, all in one scenario -> one summarisation pass
+    assert model.embedding_tokens == int(3000 / model.chars_per_token)
+    assert model.summarization_tokens == int(model.tokens_per_scenario)
+    expected_cost = (
+        (model.embedding_tokens + model.summarization_tokens) / 1000.0
+    ) * roi_config.token_cost_per_1k_rub
+    assert model.cost_rub == pytest.approx(expected_cost, abs=0.01)
+    assert model.cost_per_request_rub > 0
 
 
 def test_explicit_rate_overrides_win_over_derivation():

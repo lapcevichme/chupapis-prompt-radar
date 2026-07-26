@@ -1,7 +1,7 @@
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import Settings
@@ -28,6 +28,7 @@ class RoiService:
 
     async def _load_records(self, filters: dict[str, Any]) -> list[RoiRecord]:
         query = select(
+            func.length(DatasetRecord.query_text).label("query_chars"),
             DatasetRecord.status,
             DatasetRecord.tokens,
             DatasetRecord.manual_time_minutes,
@@ -60,6 +61,7 @@ class RoiService:
         return [
             RoiRecord(
                 status=row.status,
+                query_chars=row.query_chars or 0,
                 tokens=row.tokens or 0,
                 manual_time_minutes=row.manual_time_minutes or 0.0,
                 tools_used=list(row.tools_used or []),
@@ -97,13 +99,17 @@ class RoiService:
                 is_overridden="fte_hourly_rate_rub" in overrides,
             ),
             token_cost_model=TokenCostModel(
+                mandated_per_mln_rub=s.ROI_TOKEN_COST_PER_MLN_RUB,
                 infra_capex_rub=s.ROI_INFRA_CAPEX_RUB,
                 amortization_years=s.ROI_INFRA_AMORTIZATION_YEARS,
                 electricity_rub_per_year=s.ROI_INFRA_ELECTRICITY_RUB_PER_YEAR,
                 tokens_per_year=s.ROI_INFRA_TOKENS_PER_YEAR,
+                infra_derived_per_1k_rub=round(s.roi_infra_token_cost_per_1k, 4),
                 derived_cost_per_1k_rub=round(s.roi_token_cost_per_1k, 4),
                 is_overridden="token_cost_per_1k_rub" in overrides,
             ),
+            analysis_chars_per_token=s.ROI_ANALYSIS_CHARS_PER_TOKEN,
+            analysis_tokens_per_scenario=s.ROI_ANALYSIS_TOKENS_PER_SCENARIO,
         )
 
 

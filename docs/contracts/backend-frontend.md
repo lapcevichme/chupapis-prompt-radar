@@ -217,12 +217,26 @@ Backend проксирует в ML. `{ "job_id": "rc_01", "status": "running" }`
 Фильтры те же (`source_id`, `from`, `to`) + переопределение ставок:
 `?fte_hourly_rate_rub=&token_cost_per_1k_rub=` («что если»).
 
-**Ставки выводятся, а не задаются константой (QNA §1).** `fte_hourly_rate_rub` = месячная
-ставка FTE (400 000 ₽ — ориентир эксперта заказчика) ÷ рабочие часы в месяце.
-`token_cost_per_1k_rub` = (капзатраты на GPU ÷ срок амортизации + электричество за год) ÷
-токенов в год × 1000. Обе модели вывода возвращаются в `assumptions`, а `is_overridden`
-показывает, что значение задано вручную через query-параметр — чтобы UI никогда не выдавал
-ручную цифру за выведенную.
+**Ставки не задаются магической константой (QNA §1).**
+
+- `fte_hourly_rate_rub` = месячная ставка FTE (400 000 ₽ — ориентир эксперта заказчика)
+  ÷ рабочие часы в месяце. Спорить можно с зарплатой, а не с коэффициентом.
+- `token_cost_per_1k_rub` = **зафиксированная организаторами цена 139 ₽ за млн токенов**
+  (`ROI_TOKEN_COST_PER_MLN_RUB`), чтобы цифры команд сравнивались между собой. Независимый
+  вывод из амортизации GPU остаётся в `token_cost_model.infra_derived_per_1k_rub` как
+  проверка порядка величины, но цену больше не задаёт.
+- `is_overridden` показывает, что значение пришло query-параметром — UI не должен выдавать
+  ручную цифру за выведенную.
+
+**`analysis_cost_model` — во что обходится сам анализ** (прямой запрос эксперта: «нужно
+понимать затраты на классификацию»). Эмбеддинги считаются по тексту запроса, символы
+переводятся в токены по заявленному коэффициенту; саммаризация — разово на сценарий при
+каждом recompute; CatBoost работает на CPU и в стоимость не входит.
+
+> ⚠️ Оговорка эксперта: пересчёт по 139 ₽/млн корректен **только для LLM-генерации**. Для
+> эмбеддингов и дешёвых локальных моделей прямой пересчёт неприменим, поэтому
+> `embedding_tokens` и `summarization_tokens` отдаются **раздельно** — потребитель сам решает,
+> что переводить в рубли.
 
 **`verdict` — явный ответ на вопрос «окупается ли ИИ»** (B > A), а не число, которое читатель
 должен сравнить в уме. `B` = высвобожденные FTE-часы × ставка, `A` = токены × себестоимость.
@@ -230,7 +244,7 @@ Backend проксирует в ML. `{ "job_id": "rc_01", "status": "running" }`
 ```json
 {
   "assumptions": {
-    "fte_hourly_rate_rub": 2380.95, "token_cost_per_1k_rub": 1.03,
+    "fte_hourly_rate_rub": 2380.95, "token_cost_per_1k_rub": 0.139,
     "session_coefficients": { "short": 0.3, "medium": 1.0, "long": 2.0 },
     "session_short_max_tokens": 4000, "session_long_min_tokens": 30000,
     "manual_minutes_by_category": { "code_help": 30.0, "data_analysis": 45.0, "other": 15.0 },
@@ -240,15 +254,22 @@ Backend проксирует в ML. `{ "job_id": "rc_01", "status": "running" }`
       "derived_hourly_rate_rub": 2380.95, "is_overridden": false
     },
     "token_cost_model": {
+      "mandated_per_mln_rub": 139.0,
       "infra_capex_rub": 100000000.0, "amortization_years": 5.0,
       "electricity_rub_per_year": 600000.0, "tokens_per_year": 20000000000.0,
-      "derived_cost_per_1k_rub": 1.03, "is_overridden": false
+      "infra_derived_per_1k_rub": 1.03,
+      "derived_cost_per_1k_rub": 0.139, "is_overridden": false
+    },
+    "analysis_cost_model": {
+      "embedding_tokens": 201681, "summarization_tokens": 105600,
+      "chars_per_token": 3.0, "tokens_per_scenario": 1100.0,
+      "cost_rub": 42.71, "cost_per_request_rub": 0.0087
     }
   },
   "verdict": {
-    "benefit_rub": 2112817.46, "cost_rub": 245189.68, "net_rub": 1867627.78,
-    "ratio": 8.62, "pays_off": true,
-    "headline": "ИИ окупается: выгода 2.1 млн ₽ > затрат 245 тыс ₽ (×8.62, чистыми 1.9 млн ₽)"
+    "benefit_rub": 6774444.0, "cost_rub": 66511.36, "net_rub": 6707932.64,
+    "ratio": 101.85, "pays_off": true,
+    "headline": "ИИ окупается: выгода 6.8 млн ₽ > затрат 67 тыс ₽ (×101.85, чистыми 6.7 млн ₽)"
   },
   "summary": {
     "total_logs": 348, "success_rate_percent": 82.5,

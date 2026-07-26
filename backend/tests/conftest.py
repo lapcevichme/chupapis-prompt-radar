@@ -45,6 +45,7 @@ def make_record():
         task_type: str | None = "data_analysis",
         scenario_id: str | None = "data_analysis:cluster_01",
         scenario_name: str | None = "Экспорт отчётов CRM",
+        query_chars: int = 0,
     ) -> RoiRecord:
         return RoiRecord(
             status=status,
@@ -54,6 +55,7 @@ def make_record():
             task_type=task_type,
             scenario_id=scenario_id,
             scenario_name=scenario_name,
+            query_chars=query_chars,
         )
 
     return _make

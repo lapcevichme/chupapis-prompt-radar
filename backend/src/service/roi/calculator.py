@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from domain.roi import (
+    AnalysisCostModel,
     Assumptions,
     FteRateModel,
     PayoffVerdict,
@@ -31,6 +32,9 @@ class RoiConfig:
     # the numbers can be audited rather than taken on trust.
     fte_rate_model: FteRateModel | None = None
     token_cost_model: TokenCostModel | None = None
+    # Cost of running our own analysis over these records.
+    analysis_chars_per_token: float = 3.0
+    analysis_tokens_per_scenario: float = 1100.0
 
     def session_coeff(self, tokens: int) -> float:
         if tokens <= self.short_max_tokens:
@@ -51,6 +55,7 @@ class RoiRecord:
     task_type: str | None
     scenario_id: str | None
     scenario_name: str | None
+    query_chars: int = 0
     user_id: str | None = "unknown_user"
     user_name: str | None = "Unknown"
     department: str | None = "Unknown"
@@ -131,6 +136,7 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
     by_scenario: dict[str, _Bucket] = {}
 
     estimated_manual_count = 0
+    query_chars_total = 0
 
     for rec in records:
         tokens = rec.tokens or 0
@@ -143,6 +149,7 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
             estimated_manual_count += 1
 
         total_tokens += tokens
+        query_chars_total += rec.query_chars or 0
         cost_for_log = (tokens / 1000.0) * config.token_cost_per_1k_rub
 
         uid = rec.user_id or "unknown_user"
@@ -193,6 +200,9 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
 
     assumptions.manual_minutes_estimated_percent = round(
         (estimated_manual_count / total_logs) * 100, 1
+    )
+    assumptions.analysis_cost_model = _build_analysis_cost(
+        query_chars_total, len(by_scenario), total_logs, config
     )
 
     total_fte_hours = total_saved_minutes / 60.0
@@ -353,4 +363,29 @@ def _empty_summary() -> RoiSummary:
         token_value_index=0.0,
         process_automation_rate=0.0,
         top_tools_used={},
+    )
+
+
+def _build_analysis_cost(
+    query_chars: int, scenario_count: int, total_logs: int, config: RoiConfig
+) -> AnalysisCostModel:
+    """Cost of running Prompt Radar over these records, at the same token price.
+
+    Embeddings are charged on the query text (characters converted at a stated
+    ratio, since there is no tokeniser at this layer); summarisation is a one-off
+    per scenario on each recompute. CatBoost inference is CPU-only and free.
+    """
+    chars_per_token = config.analysis_chars_per_token or 3.0
+    embedding_tokens = int(query_chars / chars_per_token)
+    summarization_tokens = int(scenario_count * config.analysis_tokens_per_scenario)
+    total = embedding_tokens + summarization_tokens
+    cost = (total / 1000.0) * config.token_cost_per_1k_rub
+
+    return AnalysisCostModel(
+        embedding_tokens=embedding_tokens,
+        summarization_tokens=summarization_tokens,
+        chars_per_token=chars_per_token,
+        tokens_per_scenario=config.analysis_tokens_per_scenario,
+        cost_rub=round(cost, 2),
+        cost_per_request_rub=round(cost / total_logs, 4) if total_logs else 0.0,
     )

@@ -68,15 +68,24 @@ class Settings(BaseSettings):
     ROI_FTE_HOURLY_RATE_RUB: float | None = None
 
     # --- ROI: cost side (A) ---
-    # Token cost is derived from infrastructure economics instead of being a
-    # magic constant (QNA §1.2): GPU server capex amortised over N years, plus
-    # electricity, divided by the tokens that server produces per year.
+    # Token price mandated by the organisers so every team's numbers compare:
+    # 139 RUB per million tokens. This wins over the infrastructure derivation
+    # below, which is kept as a sanity check on the order of magnitude.
+    ROI_TOKEN_COST_PER_MLN_RUB: float = 139.0
     ROI_INFRA_CAPEX_RUB: float = 100_000_000.0
     ROI_INFRA_AMORTIZATION_YEARS: float = 5.0
     ROI_INFRA_ELECTRICITY_RUB_PER_YEAR: float = 600_000.0
     ROI_INFRA_TOKENS_PER_YEAR: float = 20_000_000_000.0
-    # Explicit override; when unset the price is derived from the four above.
+    # Explicit override; when unset the mandated price above is used.
     ROI_TOKEN_COST_PER_1K_RUB: float | None = None
+
+    # --- ROI: cost of running Prompt Radar itself ---
+    # What the analysis costs us, asked for directly by the customer's expert.
+    # Embedding input is the query text; we have no tokeniser at this layer, so
+    # characters are converted at a stated ratio rather than silently guessed.
+    ROI_ANALYSIS_CHARS_PER_TOKEN: float = 3.0
+    # One-off summarisation per recompute: prompt + representatives + output.
+    ROI_ANALYSIS_TOKENS_PER_SCENARIO: float = 1_100.0
     # Session-length coefficients applied to manual_time (customer FTE method, D6).
     ROI_SESSION_COEFF_SHORT: float = 0.3
     ROI_SESSION_COEFF_MEDIUM: float = 1.0
@@ -109,9 +118,14 @@ class Settings(BaseSettings):
 
     @property
     def roi_token_cost_per_1k(self) -> float:
-        """Cost of 1k tokens: explicit override, else derived from infra economics."""
+        """Cost of 1k tokens: explicit override, else the mandated price."""
         if self.ROI_TOKEN_COST_PER_1K_RUB is not None:
             return self.ROI_TOKEN_COST_PER_1K_RUB
+        return self.ROI_TOKEN_COST_PER_MLN_RUB / 1000.0
+
+    @property
+    def roi_infra_token_cost_per_1k(self) -> float:
+        """Same price derived from infrastructure economics — an order-of-magnitude check."""
         if (
             self.ROI_INFRA_AMORTIZATION_YEARS <= 0
             or self.ROI_INFRA_TOKENS_PER_YEAR <= 0
