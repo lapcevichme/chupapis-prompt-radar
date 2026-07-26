@@ -93,6 +93,17 @@ DEFAULT_CATEGORY_MANUAL_MINUTES: dict[str, float] = {
 }
 DEFAULT_FALLBACK_MANUAL_MINUTES: float = 15.0
 
+# `voice` is direct evidence of speech input; `typo` is only a proxy for it — a
+# phone keyboard produces typos, but so does haste at a desk. They are summed for
+# the headline rate and also reported separately, so the weaker signal stays
+# visible instead of hiding inside one number.
+#
+# Above this share the data supports investing in a voice-first interface. Below
+# it we say the threshold was not reached rather than issuing the recommendation
+# anyway — an earlier revision returned the same "build Voice-to-Text" sentence
+# regardless of what the logs actually showed.
+VOICE_ADOPTION_RECOMMEND_PERCENT: float = 20.0
+
 
 def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
     """Merged ROI calculator: session coefficients, MAU/Depts, and style analytics (D6)."""
@@ -225,12 +236,10 @@ def compute_roi(records: list[RoiRecord], config: RoiConfig) -> Roi:
     style_percentages = {
         st: round((cnt / total_logs) * 100, 1) for st, cnt in style_stats.items()
     }
-    mobile_voice_count = style_stats.get("voice", 0) + style_stats.get("typo", 0)
-    mobile_voice_rate = round((mobile_voice_count / total_logs) * 100, 1)
-    insight = (
-        f"📱 {mobile_voice_rate}% запросов поступают в неформальном/мобильном стиле (голос или опечатки с телефона). "
-        f"Рекомендуется поддерживать и развивать Voice-to-Text интерфейс."
-    )
+    voice_rate = round((style_stats.get("voice", 0) / total_logs) * 100, 1)
+    typo_rate = round((style_stats.get("typo", 0) / total_logs) * 100, 1)
+    mobile_voice_rate = round(voice_rate + typo_rate, 1)
+    insight = _style_insight(voice_rate, typo_rate, mobile_voice_rate)
 
     summary = RoiSummary(
         total_logs=total_logs,
@@ -332,6 +341,25 @@ def _money(value: float) -> str:
     if abs(value) >= 1_000:
         return f"{value / 1_000:.0f} тыс ₽"
     return f"{value:.0f} ₽"
+
+
+def _style_insight(voice_rate: float, typo_rate: float, informal_rate: float) -> str:
+    """Describe the speech-style mix; recommend only what the numbers support."""
+    if informal_rate <= 0.0:
+        return "Неформальных запросов не зафиксировано."
+
+    detail = f"голос {voice_rate}%, опечатки {typo_rate}%"
+    if informal_rate >= VOICE_ADOPTION_RECOMMEND_PERCENT:
+        return (
+            f"{informal_rate}% запросов приходят в неформальном стиле ({detail}) — "
+            f"выше порога {VOICE_ADOPTION_RECOMMEND_PERCENT}%, поддержка "
+            f"Voice-to-Text оправдана."
+        )
+    return (
+        f"Неформальный стиль — {informal_rate}% запросов ({detail}). "
+        f"Это ниже порога {VOICE_ADOPTION_RECOMMEND_PERCENT}%, отдельный "
+        f"Voice-to-Text интерфейс данными пока не обоснован."
+    )
 
 
 def _bucket_net(bucket: _Bucket, config: RoiConfig) -> float:

@@ -9,6 +9,11 @@ COPY . .
 
 ARG VITE_AUTO_DEMO_LOGIN=false
 ENV VITE_AUTO_DEMO_LOGIN=${VITE_AUTO_DEMO_LOGIN}
+# Demo credentials are build args so they never live as literals in the source.
+ARG VITE_DEMO_EMAIL=""
+ENV VITE_DEMO_EMAIL=${VITE_DEMO_EMAIL}
+ARG VITE_DEMO_PASSWORD=""
+ENV VITE_DEMO_PASSWORD=${VITE_DEMO_PASSWORD}
 
 RUN npm run build
 

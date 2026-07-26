@@ -266,3 +266,32 @@ def test_explicit_rate_overrides_win_over_derivation():
 
     assert s.roi_fte_hourly_rate == 1200.0
     assert s.roi_token_cost_per_1k == 0.1
+
+
+# --- style insight must follow the data, not a fixed script -----------------
+
+
+def test_style_insight_recommends_only_above_the_threshold(roi_config, make_record):
+    records = [make_record(status="success") for _ in range(10)]
+    for r in records[:5]:
+        r.style = "voice"
+    for r in records[5:]:
+        r.style = "formal"
+
+    roi = compute_roi(records, roi_config)
+
+    assert roi.summary.mobile_voice_adoption_rate == 50.0
+    assert "оправдана" in roi.summary.style_insight
+
+
+def test_style_insight_declines_to_recommend_on_thin_evidence(roi_config, make_record):
+    """The old build recommended Voice-to-Text even at 0% voice usage."""
+    records = [make_record(status="success") for _ in range(100)]
+    for r in records:
+        r.style = "formal"
+    records[0].style = "voice"
+
+    roi = compute_roi(records, roi_config)
+
+    assert roi.summary.mobile_voice_adoption_rate == 1.0
+    assert "не обоснован" in roi.summary.style_insight

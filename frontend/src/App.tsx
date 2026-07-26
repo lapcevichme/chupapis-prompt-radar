@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Target, Activity, DollarSign, Radar, Menu, X, Moon, Sun, Database, Users, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, Target, Activity, DollarSign, Radar, Menu, X, Moon, Sun, Database, Users, RefreshCw, LogOut } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Scenarios from './components/Scenarios';
 import Logs from './components/Logs';
@@ -9,14 +9,17 @@ import UsersModelsView from './components/UsersModelsView';
 import ProcessingBanner from './components/ProcessingBanner';
 import FilterBar from './components/FilterBar';
 import { cn } from './lib/utils';
-import { ensureAuth } from './api';
+import { checkSession, demoLogin, logout, SESSION_EXPIRED_EVENT, type CurrentUser } from './api';
+import Login from './components/Login';
 import type { DashboardFilters } from './types';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'ingestion' | 'scenarios' | 'logs' | 'roi' | 'users_models'>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(true);
-  const [ready, setReady] = useState(false);
+  // 'checking' until we know whether a cookie session exists — rendering the
+  // shell before that produced an app full of silent 401s.
+  const [session, setSession] = useState<'checking' | 'anonymous' | CurrentUser>('checking');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   // Global filters (D3): one scope shared by every screen and by the export.
@@ -31,8 +34,28 @@ export default function App() {
   }, [isDark]);
 
   useEffect(() => {
-    ensureAuth().then(() => setReady(true));
+    let cancelled = false;
+    (async () => {
+      const user = (await checkSession()) ?? (await demoLogin());
+      if (!cancelled) setSession(user ?? 'anonymous');
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  // A session can die while the dashboard is open; drop straight to the form
+  // rather than leaving screens polling into 401s.
+  useEffect(() => {
+    const onExpired = () => setSession('anonymous');
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    setSession('anonymous');
+  };
 
   const handleManualRefresh = () => {
     setLastUpdated(new Date());
@@ -73,12 +96,16 @@ export default function App() {
     { id: 'roi', label: 'ROI Analytics', icon: DollarSign },
   ] as const;
 
-  if (!ready) {
+  if (session === 'checking') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
       </div>
     );
+  }
+
+  if (session === 'anonymous') {
+    return <Login onSuccess={setSession} />;
   }
 
   return (
@@ -138,13 +165,21 @@ export default function App() {
           </nav>
 
           <div className="p-4 border-t border-divider flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-3 px-2 py-2">
-              <div className="w-8 h-8 rounded-full bg-accent-muted flex items-center justify-center text-accent font-bold text-sm">
-                A
+            <div className="flex items-center gap-3 px-2 py-2 min-w-0">
+              <div className="w-8 h-8 shrink-0 rounded-full bg-accent-muted flex items-center justify-center text-accent font-bold text-sm">
+                {session.email.charAt(0).toUpperCase()}
               </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-primary">Admin</span>
-                <span className="text-xs text-secondary">Workspace</span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-medium text-primary truncate" title={session.email}>
+                  {session.email}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-1 text-xs text-secondary hover:text-primary transition-colors"
+                >
+                  <LogOut className="w-3 h-3" />
+                  Выйти
+                </button>
               </div>
             </div>
             <button onClick={() => setIsDark(!isDark)} className="hidden md:block p-2 text-secondary hover:bg-surface-hover rounded-md transition-colors">

@@ -123,6 +123,8 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_AUTO_DEMO_LOGIN: ${FRONTEND_AUTO_DEMO_LOGIN:-true}
+        VITE_DEMO_EMAIL: ${DEMO_USER_EMAIL:-test@gmail.com}
+        VITE_DEMO_PASSWORD: ${DEMO_USER_PASSWORD:-test123}
     ports:
       - "${FRONTEND_HOST_PORT:-3000}:80"
     depends_on:
