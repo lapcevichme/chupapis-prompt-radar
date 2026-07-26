@@ -71,7 +71,9 @@ class ProcessingStatus(BaseModel):
     total_classified: int
     percent: float
     recompute_status: str
+    # Work exists and nothing is running -> offer the user a recompute.
     recompute_pending: bool
+    recompute_running: bool = False
     logs_since_last_recompute: int
     scenarios_named: int
     sources: list[ProcessingSourceItem] = Field(default_factory=list)

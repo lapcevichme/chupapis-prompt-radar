@@ -482,6 +482,7 @@ def build_statistics(
         "last_recompute_at": None,
         "logs_since_last_recompute": 0,
         "recompute_pending": False,
+        "recompute_running": False,
     }
     if freshness:
         freshness_out.update(freshness)

@@ -79,7 +79,7 @@ fallback на зеркало). Фронт поллит.
 {
   "indexing": true,
   "total_valid": 2083, "total_classified": 667, "percent": 32.0,
-  "recompute_status": "idle", "recompute_pending": false,
+  "recompute_status": "idle", "recompute_pending": false, "recompute_running": false,
   "logs_since_last_recompute": 0, "scenarios_named": 0,
   "sources": [
     { "source_id": "...", "name": "prompt_radar_dataset.json", "origin": "upload",
@@ -91,7 +91,12 @@ fallback на зеркало). Фронт поллит.
 
 > Побочный эффект: запрос до-синхронизирует assignments для источников, которые ML успел
 > классифицировать дальше нашего зеркала — поэтому `/logs` наполняется по мере индексации.
-> `indexing == false && recompute_pending == false` → индикатор скрыт.
+>
+> **`recompute_pending` ≠ `recompute_running`.** `recompute_running` — джоба в полёте (спиннер).
+> `recompute_pending` — хранимый анализ отстал от логов и **никто пересчёт не запускал**: это
+> состояние требует кнопки, а не спиннера. Раньше оба смысла жили в одном поле, из-за чего стор
+> с тысячами некластеризованных логов отдавал `false` — ровно тот случай, ради которого плашка и
+> существует. `indexing == false && !recompute_pending && !recompute_running` → индикатор скрыт.
 
 ### `POST /api/v1/sources/{source_id}/resume` → `202`
 
@@ -146,7 +151,8 @@ Backend проксирует в ML. `{ "job_id": "rc_01", "status": "running" }`
 ```json
 {
   "taxonomy_version": "v1",
-  "freshness": { "last_recompute_at": "...", "logs_since_last_recompute": 0, "recompute_pending": false },
+  "freshness": { "last_recompute_at": "...", "logs_since_last_recompute": 0,
+                 "recompute_pending": false, "recompute_running": false },
   "totals": { "records_processed": 348, "scenarios_count": 18, "outliers_percentage": 4.5 },
   "tasks_distribution": [
     { "task_type": "data_analysis", "label": "Анализ данных", "count": 120, "percentage": 34.5 },

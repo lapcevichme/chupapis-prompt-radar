@@ -12,7 +12,10 @@ class Totals(BaseModel):
 class Freshness(BaseModel):
     last_recompute_at: datetime | None = None
     logs_since_last_recompute: int = 0
+    # True when the stored analysis lags behind the logs and no job is running —
+    # i.e. there is something for the user to trigger.
     recompute_pending: bool = False
+    recompute_running: bool = False
 
 
 class TaskDistItem(BaseModel):

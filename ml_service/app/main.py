@@ -359,18 +359,31 @@ def _agg_config() -> AggregationConfig:
 
 
 def _freshness() -> dict[str, Any]:
+    """Is the read model stale, and is anything being done about it?
+
+    `recompute_pending` answers "does the stored analysis lag behind the logs",
+    which is what the dashboard banner asks. It used to report "is a job running
+    right now", so a store with thousands of unclustered logs and no job reported
+    `false` — the one state the banner exists to catch.
+    """
     meta: MetaStore = app.state.meta
     total = meta.count_assignments()
     logs_since = max(0, total - _LOGS_AT_LAST_RECOMPUTE)
-    pending = False
-    for job in job_mod.STORE.jobs.values():
-        if job.get("status") in ("pending", "running"):
-            pending = True
-            break
+
+    running = any(
+        job.get("status") in ("pending", "running")
+        for job in job_mod.STORE.jobs.values()
+    )
+    # Never recomputed but logs exist -> stale. Recomputed earlier but new logs
+    # arrived since -> stale. A job already in flight is not "pending work".
+    never_recomputed = _LAST_RECOMPUTE_AT is None
+    stale = (never_recomputed and total > 0) or logs_since > 0
+
     return {
         "last_recompute_at": _LAST_RECOMPUTE_AT,
         "logs_since_last_recompute": logs_since,
-        "recompute_pending": pending,
+        "recompute_pending": stale and not running,
+        "recompute_running": running,
     }
 
 

@@ -294,14 +294,18 @@ class IngestionService:
         overall_pct = (
             round(total_classified / total_valid * 100, 1) if total_valid else 0.0
         )
-        # Real "new logs since last recompute" comes from the ML read-model; if ML is
-        # unreachable we report 0 rather than guessing.
+        # Real staleness comes from the ML read-model; if ML is unreachable we
+        # report "nothing pending" rather than guessing.
         logs_since = 0
+        recompute_pending = False
         try:
             freshness = (await client.get_statistics()).get("freshness") or {}
             logs_since = int(freshness.get("logs_since_last_recompute", 0) or 0)
+            recompute_pending = bool(freshness.get("recompute_pending", False))
         except Exception as exc:
             logger.warning("freshness lookup failed: %s", exc)
+
+        running = recompute.status in ("running", "pending", "processing")
 
         return ProcessingStatus(
             indexing=indexing,
@@ -309,7 +313,10 @@ class IngestionService:
             total_classified=total_classified,
             percent=overall_pct,
             recompute_status=recompute.status,
-            recompute_pending=recompute.status in ("running", "pending", "processing"),
+            # "There is work to trigger", not "a job is in flight" — those are
+            # different states and the banner needs the first one.
+            recompute_pending=recompute_pending and not running,
+            recompute_running=running,
             logs_since_last_recompute=logs_since,
             scenarios_named=int(recompute.scenarios_named or 0),
             sources=items,

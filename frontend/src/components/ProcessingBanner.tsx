@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { fetchProcessingStatus } from '../api';
+import { fetchProcessingStatus, triggerRecompute } from '../api';
 import type { ProcessingStatus } from '../types';
-import { Loader2, CheckCircle2, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { Loader2, CheckCircle2, ChevronDown, ChevronUp, Sparkles, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface ProcessingBannerProps {
@@ -11,14 +11,15 @@ interface ProcessingBannerProps {
 const POLL_MS = 3000;
 
 /**
- * App-wide indexing progress. Visible on every tab so the analysis stage is
- * obvious without opening Sources. Hides itself once everything is indexed and
- * no recompute is running.
+ * App-wide analysis status. Three distinct states, previously conflated into one:
+ * indexing, a recompute in flight, and "the stored analysis is stale and nobody
+ * has started a recompute" — the last of which needs a button, not a spinner.
  */
 export default function ProcessingBanner({ refreshTrigger }: ProcessingBannerProps) {
   const [status, setStatus] = useState<ProcessingStatus | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [justFinished, setJustFinished] = useState(false);
+  const [starting, setStarting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,14 +31,15 @@ export default function ProcessingBanner({ refreshTrigger }: ProcessingBannerPro
         if (cancelled) return;
         setStatus((prev) => {
           // Surface a short "done" confirmation on the active→idle edge.
-          if (prev && (prev.indexing || prev.recompute_pending) && !data.indexing && !data.recompute_pending) {
+          const wasBusy = prev && (prev.indexing || prev.recompute_running);
+          if (wasBusy && !data.indexing && !data.recompute_running) {
             setJustFinished(true);
             setTimeout(() => !cancelled && setJustFinished(false), 6000);
           }
           return data;
         });
         // Poll fast while work is in flight, slowly when idle.
-        timer = setTimeout(poll, data.indexing || data.recompute_pending ? POLL_MS : POLL_MS * 5);
+        timer = setTimeout(poll, data.indexing || data.recompute_running ? POLL_MS : POLL_MS * 5);
       } catch {
         if (!cancelled) timer = setTimeout(poll, POLL_MS * 5);
       }
@@ -52,10 +54,21 @@ export default function ProcessingBanner({ refreshTrigger }: ProcessingBannerPro
 
   if (!status) return null;
 
-  const active = status.indexing || status.recompute_pending;
-  if (!active && !justFinished) return null;
+  const active = status.indexing || status.recompute_running;
+  // Stale store with nothing running: the user has to trigger the recompute.
+  const stale = status.recompute_pending && !active;
+  if (!active && !stale && !justFinished) return null;
 
   const pending = status.sources.filter((s) => !s.done);
+
+  const handleRecompute = async () => {
+    setStarting(true);
+    try {
+      await triggerRecompute();
+    } finally {
+      setStarting(false);
+    }
+  };
 
   return (
     <div
@@ -63,13 +76,17 @@ export default function ProcessingBanner({ refreshTrigger }: ProcessingBannerPro
         'shrink-0 border-b transition-colors',
         active
           ? 'bg-accent/5 border-accent/20'
-          : 'bg-emerald-500/5 border-emerald-500/20'
+          : stale
+            ? 'bg-amber-500/5 border-amber-500/20'
+            : 'bg-emerald-500/5 border-emerald-500/20'
       )}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-3">
         <div className="flex items-center gap-3">
           {active ? (
             <Loader2 className="w-4 h-4 text-accent animate-spin shrink-0" />
+          ) : stale ? (
+            <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
           ) : (
             <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
           )}
@@ -77,11 +94,13 @@ export default function ProcessingBanner({ refreshTrigger }: ProcessingBannerPro
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2 flex-wrap">
               <span className="text-sm font-semibold text-primary">
-                {status.recompute_pending
+                {status.recompute_running
                   ? 'Building scenarios'
                   : status.indexing
                     ? 'Indexing dataset'
-                    : 'Analysis complete'}
+                    : stale
+                      ? 'Есть новые логи'
+                      : 'Analysis complete'}
               </span>
               {active && (
                 <span className="text-xs font-mono text-secondary tabular-nums">
@@ -106,13 +125,33 @@ export default function ProcessingBanner({ refreshTrigger }: ProcessingBannerPro
               </div>
             )}
 
-            {status.recompute_pending && !status.indexing && (
+            {status.recompute_running && !status.indexing && (
               <p className="text-xs text-secondary mt-1 flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3" />
                 Clustering and naming scenarios — this can take a few minutes
               </p>
             )}
+
+            {stale && (
+              <p className="text-xs text-secondary mt-1">
+                {status.logs_since_last_recompute > 0
+                  ? `${status.logs_since_last_recompute.toLocaleString('ru-RU')} записей не вошли в сценарии`
+                  : 'Сценарии ещё ни разу не пересчитывались'}
+                {' '}— запустите пересчёт, чтобы обновить кластеры и саммари.
+              </p>
+            )}
           </div>
+
+          {stale && (
+            <button
+              onClick={handleRecompute}
+              disabled={starting}
+              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-amber-500/15 text-amber-500 hover:bg-amber-500/25 disabled:opacity-60 rounded-md transition-colors"
+            >
+              <RefreshCw className={cn('w-3.5 h-3.5', starting && 'animate-spin')} />
+              Пересчитать
+            </button>
+          )}
 
           {pending.length > 0 && (
             <button

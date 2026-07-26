@@ -60,12 +60,26 @@ export interface RoiData {
       is_overridden: boolean;
     } | null;
     token_cost_model?: {
+      /** Price fixed by the organisers so teams' numbers compare. */
+      mandated_per_mln_rub: number;
       infra_capex_rub: number;
       amortization_years: number;
       electricity_rub_per_year: number;
       tokens_per_year: number;
+      /** Independent derivation, kept as a sanity check on the order of magnitude. */
+      infra_derived_per_1k_rub: number;
       derived_cost_per_1k_rub: number;
       is_overridden: boolean;
+    } | null;
+    /** What running the analysis itself costs. Embedding and LLM tokens stay
+     *  separate: the mandated price applies only to LLM generation. */
+    analysis_cost_model?: {
+      embedding_tokens: number;
+      summarization_tokens: number;
+      chars_per_token: number;
+      tokens_per_scenario: number;
+      cost_rub: number;
+      cost_per_request_rub: number;
     } | null;
   };
   /** Explicit B > A verdict (QNA §1): B = money freed, A = cost of running the agent. */
@@ -169,7 +183,9 @@ export interface ProcessingStatus {
   total_classified: number;
   percent: number;
   recompute_status: string;
+  /** Work exists and nothing is running -> show the recompute call to action. */
   recompute_pending: boolean;
+  recompute_running: boolean;
   logs_since_last_recompute: number;
   scenarios_named: number;
   sources: ProcessingSource[];
