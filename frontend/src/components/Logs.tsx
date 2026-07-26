@@ -3,7 +3,7 @@ import { fetchLogs } from '../api';
 import type { LogItem, DashboardFilters } from '../types';
 import { Card, CardContent } from './ui/Card';
 import { Badge } from './ui/Badge';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface LogsProps {
@@ -12,15 +12,22 @@ interface LogsProps {
   refreshTrigger?: number;
 }
 
+const PAGE_SIZE = 100;
+
 export default function Logs({ onFetchSuccess, refreshTrigger, filters }: LogsProps) {
   const [logs, setLogs] = useState<LogItem[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const loadData = async (silent = false) => {
+  // Polling refreshes the pages already on screen rather than snapping back to
+  // the first one, so "load more" survives the 5s refresh.
+  const loadData = async (silent = false, size = PAGE_SIZE) => {
     try {
       if (!silent && logs.length === 0) setLoading(true);
-      const data = await fetchLogs(filters);
-      setLogs(data);
+      const page = await fetchLogs(filters, size);
+      setLogs(page.items);
+      setTotal(page.total);
       onFetchSuccess?.();
     } catch (err) {
       console.error('Failed to load logs', err);
@@ -29,13 +36,32 @@ export default function Logs({ onFetchSuccess, refreshTrigger, filters }: LogsPr
     }
   };
 
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const page = await fetchLogs(filters, PAGE_SIZE, logs.length);
+      setLogs((prev) => [...prev, ...page.items]);
+      setTotal(page.total);
+    } catch (err) {
+      console.error('Failed to load more logs', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   useEffect(() => {
+    setLogs([]);
     loadData(false);
+  }, [filters]);
+
+  useEffect(() => {
+    loadData(false, Math.max(PAGE_SIZE, logs.length));
     const interval = setInterval(() => {
-      loadData(true);
+      loadData(true, Math.max(PAGE_SIZE, logs.length));
     }, 5000);
     return () => clearInterval(interval);
-  }, [refreshTrigger, filters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshTrigger]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('en-US', {
@@ -58,7 +84,14 @@ export default function Logs({ onFetchSuccess, refreshTrigger, filters }: LogsPr
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-secondary">Raw prompt data and classification</h2>
+        <h2 className="text-sm font-medium text-secondary">
+          Raw prompt data and classification
+          {total > 0 && (
+            <span className="ml-2 text-secondary/70">
+              — показано {logs.length.toLocaleString('ru-RU')} из {total.toLocaleString('ru-RU')}
+            </span>
+          )}
+        </h2>
       </div>
 
       <Card>
@@ -117,6 +150,23 @@ export default function Logs({ onFetchSuccess, refreshTrigger, filters }: LogsPr
               </tbody>
             </table>
           </div>
+
+          {logs.length < total && (
+            <div className="p-4 border-t border-divider flex justify-center">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-secondary hover:text-primary hover:bg-surface-hover disabled:opacity-60 rounded-md transition-colors"
+              >
+                {loadingMore ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+                Показать ещё {Math.min(PAGE_SIZE, total - logs.length)}
+              </button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

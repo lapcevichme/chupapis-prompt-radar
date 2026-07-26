@@ -346,17 +346,21 @@ def _failure_analysis(items: list[dict[str, Any]]) -> dict[str, Any]:
             except (TypeError, ValueError):
                 pass
 
-        # Explicit flag from ingest path
-        if a.get("has_failure_signals") and not signals:
-            # has flag but no structured codes — count generic
-            any_signal_field_present = True
-            signals.append("failure")
-
+        # Structured signals from the ingest path come before the generic flag:
+        # checking `has_failure_signals` first counted the same record twice —
+        # once as "failure" and again as "response_status:error" — because the
+        # structured list had not been read yet when the emptiness check ran.
         if a.get("failure_signals"):
             any_signal_field_present = True
             for s in a["failure_signals"]:
-                if s and s not in signals:
+                if s and str(s) not in signals:
                     signals.append(str(s))
+
+        # Explicit flag with no structured detail anywhere: count it generically.
+        if a.get("has_failure_signals"):
+            any_signal_field_present = True
+            if not signals:
+                signals.append("failure")
 
         if signals:
             requests_with_signals += 1

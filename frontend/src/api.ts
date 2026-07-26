@@ -208,9 +208,20 @@ export async function fetchScenarioDetail(id: string): Promise<Scenario> {
 
 /* ── Logs ── */
 
-export async function fetchLogs(filters?: DashboardFilters, limit = 100): Promise<LogItem[]> {
-  const raw = await request<{ items: LogItem[]; total: number }>(`/logs${buildFilterQuery(filters, { limit })}`);
-  return raw.items ?? [];
+export interface LogsPage {
+  items: LogItem[];
+  total: number;
+}
+
+export async function fetchLogs(
+  filters?: DashboardFilters,
+  limit = 100,
+  offset = 0,
+): Promise<LogsPage> {
+  const raw = await request<LogsPage>(
+    `/logs${buildFilterQuery(filters, { limit, offset })}`,
+  );
+  return { items: raw.items ?? [], total: raw.total ?? 0 };
 }
 
 /* ── ROI ── */

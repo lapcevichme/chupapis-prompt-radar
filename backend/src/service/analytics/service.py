@@ -40,6 +40,11 @@ PERSONA_LABELS = {
 # Trailing window for the "active users" metric, in days.
 ACTIVE_WINDOW_DAYS = 7
 
+# Analytics aggregates in Python, so an unbounded SELECT would pull the whole
+# corpus into memory. Cap it and say so in the response rather than silently
+# degrading on a large store.
+MAX_ANALYTICS_RECORDS = 50_000
+
 # Frustration index = weighted blend of failure-signal share and outlier share.
 # Both come from ML assignments; the weights are a product judgement, not a
 # measurement, and are surfaced as such in the docs/contract.
@@ -340,7 +345,7 @@ class AnalyticsService:
         if filters.get("to"):
             query = query.where(DatasetRecord.timestamp <= filters["to"])
 
-        res = await self._session.execute(query)
+        res = await self._session.execute(query.limit(MAX_ANALYTICS_RECORDS))
         return list(res.all())
 
 
