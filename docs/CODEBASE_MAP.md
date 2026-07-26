@@ -116,26 +116,27 @@ CatBoost лежит в `app/models/`; при несовместимом или �
 
 ### `frontend/`
 
-Стек: React 19, TypeScript, Vite 6, Tailwind 4, Recharts, npm.
+Стек: React 19, TypeScript, Vite 6, Tailwind 4, Recharts, Vitest, npm.
 
-- `src/app/App.tsx` — bootstrap cookie-auth, глобальные фильтры, polling и переключение пяти
-  лениво загружаемых экранов без роутера.
-- `src/features/dataset-switcher/` — выбор общего представления или конкретного `source_id`;
-  один фильтр применяется к Dashboard, Scenarios, Logs, ROI и экспортам.
-- `src/shared/api/promptRadarApi.ts` — единый типизированный клиент backend.
-- `src/shared/api/http.ts` — query/body handling, `credentials: include`, refresh после 401.
-- `src/entities/` — локальные типы API; при контрактных изменениях синхронизировать вручную.
-- `src/pages/` — Login, Dashboard, Sources, Scenarios, Logs, ROI; ROI поддерживает what-if и
-  XLSX/CSV-экспорт с теми же фильтрами.
-- `src/features/workspace-actions/` — ingestion/recompute actions.
-- `src/widgets/` и `src/shared/ui/` — shell и общие состояния/примитивы.
-- `vite.config.ts` — alias `@`, Vitest/jsdom и dev proxy `/api` → backend `:8080`.
-- `Dockerfile` и `nginx.conf` — production-сборка SPA, history fallback и same-origin `/api`.
+Плоская структура — компоненты и один API-клиент, без слоёв feature/entity:
 
-Frontend пытается восстановить cookie-сессию и показывает обычную форму входа. Demo-autologin
-включается только build-time флагом `VITE_AUTO_DEMO_LOGIN`; корневой Compose включает его по
-умолчанию для локального демо, а standalone Vite — нет. Выход из аккаунта отключает повторный
-autologin в текущей вкладке.
+- `src/App.tsx` — shell: сессия (checking / anonymous / signed-in), глобальные фильтры,
+  переключение шести экранов без роутера, ProcessingBanner на всех вкладках.
+- `src/api.ts` — единственная граница с backend: сериализация фильтров, `credentials:
+  include`, поток `401 → refresh → повтор` и событие `SESSION_EXPIRED_EVENT`, по которому
+  shell возвращает форму входа.
+- `src/types.ts` — локальные типы API; при контрактных изменениях синхронизировать вручную.
+- `src/components/` — `Login`, `Dashboard`, `Ingestion`, `Scenarios`, `Logs`,
+  `UsersModelsView`, `RoiView`, `FilterBar`, `ProcessingBanner`, плюс `ui/` (Card, Badge).
+- `src/components/*.test.tsx`, `src/api.test.ts` — Vitest поверх jsdom.
+- `vite.config.ts` — сборка и dev-proxy `/api` → backend `:8080`.
+  `vitest.config.ts` — отдельный конфиг тестов: плагин Tailwind вешает раннер.
+- `Dockerfile` и `nginx.conf` — production-сборка SPA, history fallback, same-origin `/api`.
+
+Вход — обычная форма. Demo-автологин включается build-флагом `VITE_AUTO_DEMO_LOGIN` и
+берёт учётку из `VITE_DEMO_EMAIL` / `VITE_DEMO_PASSWORD` (build-args в compose) — учётных
+данных в исходниках нет. Фильтры `source_id/from/to` живут в `App` и применяются ко всем
+экранам и к экспорту.
 
 ## Контракты и версии
 
@@ -174,10 +175,10 @@ make demo
 
 На момент актуализации:
 
-- backend: `57 passed`; `ruff check src tests` проходит;
+- backend: `87 passed`; `ruff check src tests` проходит;
 - ML: `95 passed, 8 deselected` в runtime-образе с mock providers; отдельный online smoke через
   OpenRouter создал реальные embeddings/assignments в Qdrant;
-- frontend: lint, пять Vitest-тестов и production build проходят; npm audit не находит уязвимостей;
+- frontend: `tsc --noEmit`, 12 Vitest-тестов и production build проходят;
 - основной Compose на чистых volumes поднял три preloaded источника (170 + 106 + 109 = 385),
   создал 385 OpenRouter-векторов размерности 2560, завершил heavy recompute с 22 сценариями и
   проверен по dashboard, scenarios, logs, ROI и XLSX/CSV через frontend/nginx.
@@ -191,6 +192,9 @@ make demo
   worker/replika без внешней очереди и общего job-store нарушат ожидания.
 - Online cosine centroids пока не восстанавливаются из meta-store после рестарта (TODO в
   `cosine_clusterer.py`). Heavy recompute — путь стабилизации сценариев.
+- `freshness.recompute_pending` означает «анализ отстал и пересчёт не запущен», а
+  `recompute_running` — «джоба в полёте». Это разные состояния: первому нужна кнопка,
+  второму — прогресс.
 - Read-кэш backend — память процесса, не Redis; фильтры входят в cache key.
 - `.gitignore` исторически исключает локальные `.claude/`, `TASKS.md`, `docs/decisions/` и
   `template/`. Важные долговечные правила нужно переносить в tracked `AGENTS.md` или docs.
